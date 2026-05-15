@@ -256,6 +256,45 @@ export type Database = {
         }
         Relationships: []
       }
+      share_links: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          include_notes: boolean
+          include_photos: boolean
+          title: string | null
+          token: string
+          updated_at: string
+          user_id: string
+          views: number
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          include_notes?: boolean
+          include_photos?: boolean
+          title?: string | null
+          token: string
+          updated_at?: string
+          user_id: string
+          views?: number
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          include_notes?: boolean
+          include_photos?: boolean
+          title?: string | null
+          token?: string
+          updated_at?: string
+          user_id?: string
+          views?: number
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string

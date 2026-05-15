@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, TrendingUp, Loader2, Plus, Camera } from "lucide-react";
+import { ArrowLeft, TrendingUp, Loader2, Plus, Camera, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
+import { ShareProgressDialog } from "@/components/ShareProgressDialog";
 import {
   ResponsiveContainer,
   LineChart,
@@ -50,6 +51,7 @@ function ProgressPage() {
   const [notes, setNotes] = useState("");
   const [files, setFiles] = useState<Record<string, File | null>>({});
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
+  const [shareOpen, setShareOpen] = useState(false);
 
   const load = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -161,10 +163,19 @@ function ProgressPage() {
           <h1 className="text-3xl md:text-4xl font-heading font-bold flex items-center gap-3">
             <TrendingUp className="text-primary" /> Progresso
           </h1>
-          <Button onClick={() => setShowForm((v) => !v)}>
-            <Plus size={16} className="mr-1" /> Novo check-in
-          </Button>
+          <div className="flex gap-2">
+            {checkins.length > 0 && (
+              <Button variant="outline" onClick={() => setShareOpen(true)}>
+                <Share2 size={16} className="mr-1" /> Compartilhar
+              </Button>
+            )}
+            <Button onClick={() => setShowForm((v) => !v)}>
+              <Plus size={16} className="mr-1" /> Novo check-in
+            </Button>
+          </div>
         </div>
+
+        <ShareProgressDialog open={shareOpen} onOpenChange={setShareOpen} />
 
         {checkins.length > 0 && (
           <div className="mt-6 grid gap-4 grid-cols-3">
