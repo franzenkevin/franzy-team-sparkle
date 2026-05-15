@@ -4,9 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, Save, Dumbbell, Loader2, Timer, X } from "lucide-react";
+import { ArrowLeft, Save, Dumbbell, Loader2, Timer, X, Star, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
+import { Textarea } from "@/components/ui/textarea";
 
 export const Route = createFileRoute("/_authenticated/training")({
   head: () => ({ meta: [{ title: "Treino — Franzen Team" }] }),
@@ -57,6 +58,10 @@ function TrainingPage() {
   const [previousSets, setPreviousSets] = useState<Record<string, WorkoutSet[]>>({});
   const [restSeconds, setRestSeconds] = useState<number | null>(null);
   const restRef = useRef<number | null>(null);
+  const [feedbackRating, setFeedbackRating] = useState<number>(0);
+  const [feedbackNotes, setFeedbackNotes] = useState<string>("");
+  const [feedbackId, setFeedbackId] = useState<string | null>(null);
+  const [savingFeedback, setSavingFeedback] = useState(false);
 
   // Rest timer countdown
   useEffect(() => {
@@ -140,6 +145,19 @@ function TrainingPage() {
       }
       setExerciseSets(initial);
 
+      // Load today's feedback for this day, if any
+      const { data: fb } = await supabase
+        .from("workout_feedback")
+        .select("id, rating, notes")
+        .eq("user_id", user.id)
+        .eq("protocol_id", protocol.id)
+        .eq("day_index", selectedDay)
+        .eq("session_date", todayISO)
+        .maybeSingle();
+      setFeedbackId(fb?.id ?? null);
+      setFeedbackRating(fb?.rating ?? 0);
+      setFeedbackNotes(fb?.notes ?? "");
+
       // Load previous session per exercise (most recent before today)
       const exerciseIds = day.exercises.map((e) => e.id);
       if (exerciseIds.length > 0) {
@@ -166,6 +184,48 @@ function TrainingPage() {
       sets[i] = { ...sets[i], [field]: value as never };
       return { ...prev, [exId]: sets };
     });
+  };
+
+  const saveFeedback = async () => {
+    if (!protocol) return;
+    if (feedbackRating < 1 || feedbackRating > 5) {
+      toast.error("Selecione de 1 a 5 estrelas");
+      return;
+    }
+    setSavingFeedback(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("not signed in");
+      const notes = feedbackNotes.trim().slice(0, 1000);
+      if (feedbackId) {
+        const { error } = await supabase
+          .from("workout_feedback")
+          .update({ rating: feedbackRating, notes })
+          .eq("id", feedbackId);
+        if (error) throw error;
+      } else {
+        const { data, error } = await supabase
+          .from("workout_feedback")
+          .insert({
+            user_id: user.id,
+            protocol_id: protocol.id,
+            day_index: selectedDay,
+            session_date: todayISO,
+            rating: feedbackRating,
+            notes,
+          })
+          .select("id")
+          .single();
+        if (error) throw error;
+        setFeedbackId(data.id);
+      }
+      toast.success("Feedback enviado!");
+    } catch (e) {
+      console.error(e);
+      toast.error("Erro ao enviar feedback");
+    } finally {
+      setSavingFeedback(false);
+    }
   };
 
   const handleCompletedToggle = (ex: Exercise, i: number, checked: boolean) => {
@@ -347,6 +407,42 @@ function TrainingPage() {
                     </div>
                   );
                 })}
+                <div className="rounded-xl border border-border bg-card p-5">
+                  <h3 className="font-heading font-semibold flex items-center gap-2">
+                    <MessageSquare size={16} className="text-primary" /> Feedback do treino
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-1">Como foi a sessão de hoje?</p>
+                  <div className="mt-3 flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <button
+                        key={n}
+                        type="button"
+                        onClick={() => setFeedbackRating(n)}
+                        className="p-1"
+                        aria-label={`${n} estrela${n > 1 ? "s" : ""}`}
+                      >
+                        <Star
+                          size={28}
+                          className={n <= feedbackRating ? "fill-primary text-primary" : "text-muted-foreground"}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                  <Textarea
+                    value={feedbackNotes}
+                    onChange={(e) => setFeedbackNotes(e.target.value)}
+                    placeholder="Observações (opcional, máx 1000 caracteres)"
+                    maxLength={1000}
+                    rows={3}
+                    className="mt-3"
+                  />
+                  <div className="mt-3 flex justify-end">
+                    <Button onClick={saveFeedback} disabled={savingFeedback || feedbackRating === 0}>
+                      {savingFeedback ? <Loader2 className="animate-spin mr-2" size={14} /> : null}
+                      {feedbackId ? "Atualizar feedback" : "Enviar feedback"}
+                    </Button>
+                  </div>
+                </div>
               </div>
             )}
           </>
