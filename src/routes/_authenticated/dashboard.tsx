@@ -2,9 +2,12 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Dumbbell, Apple, LineChart, History, Bell, Download } from "lucide-react";
+import { Sparkles, Dumbbell, Apple, LineChart, History, Bell, Download, ShoppingCart } from "lucide-react";
 import { useReminders } from "@/hooks/useReminders";
 import { generateProtocolPdf } from "@/lib/protocolPdf";
+import { generateShoppingListPdf } from "@/lib/shoppingList";
+import { NotificationBell } from "@/components/NotificationBell";
+import { AchievementsCard } from "@/components/AchievementsCard";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -16,6 +19,7 @@ function DashboardPage() {
   const [name, setName] = useState<string>("");
   const [permission, setPermission] = useState<NotificationPermission>("default");
   const [downloading, setDownloading] = useState(false);
+  const [downloadingList, setDownloadingList] = useState(false);
   const navigate = useNavigate();
 
   useReminders(8, 0, "Franzen Team", "Bom dia! Hora do treino e check-in.");
@@ -68,12 +72,42 @@ function DashboardPage() {
     }
   };
 
+  const downloadShoppingList = async () => {
+    setDownloadingList(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const [{ data: profile }, { data: protocol }] = await Promise.all([
+        supabase.from("profiles").select("full_name").eq("user_id", user.id).maybeSingle(),
+        supabase.from("protocols").select("diet")
+          .eq("user_id", user.id).eq("status", "active")
+          .order("created_at", { ascending: false }).limit(1).maybeSingle(),
+      ]);
+      if (!protocol?.diet) {
+        toast.error("Nenhuma dieta ativa encontrada");
+        return;
+      }
+      generateShoppingListPdf({
+        fullName: profile?.full_name ?? "",
+        diet: protocol.diet as any,
+      });
+    } catch (e) {
+      console.error(e);
+      toast.error("Erro ao gerar lista");
+    } finally {
+      setDownloadingList(false);
+    }
+  };
+
   return (
     <div>
       <main className="container mx-auto px-4 py-8 sm:py-10 max-w-5xl">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-heading font-bold">
-          Olá, <span className="text-primary">{name || "atleta"}</span>
-        </h1>
+        <div className="flex items-start justify-between gap-3">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-heading font-bold">
+            Olá, <span className="text-primary">{name || "atleta"}</span>
+          </h1>
+          <NotificationBell />
+        </div>
         <p className="mt-2 text-sm sm:text-base text-muted-foreground">Pronto para o treino de hoje?</p>
 
         <div className="mt-5 flex flex-wrap gap-2">
@@ -96,6 +130,16 @@ function DashboardPage() {
             <Download size={16} className="mr-2" />
             {downloading ? "Gerando..." : "Baixar protocolo (PDF)"}
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={downloadShoppingList}
+            disabled={downloadingList}
+            className="w-full sm:w-auto"
+          >
+            <ShoppingCart size={16} className="mr-2" />
+            {downloadingList ? "Gerando..." : "Lista de compras"}
+          </Button>
         </div>
 
         <Link
@@ -117,6 +161,10 @@ function DashboardPage() {
           <DashCard to="/diet" icon={Apple} title="Nutrição" desc="Refeições e macros" />
           <DashCard to="/progress" icon={LineChart} title="Progresso" desc="Check-ins e fotos" />
           <DashCard to="/history" icon={History} title="Histórico" desc="Versões anteriores" />
+        </div>
+
+        <div className="mt-6">
+          <AchievementsCard />
         </div>
       </main>
     </div>
