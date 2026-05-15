@@ -25,7 +25,6 @@ import { Route as AuthenticatedExercisesRouteImport } from './routes/_authentica
 import { Route as AuthenticatedDietRouteImport } from './routes/_authenticated/diet'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
-import { Route as AuthenticatedExercisesRouteImport } from './routes/_authenticated/exercises'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -382,13 +381,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
