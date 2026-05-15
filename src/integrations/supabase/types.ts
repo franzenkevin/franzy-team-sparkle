@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      exercises: {
+        Row: {
+          category: string
+          created_at: string
+          equipment: string | null
+          id: string
+          instructions: string | null
+          name: string
+          updated_at: string
+          video_url: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          equipment?: string | null
+          id?: string
+          instructions?: string | null
+          name: string
+          updated_at?: string
+          video_url?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          equipment?: string | null
+          id?: string
+          instructions?: string | null
+          name?: string
+          updated_at?: string
+          video_url?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           activity_level: string | null
@@ -137,6 +170,45 @@ export type Database = {
         }
         Relationships: []
       }
+      protocols: {
+        Row: {
+          created_at: string
+          diet: Json
+          end_date: string
+          id: string
+          start_date: string
+          status: string
+          training: Json
+          updated_at: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          diet?: Json
+          end_date?: string
+          id?: string
+          start_date?: string
+          status?: string
+          training?: Json
+          updated_at?: string
+          user_id: string
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          diet?: Json
+          end_date?: string
+          id?: string
+          start_date?: string
+          status?: string
+          training?: Json
+          updated_at?: string
+          user_id?: string
+          version?: number
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -157,6 +229,100 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      workout_feedback: {
+        Row: {
+          created_at: string
+          day_index: number
+          id: string
+          notes: string | null
+          protocol_id: string | null
+          rating: number
+          session_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          day_index: number
+          id?: string
+          notes?: string | null
+          protocol_id?: string | null
+          rating: number
+          session_date?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          day_index?: number
+          id?: string
+          notes?: string | null
+          protocol_id?: string | null
+          rating?: number
+          session_date?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workout_feedback_protocol_id_fkey"
+            columns: ["protocol_id"]
+            isOneToOne: false
+            referencedRelation: "protocols"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workout_logs: {
+        Row: {
+          created_at: string
+          day_index: number
+          exercise_id: string
+          exercise_name: string
+          id: string
+          notes: string | null
+          protocol_id: string | null
+          session_date: string
+          sets: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          day_index: number
+          exercise_id: string
+          exercise_name: string
+          id?: string
+          notes?: string | null
+          protocol_id?: string | null
+          session_date?: string
+          sets?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          day_index?: number
+          exercise_id?: string
+          exercise_name?: string
+          id?: string
+          notes?: string | null
+          protocol_id?: string | null
+          session_date?: string
+          sets?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workout_logs_protocol_id_fkey"
+            columns: ["protocol_id"]
+            isOneToOne: false
+            referencedRelation: "protocols"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
