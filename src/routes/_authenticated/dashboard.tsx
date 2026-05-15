@@ -2,8 +2,10 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Dumbbell, Apple, LineChart, History, Bell } from "lucide-react";
+import { Sparkles, Dumbbell, Apple, LineChart, History, Bell, Download } from "lucide-react";
 import { useReminders } from "@/hooks/useReminders";
+import { generateProtocolPdf } from "@/lib/protocolPdf";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — Franzen Team" }] }),
@@ -13,6 +15,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 function DashboardPage() {
   const [name, setName] = useState<string>("");
   const [permission, setPermission] = useState<NotificationPermission>("default");
+  const [downloading, setDownloading] = useState(false);
   const navigate = useNavigate();
 
   useReminders(8, 0, "Franzen Team", "Bom dia! Hora do treino e check-in.");
@@ -38,6 +41,33 @@ function DashboardPage() {
     setPermission(r);
   };
 
+  const downloadPdf = async () => {
+    setDownloading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const [{ data: profile }, { data: protocol }] = await Promise.all([
+        supabase.from("profiles").select("full_name").eq("user_id", user.id).maybeSingle(),
+        supabase.from("protocols").select("training, diet, start_date, end_date, version")
+          .eq("user_id", user.id).eq("status", "active")
+          .order("created_at", { ascending: false }).limit(1).maybeSingle(),
+      ]);
+      if (!protocol) {
+        toast.error("Nenhum protocolo ativo encontrado");
+        return;
+      }
+      generateProtocolPdf({
+        fullName: profile?.full_name ?? "",
+        protocol: protocol as any,
+      });
+    } catch (e) {
+      console.error(e);
+      toast.error("Erro ao gerar PDF");
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   return (
     <div>
       <main className="container mx-auto px-4 py-8 sm:py-10 max-w-5xl">
@@ -46,15 +76,27 @@ function DashboardPage() {
         </h1>
         <p className="mt-2 text-sm sm:text-base text-muted-foreground">Pronto para o treino de hoje?</p>
 
-        {permission !== "granted" && (
-          <button
-            onClick={requestNotif}
-            className="mt-5 w-full sm:w-auto inline-flex items-center gap-2 rounded-lg border border-primary/40 bg-primary/5 hover:bg-primary/10 transition px-4 py-2 text-sm"
+        <div className="mt-5 flex flex-wrap gap-2">
+          {permission !== "granted" && (
+            <button
+              onClick={requestNotif}
+              className="w-full sm:w-auto inline-flex items-center gap-2 rounded-lg border border-primary/40 bg-primary/5 hover:bg-primary/10 transition px-4 py-2 text-sm"
+            >
+              <Bell size={16} className="text-primary" />
+              Ativar lembretes diários
+            </button>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={downloadPdf}
+            disabled={downloading}
+            className="w-full sm:w-auto"
           >
-            <Bell size={16} className="text-primary" />
-            Ativar lembretes diários de treino
-          </button>
-        )}
+            <Download size={16} className="mr-2" />
+            {downloading ? "Gerando..." : "Baixar protocolo (PDF)"}
+          </Button>
+        </div>
 
         <Link
           to="/generate"
