@@ -2,9 +2,8 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, Shield, Sparkles, Dumbbell, Apple, LineChart, History, Bell } from "lucide-react";
+import { Sparkles, Dumbbell, Apple, LineChart, History, Bell } from "lucide-react";
 import { useReminders } from "@/hooks/useReminders";
-import logo from "@/assets/logo.png";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — Franzen Team" }] }),
@@ -13,7 +12,6 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 function DashboardPage() {
   const [name, setName] = useState<string>("");
-  const [isAdmin, setIsAdmin] = useState(false);
   const [permission, setPermission] = useState<NotificationPermission>("default");
   const navigate = useNavigate();
 
@@ -31,16 +29,8 @@ function DashboardPage() {
         .maybeSingle();
       if (!p?.onboarding_complete) { navigate({ to: "/onboarding" }); return; }
       setName(p.full_name ?? user.email ?? "");
-      const { data: role } = await supabase
-        .from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle();
-      setIsAdmin(!!role);
     })();
   }, [navigate]);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate({ to: "/login" });
-  };
 
   const requestNotif = async () => {
     if (typeof Notification === "undefined") return;
@@ -49,31 +39,7 @@ function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="container mx-auto flex items-center justify-between gap-2 px-4 py-4 border-b border-border">
-        <Link to="/dashboard" className="flex items-center gap-2 min-w-0">
-          <img src={logo} alt="Franzen Team" className="w-8 h-8 shrink-0" />
-          <span className="font-heading font-bold tracking-wide text-sm sm:text-base truncate">FRANZEN TEAM</span>
-        </Link>
-        <div className="flex items-center gap-1">
-          {isAdmin && (
-            <Link to="/admin">
-              <Button variant="ghost" size="sm" className="px-2 sm:px-3">
-                <Shield size={16} className="sm:mr-2" /> <span className="hidden sm:inline">Admin</span>
-              </Button>
-            </Link>
-          )}
-          <Link to="/profile">
-            <Button variant="ghost" size="sm" className="px-2 sm:px-3">
-              <User size={16} className="sm:mr-2" /> <span className="hidden sm:inline">Perfil</span>
-            </Button>
-          </Link>
-          <Button variant="ghost" size="sm" className="px-2 sm:px-3" onClick={handleLogout}>
-            <LogOut size={16} className="sm:mr-2" /> <span className="hidden sm:inline">Sair</span>
-          </Button>
-        </div>
-      </header>
-
+    <div>
       <main className="container mx-auto px-4 py-8 sm:py-10 max-w-5xl">
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-heading font-bold">
           Olá, <span className="text-primary">{name || "atleta"}</span>
