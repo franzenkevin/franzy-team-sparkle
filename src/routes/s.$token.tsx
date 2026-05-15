@@ -12,12 +12,18 @@ import {
 } from "recharts";
 
 export const Route = createFileRoute("/s/$token")({
-  head: () => ({
+  head: ({ params }) => ({
     meta: [
       { title: "Progresso compartilhado — Franzen Team" },
       { name: "description", content: "Acompanhe a evolução deste atleta no programa Franzen Team." },
       { property: "og:title", content: "Progresso — Franzen Team" },
       { property: "og:description", content: "Acompanhe a evolução deste atleta." },
+      { property: "og:type", content: "article" },
+      { property: "og:image", content: `/api/public/share-og/${params.token}` },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: `/api/public/share-og/${params.token}` },
     ],
   }),
   component: SharePage,

@@ -29,6 +29,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedCoachRouteImport } from './routes/_authenticated/coach'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as ApiPublicShareTokenRouteImport } from './routes/api/public/share.$token'
+import { Route as ApiPublicShareOgTokenRouteImport } from './routes/api/public/share-og.$token'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -129,6 +130,11 @@ const ApiPublicShareTokenRoute = ApiPublicShareTokenRouteImport.update({
   path: '/api/public/share/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicShareOgTokenRoute = ApiPublicShareOgTokenRouteImport.update({
+  id: '/api/public/share-og/$token',
+  path: '/api/public/share-og/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -149,6 +155,7 @@ export interface FileRoutesByFullPath {
   '/training': typeof AuthenticatedTrainingRoute
   '/api/coach': typeof ApiCoachRoute
   '/s/$token': typeof STokenRoute
+  '/api/public/share-og/$token': typeof ApiPublicShareOgTokenRoute
   '/api/public/share/$token': typeof ApiPublicShareTokenRoute
 }
 export interface FileRoutesByTo {
@@ -170,6 +177,7 @@ export interface FileRoutesByTo {
   '/training': typeof AuthenticatedTrainingRoute
   '/api/coach': typeof ApiCoachRoute
   '/s/$token': typeof STokenRoute
+  '/api/public/share-og/$token': typeof ApiPublicShareOgTokenRoute
   '/api/public/share/$token': typeof ApiPublicShareTokenRoute
 }
 export interface FileRoutesById {
@@ -193,6 +201,7 @@ export interface FileRoutesById {
   '/_authenticated/training': typeof AuthenticatedTrainingRoute
   '/api/coach': typeof ApiCoachRoute
   '/s/$token': typeof STokenRoute
+  '/api/public/share-og/$token': typeof ApiPublicShareOgTokenRoute
   '/api/public/share/$token': typeof ApiPublicShareTokenRoute
 }
 export interface FileRouteTypes {
@@ -216,6 +225,7 @@ export interface FileRouteTypes {
     | '/training'
     | '/api/coach'
     | '/s/$token'
+    | '/api/public/share-og/$token'
     | '/api/public/share/$token'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -237,6 +247,7 @@ export interface FileRouteTypes {
     | '/training'
     | '/api/coach'
     | '/s/$token'
+    | '/api/public/share-og/$token'
     | '/api/public/share/$token'
   id:
     | '__root__'
@@ -259,6 +270,7 @@ export interface FileRouteTypes {
     | '/_authenticated/training'
     | '/api/coach'
     | '/s/$token'
+    | '/api/public/share-og/$token'
     | '/api/public/share/$token'
   fileRoutesById: FileRoutesById
 }
@@ -271,6 +283,7 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   ApiCoachRoute: typeof ApiCoachRoute
   STokenRoute: typeof STokenRoute
+  ApiPublicShareOgTokenRoute: typeof ApiPublicShareOgTokenRoute
   ApiPublicShareTokenRoute: typeof ApiPublicShareTokenRoute
 }
 
@@ -416,6 +429,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicShareTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/share-og/$token': {
+      id: '/api/public/share-og/$token'
+      path: '/api/public/share-og/$token'
+      fullPath: '/api/public/share-og/$token'
+      preLoaderRoute: typeof ApiPublicShareOgTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -460,6 +480,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   ApiCoachRoute: ApiCoachRoute,
   STokenRoute: STokenRoute,
+  ApiPublicShareOgTokenRoute: ApiPublicShareOgTokenRoute,
   ApiPublicShareTokenRoute: ApiPublicShareTokenRoute,
 }
 export const routeTree = rootRouteImport
