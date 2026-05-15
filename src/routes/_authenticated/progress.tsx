@@ -9,6 +9,7 @@ import { ArrowLeft, TrendingUp, Loader2, Plus, Camera, Share2 } from "lucide-rea
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 import { ShareProgressDialog } from "@/components/ShareProgressDialog";
+import { evaluateCheckinAchievements } from "@/lib/achievements";
 import {
   ResponsiveContainer,
   LineChart,
@@ -117,6 +118,7 @@ function ProgressPage() {
       if (error) throw error;
 
       toast.success("Check-in salvo!");
+      evaluateCheckinAchievements(user.id).catch(() => {});
       setShowForm(false);
       setWeight("");
       setAdherence("");
