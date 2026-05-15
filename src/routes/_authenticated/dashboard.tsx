@@ -60,10 +60,10 @@ function DashboardPage() {
             <h3 className="font-heading text-lg font-semibold">Nutrição</h3>
             <p className="mt-2 text-sm text-muted-foreground">Refeições, macros e substituições.</p>
           </Link>
-          <div className="rounded-xl border border-border bg-card p-6 opacity-60">
+          <Link to="/progress" className="rounded-xl border border-border bg-card p-6 hover:border-primary transition">
             <h3 className="font-heading text-lg font-semibold">Progresso</h3>
-            <p className="mt-2 text-sm text-muted-foreground">Em breve.</p>
-          </div>
+            <p className="mt-2 text-sm text-muted-foreground">Check-ins, peso e fotos de evolução.</p>
+          </Link>
         </div>
       </main>
     </div>

@@ -14,6 +14,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      checkins: {
+        Row: {
+          adherence: number | null
+          created_at: string
+          id: string
+          notes: string | null
+          photo_back: string | null
+          photo_front: string | null
+          photo_side: string | null
+          protocol_id: string | null
+          user_id: string
+          weight: number | null
+        }
+        Insert: {
+          adherence?: number | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          photo_back?: string | null
+          photo_front?: string | null
+          photo_side?: string | null
+          protocol_id?: string | null
+          user_id: string
+          weight?: number | null
+        }
+        Update: {
+          adherence?: number | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          photo_back?: string | null
+          photo_front?: string | null
+          photo_side?: string | null
+          protocol_id?: string | null
+          user_id?: string
+          weight?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checkins_protocol_id_fkey"
+            columns: ["protocol_id"]
+            isOneToOne: false
+            referencedRelation: "protocols"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       exercises: {
         Row: {
           category: string
