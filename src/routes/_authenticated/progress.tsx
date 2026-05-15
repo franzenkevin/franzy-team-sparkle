@@ -8,6 +8,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, TrendingUp, Loader2, Plus, Camera } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+} from "recharts";
 
 export const Route = createFileRoute("/_authenticated/progress")({
   head: () => ({ meta: [{ title: "Progresso — Franzen Team" }] }),
@@ -176,6 +185,50 @@ function ProgressPage() {
                   : undefined
               }
             />
+          </div>
+        )}
+
+        {checkins.filter((c) => c.weight != null).length >= 2 && (
+          <div className="mt-6 rounded-xl border border-border bg-card p-5">
+            <h3 className="font-heading font-semibold mb-4">Evolução do peso</h3>
+            <div className="h-56 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={[...checkins]
+                    .filter((c) => c.weight != null)
+                    .reverse()
+                    .map((c) => ({
+                      date: new Date(c.created_at).toLocaleDateString("pt-BR", {
+                        day: "2-digit",
+                        month: "2-digit",
+                      }),
+                      peso: Number(c.weight),
+                    }))}
+                  margin={{ top: 5, right: 10, left: -10, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={11} />
+                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} domain={["auto", "auto"]} />
+                  <Tooltip
+                    contentStyle={{
+                      background: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: 8,
+                      fontSize: 12,
+                    }}
+                    labelStyle={{ color: "hsl(var(--foreground))" }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="peso"
+                    stroke="hsl(var(--primary))"
+                    strokeWidth={2}
+                    dot={{ r: 3, fill: "hsl(var(--primary))" }}
+                    activeDot={{ r: 5 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         )}
 
