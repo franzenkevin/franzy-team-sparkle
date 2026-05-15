@@ -15,10 +15,18 @@ function DashboardPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setName((user?.user_metadata as { full_name?: string } | undefined)?.full_name ?? user?.email ?? "");
-    });
-  }, []);
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: p } = await supabase
+        .from("profiles")
+        .select("full_name, onboarding_complete")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (!p?.onboarding_complete) { navigate({ to: "/onboarding" }); return; }
+      setName(p.full_name ?? user.email ?? "");
+    })();
+  }, [navigate]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
