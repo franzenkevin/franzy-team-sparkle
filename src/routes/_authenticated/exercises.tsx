@@ -97,11 +97,11 @@ function ExercisesPage() {
     try {
       const ext = file.name.split(".").pop() || "mp4";
       const path = `exercises/${crypto.randomUUID()}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("photos").upload(path, file, {
+      const { error: upErr } = await supabase.storage.from("exercise-media").upload(path, file, {
         contentType: file.type, upsert: false,
       });
       if (upErr) throw upErr;
-      const { data: pub } = supabase.storage.from("photos").getPublicUrl(path);
+      const { data: pub } = supabase.storage.from("exercise-media").getPublicUrl(path);
       setEditing({ ...editing, video_url: pub.publicUrl });
       toast.success("Vídeo enviado");
     } catch (e) {
