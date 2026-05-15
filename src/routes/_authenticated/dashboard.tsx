@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
+import { LogOut, User } from "lucide-react";
 import logo from "@/assets/logo.png";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -40,9 +40,16 @@ function DashboardPage() {
           <img src={logo} alt="Franzen Team" className="w-9 h-9" />
           <span className="font-heading font-bold tracking-wide">FRANZEN TEAM</span>
         </Link>
-        <Button variant="ghost" size="sm" onClick={handleLogout}>
-          <LogOut size={16} className="mr-2" /> Sair
-        </Button>
+        <div className="flex items-center gap-1">
+          <Link to="/profile">
+            <Button variant="ghost" size="sm">
+              <User size={16} className="mr-2" /> Perfil
+            </Button>
+          </Link>
+          <Button variant="ghost" size="sm" onClick={handleLogout}>
+            <LogOut size={16} className="mr-2" /> Sair
+          </Button>
+        </div>
       </header>
 
       <main className="container mx-auto px-4 py-12">
