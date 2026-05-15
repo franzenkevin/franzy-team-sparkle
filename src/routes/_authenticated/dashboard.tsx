@@ -1,0 +1,57 @@
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { LogOut } from "lucide-react";
+import logo from "@/assets/logo.png";
+
+export const Route = createFileRoute("/_authenticated/dashboard")({
+  head: () => ({ meta: [{ title: "Dashboard — Franzen Team" }] }),
+  component: DashboardPage,
+});
+
+function DashboardPage() {
+  const [name, setName] = useState<string>("");
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setName((user?.user_metadata as { full_name?: string } | undefined)?.full_name ?? user?.email ?? "");
+    });
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate({ to: "/login" });
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="container mx-auto flex items-center justify-between px-4 py-5 border-b border-border">
+        <Link to="/" className="flex items-center gap-2">
+          <img src={logo} alt="Franzen Team" className="w-9 h-9" />
+          <span className="font-heading font-bold tracking-wide">FRANZEN TEAM</span>
+        </Link>
+        <Button variant="ghost" size="sm" onClick={handleLogout}>
+          <LogOut size={16} className="mr-2" /> Sair
+        </Button>
+      </header>
+
+      <main className="container mx-auto px-4 py-12">
+        <h1 className="text-3xl md:text-4xl font-heading font-bold">
+          Olá, <span className="text-primary">{name || "atleta"}</span>
+        </h1>
+        <p className="mt-2 text-muted-foreground">Seu painel está pronto. Em breve, mais módulos serão liberados aqui.</p>
+
+        <div className="mt-10 grid gap-4 md:grid-cols-3">
+          {["Treinos", "Nutrição", "Progresso"].map((m) => (
+            <div key={m} className="rounded-xl border border-border bg-card p-6">
+              <h3 className="font-heading text-lg font-semibold">{m}</h3>
+              <p className="mt-2 text-sm text-muted-foreground">Em breve.</p>
+            </div>
+          ))}
+        </div>
+      </main>
+    </div>
+  );
+}
