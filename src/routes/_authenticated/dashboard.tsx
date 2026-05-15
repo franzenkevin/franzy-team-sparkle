@@ -56,12 +56,14 @@ function DashboardPage() {
             <h3 className="font-heading text-lg font-semibold">Treinos</h3>
             <p className="mt-2 text-sm text-muted-foreground">Veja seu protocolo e registre as séries.</p>
           </Link>
-          {["Nutrição", "Progresso"].map((m) => (
-            <div key={m} className="rounded-xl border border-border bg-card p-6 opacity-60">
-              <h3 className="font-heading text-lg font-semibold">{m}</h3>
-              <p className="mt-2 text-sm text-muted-foreground">Em breve.</p>
-            </div>
-          ))}
+          <Link to="/diet" className="rounded-xl border border-border bg-card p-6 hover:border-primary transition">
+            <h3 className="font-heading text-lg font-semibold">Nutrição</h3>
+            <p className="mt-2 text-sm text-muted-foreground">Refeições, macros e substituições.</p>
+          </Link>
+          <div className="rounded-xl border border-border bg-card p-6 opacity-60">
+            <h3 className="font-heading text-lg font-semibold">Progresso</h3>
+            <p className="mt-2 text-sm text-muted-foreground">Em breve.</p>
+          </div>
         </div>
       </main>
     </div>
