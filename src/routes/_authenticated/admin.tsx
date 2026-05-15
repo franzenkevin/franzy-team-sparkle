@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Save, Shield, Users, ClipboardList, MessageSquare, History as HistoryIcon } from "lucide-react";
+import { Save, Shield, Users, ClipboardList, MessageSquare, History as HistoryIcon, ShieldCheck, ShieldOff } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({ meta: [{ title: "Admin — Franzen Team" }] }),
@@ -21,7 +21,7 @@ type ProtocolRow = { id: string; user_id: string; status: string; version: numbe
 type CheckinRow = { id: string; created_at: string; weight: number | null; adherence: number | null; notes: string | null; photo_front: string | null; photo_side: string | null; photo_back: string | null };
 type FeedbackRow = { id: string; session_date: string; day_index: number; rating: number; notes: string | null };
 
-type Tab = "protocol" | "history" | "checkins" | "feedback";
+type Tab = "protocol" | "history" | "checkins" | "feedback" | "roles";
 
 function AdminPage() {
   const navigate = useNavigate();
@@ -42,6 +42,8 @@ function AdminPage() {
   const [history, setHistory] = useState<ProtocolRow[]>([]);
   const [checkins, setCheckins] = useState<CheckinRow[]>([]);
   const [feedback, setFeedback] = useState<FeedbackRow[]>([]);
+  const [isUserAdmin, setIsUserAdmin] = useState(false);
+  const [togglingRole, setTogglingRole] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -79,6 +81,41 @@ function AdminPage() {
     setHistory((hist ?? []) as ProtocolRow[]);
     setCheckins((chk ?? []) as CheckinRow[]);
     setFeedback((fb ?? []) as FeedbackRow[]);
+    const { data: roleRow } = await supabase
+      .from("user_roles")
+      .select("id")
+      .eq("user_id", u.user_id)
+      .eq("role", "admin")
+      .maybeSingle();
+    setIsUserAdmin(!!roleRow);
+  };
+
+  const toggleAdminRole = async () => {
+    if (!selectedUser) return;
+    setTogglingRole(true);
+    try {
+      if (isUserAdmin) {
+        const { error } = await supabase
+          .from("user_roles")
+          .delete()
+          .eq("user_id", selectedUser.user_id)
+          .eq("role", "admin");
+        if (error) throw error;
+        toast.success("Permissão de admin removida");
+        setIsUserAdmin(false);
+      } else {
+        const { error } = await supabase
+          .from("user_roles")
+          .insert({ user_id: selectedUser.user_id, role: "admin" });
+        if (error) throw error;
+        toast.success("Usuário promovido a admin");
+        setIsUserAdmin(true);
+      }
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro ao alterar permissão");
+    } finally {
+      setTogglingRole(false);
+    }
   };
 
   const handleSave = async () => {
@@ -185,6 +222,7 @@ function AdminPage() {
                     ["history", `Histórico (${history.length})`, HistoryIcon],
                     ["checkins", `Check-ins (${checkins.length})`, ClipboardList],
                     ["feedback", `Feedback (${feedback.length})`, MessageSquare],
+                    ["roles", "Permissões", ShieldCheck],
                   ] as const).map(([key, label, Icon]) => (
                     <Button
                       key={key}
@@ -265,6 +303,33 @@ function AdminPage() {
                       {f.notes && <p className="mt-2 text-sm text-muted-foreground whitespace-pre-wrap">{f.notes}</p>}
                     </div>
                   ))}
+                </div>
+              )}
+
+              {tab === "roles" && (
+                <div className="rounded-xl border border-border bg-card p-5">
+                  <h3 className="font-heading font-semibold flex items-center gap-2">
+                    <ShieldCheck size={16} className="text-primary" /> Permissões do usuário
+                  </h3>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Status atual: {isUserAdmin ? (
+                      <span className="text-primary font-semibold">Administrador</span>
+                    ) : (
+                      <span>Usuário comum</span>
+                    )}
+                  </p>
+                  <Button
+                    onClick={toggleAdminRole}
+                    disabled={togglingRole}
+                    variant={isUserAdmin ? "outline" : "default"}
+                    className="mt-4"
+                  >
+                    {isUserAdmin ? (
+                      <><ShieldOff size={14} className="mr-2" /> Remover acesso admin</>
+                    ) : (
+                      <><ShieldCheck size={14} className="mr-2" /> Promover a admin</>
+                    )}
+                  </Button>
                 </div>
               )}
             </>
