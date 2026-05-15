@@ -1,11 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
-import { coachChat } from "@/lib/coach.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, Send, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/coach")({
   head: () => ({ meta: [{ title: "Coach IA — Franzen Team" }] }),
@@ -15,7 +14,6 @@ export const Route = createFileRoute("/_authenticated/coach")({
 type Msg = { role: "user" | "assistant"; content: string };
 
 function CoachPage() {
-  const chat = useServerFn(coachChat);
   const [messages, setMessages] = useState<Msg[]>([
     { role: "assistant", content: "Oi! Sou seu coach virtual. Pergunte sobre treino, dieta, descanso ou ajustes do seu protocolo." },
   ]);
@@ -30,16 +28,57 @@ function CoachPage() {
   const send = async () => {
     const text = input.trim();
     if (!text || loading) return;
+    if (text.length > 1500) {
+      toast.error("Mensagem muito longa (máx. 1500 caracteres)");
+      return;
+    }
     const next: Msg[] = [...messages, { role: "user", content: text }];
     setMessages(next);
     setInput("");
     setLoading(true);
+    // placeholder for streamed response
+    setMessages((m) => [...m, { role: "assistant", content: "" }]);
     try {
-      const { reply } = await chat({ data: { messages: next } });
-      setMessages((m) => [...m, { role: "assistant", content: reply }]);
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) throw new Error("Sessão expirada");
+
+      const res = await fetch("/api/coach", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ messages: next.slice(-30) }),
+      });
+      if (!res.ok || !res.body) {
+        throw new Error(`Erro ${res.status}`);
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let acc = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        acc += decoder.decode(value, { stream: true });
+        setMessages((m) => {
+          const copy = m.slice();
+          copy[copy.length - 1] = { role: "assistant", content: acc };
+          return copy;
+        });
+      }
+      if (!acc.trim()) {
+        setMessages((m) => {
+          const copy = m.slice();
+          copy[copy.length - 1] = { role: "assistant", content: "Não consegui responder agora. Tente novamente." };
+          return copy;
+        });
+      }
     } catch (e) {
       console.error(e);
       toast.error("Erro ao falar com o coach");
+      setMessages((m) => m.slice(0, -1));
     } finally {
       setLoading(false);
     }
