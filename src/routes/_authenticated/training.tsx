@@ -355,15 +355,28 @@ function TrainingPage() {
                             {ex.rest ? ` · descanso ${ex.rest}` : ""}
                           </p>
                         </div>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => saveExercise(ex)}
-                          disabled={savingId === ex.id}
-                        >
-                          {savingId === ex.id ? <Loader2 className="animate-spin" size={14} /> : <Save size={14} />}
-                          <span className="ml-1">Salvar</span>
-                        </Button>
+                        <div className="flex gap-2">
+                          <Link
+                            to="/exercise-history/$exerciseId"
+                            params={{ exerciseId: ex.id }}
+                            className="inline-flex h-9 items-center rounded-md border border-border px-3 text-xs hover:border-primary"
+                            aria-label="Histórico"
+                          >
+                            <LineChart size={14} />
+                          </Link>
+                          <Button size="sm" variant="outline" onClick={() => setSwapFor(ex)}>
+                            <Replace size={14} />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => saveExercise(ex)}
+                            disabled={savingId === ex.id}
+                          >
+                            {savingId === ex.id ? <Loader2 className="animate-spin" size={14} /> : <Save size={14} />}
+                            <span className="ml-1">Salvar</span>
+                          </Button>
+                        </div>
                       </div>
 
                       <div className="mt-4 space-y-2">
