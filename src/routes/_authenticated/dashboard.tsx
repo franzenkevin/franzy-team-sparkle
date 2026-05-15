@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, Shield } from "lucide-react";
+import { LogOut, User, Shield, Sparkles } from "lucide-react";
 import logo from "@/assets/logo.png";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -68,6 +68,20 @@ function DashboardPage() {
           Olá, <span className="text-primary">{name || "atleta"}</span>
         </h1>
         <p className="mt-2 text-muted-foreground">Seu painel está pronto. Em breve, mais módulos serão liberados aqui.</p>
+
+        <Link
+          to="/generate"
+          className="mt-8 flex items-center justify-between rounded-xl border border-primary/40 bg-gradient-to-br from-primary/10 to-transparent p-6 hover:border-primary transition group"
+        >
+          <div>
+            <div className="inline-flex items-center gap-2 text-xs font-semibold text-primary uppercase tracking-wider">
+              <Sparkles size={14} /> IA
+            </div>
+            <h3 className="mt-2 font-heading text-lg font-semibold">Gerar protocolo automático</h3>
+            <p className="mt-1 text-sm text-muted-foreground">Treino e dieta personalizados a partir do seu perfil.</p>
+          </div>
+          <Sparkles className="text-primary group-hover:scale-110 transition" size={28} />
+        </Link>
 
         <div className="mt-10 grid gap-4 md:grid-cols-3">
           <Link to="/training" className="rounded-xl border border-border bg-card p-6 hover:border-primary transition">
