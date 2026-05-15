@@ -19,6 +19,7 @@ const mainItems = [
   { title: "Progresso", url: "/progress", icon: LineChart },
   { title: "Histórico", url: "/history", icon: History },
   { title: "Exercícios", url: "/exercises", icon: Library },
+  { title: "Mensagens", url: "/messages", icon: MessageSquare },
   { title: "Coach IA", url: "/coach", icon: Bot },
   { title: "Gerar (IA)", url: "/generate", icon: Sparkles },
   { title: "Perfil", url: "/profile", icon: User },
