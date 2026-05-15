@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import satori from "satori";
 import { initWasm, Resvg } from "@resvg/resvg-wasm";
-// @ts-expect-error - vite handles ?url for wasm
+// @ts-ignore - vite handles ?url for wasm
 import resvgWasmUrl from "@resvg/resvg-wasm/index_bg.wasm?url";
 
 let wasmReady: Promise<void> | null = null;
@@ -263,7 +263,7 @@ export const Route = createFileRoute("/api/public/share-og/$token")({
           await ensureWasm();
           const resvg = new Resvg(svg, { fitTo: { mode: "width", value: 1200 } });
           const png = resvg.render().asPng();
-          return new Response(png, {
+          return new Response(png as unknown as BodyInit, {
             status: 200,
             headers: {
               "Content-Type": "image/png",
