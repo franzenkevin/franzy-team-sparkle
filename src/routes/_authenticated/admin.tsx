@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Save, Shield, Users, ClipboardList, MessageSquare, History as HistoryIcon, ShieldCheck, ShieldOff } from "lucide-react";
+import { Save, Shield, Users, ClipboardList, MessageSquare, History as HistoryIcon, ShieldCheck, ShieldOff, BarChart3, AlertTriangle } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({ meta: [{ title: "Admin — Franzen Team" }] }),
@@ -23,6 +23,15 @@ type FeedbackRow = { id: string; session_date: string; day_index: number; rating
 
 type Tab = "protocol" | "history" | "checkins" | "feedback" | "roles";
 
+type Metrics = {
+  totalUsers: number;
+  activeProtocols: number;
+  checkinsLast7: number;
+  workoutsLast7: number;
+  avgAdherence: number | null;
+  atRisk: { user_id: string; full_name: string | null; lastCheckin: string | null }[];
+};
+
 function AdminPage() {
   const navigate = useNavigate();
   const [checking, setChecking] = useState(true);
@@ -31,6 +40,7 @@ function AdminPage() {
   const [filter, setFilter] = useState("");
   const [selectedUser, setSelectedUser] = useState<ProfileRow | null>(null);
   const [tab, setTab] = useState<Tab>("protocol");
+  const [metrics, setMetrics] = useState<Metrics | null>(null);
 
   // protocol active
   const [protocol, setProtocol] = useState<ProtocolRow | null>(null);
@@ -58,6 +68,48 @@ function AdminPage() {
         .order("created_at", { ascending: false });
       setProfiles(rows ?? []);
       setChecking(false);
+      // Load global metrics
+      const sevenAgo = new Date(Date.now() - 7 * 86400_000).toISOString();
+      const [
+        { count: totalUsers },
+        { count: activeProtocols },
+        { count: checkinsLast7 },
+        { count: workoutsLast7 },
+        { data: adherence },
+        { data: lastCheckins },
+      ] = await Promise.all([
+        supabase.from("profiles").select("user_id", { count: "exact", head: true }),
+        supabase.from("protocols").select("id", { count: "exact", head: true }).eq("status", "active"),
+        supabase.from("checkins").select("id", { count: "exact", head: true }).gte("created_at", sevenAgo),
+        supabase.from("workout_logs").select("id", { count: "exact", head: true }).gte("created_at", sevenAgo),
+        supabase.from("checkins").select("adherence").not("adherence", "is", null).gte("created_at", sevenAgo),
+        supabase.from("checkins").select("user_id, created_at").order("created_at", { ascending: false }).limit(1000),
+      ]);
+      const adherenceVals = (adherence ?? []).map((r: any) => Number(r.adherence)).filter((n: number) => !isNaN(n));
+      const avgAdherence = adherenceVals.length
+        ? Math.round(adherenceVals.reduce((a: number, b: number) => a + b, 0) / adherenceVals.length)
+        : null;
+      const lastByUser = new Map<string, string>();
+      for (const r of (lastCheckins ?? []) as { user_id: string; created_at: string }[]) {
+        if (!lastByUser.has(r.user_id)) lastByUser.set(r.user_id, r.created_at);
+      }
+      const tenAgo = Date.now() - 10 * 86400_000;
+      const atRisk = (rows ?? [])
+        .map((p) => ({
+          user_id: p.user_id,
+          full_name: p.full_name,
+          lastCheckin: lastByUser.get(p.user_id) ?? null,
+        }))
+        .filter((p) => !p.lastCheckin || new Date(p.lastCheckin).getTime() < tenAgo)
+        .slice(0, 20);
+      setMetrics({
+        totalUsers: totalUsers ?? 0,
+        activeProtocols: activeProtocols ?? 0,
+        checkinsLast7: checkinsLast7 ?? 0,
+        workoutsLast7: workoutsLast7 ?? 0,
+        avgAdherence,
+        atRisk,
+      });
     })();
   }, [navigate]);
 
@@ -174,6 +226,46 @@ function AdminPage() {
     <div>
       <main className="container mx-auto px-4 py-6 grid gap-6 lg:grid-cols-[300px_1fr]">
         <aside className="space-y-3">
+          {metrics && (
+            <div className="rounded-xl border border-border bg-card p-3 space-y-2">
+              <div className="flex items-center gap-2 text-sm font-heading font-semibold">
+                <BarChart3 size={16} className="text-primary" /> Métricas (7d)
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-center text-xs">
+                <Metric label="Alunos" value={metrics.totalUsers} />
+                <Metric label="Protocolos" value={metrics.activeProtocols} />
+                <Metric label="Check-ins" value={metrics.checkinsLast7} />
+                <Metric label="Treinos" value={metrics.workoutsLast7} />
+                <div className="col-span-2 rounded-md bg-background/50 p-2">
+                  <p className="text-lg font-bold font-heading text-primary">
+                    {metrics.avgAdherence != null ? `${metrics.avgAdherence}%` : "—"}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">Aderência média</p>
+                </div>
+              </div>
+              {metrics.atRisk.length > 0 && (
+                <div className="pt-2 border-t border-border">
+                  <div className="flex items-center gap-1 text-xs text-warning mb-1">
+                    <AlertTriangle size={12} /> Em risco ({metrics.atRisk.length})
+                  </div>
+                  <div className="space-y-1 max-h-40 overflow-y-auto">
+                    {metrics.atRisk.map((r) => (
+                      <button
+                        key={r.user_id}
+                        onClick={() => {
+                          const p = profiles.find((x) => x.user_id === r.user_id);
+                          if (p) selectUser(p);
+                        }}
+                        className="w-full text-left text-[11px] hover:text-foreground text-muted-foreground truncate"
+                      >
+                        • {r.full_name ?? "(sem nome)"} — {r.lastCheckin ? `${Math.floor((Date.now() - new Date(r.lastCheckin).getTime()) / 86400_000)}d` : "nunca"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
           <div className="flex items-center gap-2 text-sm font-heading font-semibold">
             <Users size={16} /> Usuários ({profiles.length})
           </div>
@@ -341,6 +433,20 @@ function AdminPage() {
 }
 
 function CheckinCard({ c, signedUrl }: { c: CheckinRow; signedUrl: (p: string | null) => Promise<string | null> }) {
+  // see below
+  return <CheckinCardImpl c={c} signedUrl={signedUrl} />;
+}
+
+function Metric({ label, value }: { label: string; value: number | string }) {
+  return (
+    <div className="rounded-md bg-background/50 p-2">
+      <p className="text-lg font-bold font-heading">{value}</p>
+      <p className="text-[10px] text-muted-foreground">{label}</p>
+    </div>
+  );
+}
+
+function CheckinCardImpl({ c, signedUrl }: { c: CheckinRow; signedUrl: (p: string | null) => Promise<string | null> }) {
   const [urls, setUrls] = useState<{ front?: string; side?: string; back?: string }>({});
   useEffect(() => {
     (async () => {

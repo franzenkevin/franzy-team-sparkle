@@ -21,6 +21,7 @@ import { Route as AuthenticatedTrainingRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedProgressRouteImport } from './routes/_authenticated/progress'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
+import { Route as AuthenticatedMessagesRouteImport } from './routes/_authenticated/messages'
 import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticated/history'
 import { Route as AuthenticatedGenerateRouteImport } from './routes/_authenticated/generate'
 import { Route as AuthenticatedExercisesRouteImport } from './routes/_authenticated/exercises'
@@ -28,6 +29,7 @@ import { Route as AuthenticatedDietRouteImport } from './routes/_authenticated/d
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCoachRouteImport } from './routes/_authenticated/coach'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedExerciseHistoryExerciseIdRouteImport } from './routes/_authenticated/exercise-history.$exerciseId'
 import { Route as ApiPublicShareTokenRouteImport } from './routes/api/public/share.$token'
 import { Route as ApiPublicShareOgTokenRouteImport } from './routes/api/public/share-og.$token'
 
@@ -90,6 +92,11 @@ const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
   path: '/onboarding',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedMessagesRoute = AuthenticatedMessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedHistoryRoute = AuthenticatedHistoryRouteImport.update({
   id: '/history',
   path: '/history',
@@ -125,6 +132,12 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedExerciseHistoryExerciseIdRoute =
+  AuthenticatedExerciseHistoryExerciseIdRouteImport.update({
+    id: '/exercise-history/$exerciseId',
+    path: '/exercise-history/$exerciseId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const ApiPublicShareTokenRoute = ApiPublicShareTokenRouteImport.update({
   id: '/api/public/share/$token',
   path: '/api/public/share/$token',
@@ -149,12 +162,14 @@ export interface FileRoutesByFullPath {
   '/exercises': typeof AuthenticatedExercisesRoute
   '/generate': typeof AuthenticatedGenerateRoute
   '/history': typeof AuthenticatedHistoryRoute
+  '/messages': typeof AuthenticatedMessagesRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/progress': typeof AuthenticatedProgressRoute
   '/training': typeof AuthenticatedTrainingRoute
   '/api/coach': typeof ApiCoachRoute
   '/s/$token': typeof STokenRoute
+  '/exercise-history/$exerciseId': typeof AuthenticatedExerciseHistoryExerciseIdRoute
   '/api/public/share-og/$token': typeof ApiPublicShareOgTokenRoute
   '/api/public/share/$token': typeof ApiPublicShareTokenRoute
 }
@@ -171,12 +186,14 @@ export interface FileRoutesByTo {
   '/exercises': typeof AuthenticatedExercisesRoute
   '/generate': typeof AuthenticatedGenerateRoute
   '/history': typeof AuthenticatedHistoryRoute
+  '/messages': typeof AuthenticatedMessagesRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/progress': typeof AuthenticatedProgressRoute
   '/training': typeof AuthenticatedTrainingRoute
   '/api/coach': typeof ApiCoachRoute
   '/s/$token': typeof STokenRoute
+  '/exercise-history/$exerciseId': typeof AuthenticatedExerciseHistoryExerciseIdRoute
   '/api/public/share-og/$token': typeof ApiPublicShareOgTokenRoute
   '/api/public/share/$token': typeof ApiPublicShareTokenRoute
 }
@@ -195,12 +212,14 @@ export interface FileRoutesById {
   '/_authenticated/exercises': typeof AuthenticatedExercisesRoute
   '/_authenticated/generate': typeof AuthenticatedGenerateRoute
   '/_authenticated/history': typeof AuthenticatedHistoryRoute
+  '/_authenticated/messages': typeof AuthenticatedMessagesRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/progress': typeof AuthenticatedProgressRoute
   '/_authenticated/training': typeof AuthenticatedTrainingRoute
   '/api/coach': typeof ApiCoachRoute
   '/s/$token': typeof STokenRoute
+  '/_authenticated/exercise-history/$exerciseId': typeof AuthenticatedExerciseHistoryExerciseIdRoute
   '/api/public/share-og/$token': typeof ApiPublicShareOgTokenRoute
   '/api/public/share/$token': typeof ApiPublicShareTokenRoute
 }
@@ -219,12 +238,14 @@ export interface FileRouteTypes {
     | '/exercises'
     | '/generate'
     | '/history'
+    | '/messages'
     | '/onboarding'
     | '/profile'
     | '/progress'
     | '/training'
     | '/api/coach'
     | '/s/$token'
+    | '/exercise-history/$exerciseId'
     | '/api/public/share-og/$token'
     | '/api/public/share/$token'
   fileRoutesByTo: FileRoutesByTo
@@ -241,12 +262,14 @@ export interface FileRouteTypes {
     | '/exercises'
     | '/generate'
     | '/history'
+    | '/messages'
     | '/onboarding'
     | '/profile'
     | '/progress'
     | '/training'
     | '/api/coach'
     | '/s/$token'
+    | '/exercise-history/$exerciseId'
     | '/api/public/share-og/$token'
     | '/api/public/share/$token'
   id:
@@ -264,12 +287,14 @@ export interface FileRouteTypes {
     | '/_authenticated/exercises'
     | '/_authenticated/generate'
     | '/_authenticated/history'
+    | '/_authenticated/messages'
     | '/_authenticated/onboarding'
     | '/_authenticated/profile'
     | '/_authenticated/progress'
     | '/_authenticated/training'
     | '/api/coach'
     | '/s/$token'
+    | '/_authenticated/exercise-history/$exerciseId'
     | '/api/public/share-og/$token'
     | '/api/public/share/$token'
   fileRoutesById: FileRoutesById
@@ -373,6 +398,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/messages': {
+      id: '/_authenticated/messages'
+      path: '/messages'
+      fullPath: '/messages'
+      preLoaderRoute: typeof AuthenticatedMessagesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/history': {
       id: '/_authenticated/history'
       path: '/history'
@@ -422,6 +454,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/exercise-history/$exerciseId': {
+      id: '/_authenticated/exercise-history/$exerciseId'
+      path: '/exercise-history/$exerciseId'
+      fullPath: '/exercise-history/$exerciseId'
+      preLoaderRoute: typeof AuthenticatedExerciseHistoryExerciseIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/api/public/share/$token': {
       id: '/api/public/share/$token'
       path: '/api/public/share/$token'
@@ -447,10 +486,12 @@ interface AuthenticatedRouteChildren {
   AuthenticatedExercisesRoute: typeof AuthenticatedExercisesRoute
   AuthenticatedGenerateRoute: typeof AuthenticatedGenerateRoute
   AuthenticatedHistoryRoute: typeof AuthenticatedHistoryRoute
+  AuthenticatedMessagesRoute: typeof AuthenticatedMessagesRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedProgressRoute: typeof AuthenticatedProgressRoute
   AuthenticatedTrainingRoute: typeof AuthenticatedTrainingRoute
+  AuthenticatedExerciseHistoryExerciseIdRoute: typeof AuthenticatedExerciseHistoryExerciseIdRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -461,10 +502,13 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedExercisesRoute: AuthenticatedExercisesRoute,
   AuthenticatedGenerateRoute: AuthenticatedGenerateRoute,
   AuthenticatedHistoryRoute: AuthenticatedHistoryRoute,
+  AuthenticatedMessagesRoute: AuthenticatedMessagesRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedProgressRoute: AuthenticatedProgressRoute,
   AuthenticatedTrainingRoute: AuthenticatedTrainingRoute,
+  AuthenticatedExerciseHistoryExerciseIdRoute:
+    AuthenticatedExerciseHistoryExerciseIdRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
