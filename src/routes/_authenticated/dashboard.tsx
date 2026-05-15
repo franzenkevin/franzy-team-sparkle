@@ -52,8 +52,12 @@ function DashboardPage() {
         <p className="mt-2 text-muted-foreground">Seu painel está pronto. Em breve, mais módulos serão liberados aqui.</p>
 
         <div className="mt-10 grid gap-4 md:grid-cols-3">
-          {["Treinos", "Nutrição", "Progresso"].map((m) => (
-            <div key={m} className="rounded-xl border border-border bg-card p-6">
+          <Link to="/training" className="rounded-xl border border-border bg-card p-6 hover:border-primary transition">
+            <h3 className="font-heading text-lg font-semibold">Treinos</h3>
+            <p className="mt-2 text-sm text-muted-foreground">Veja seu protocolo e registre as séries.</p>
+          </Link>
+          {["Nutrição", "Progresso"].map((m) => (
+            <div key={m} className="rounded-xl border border-border bg-card p-6 opacity-60">
               <h3 className="font-heading text-lg font-semibold">{m}</h3>
               <p className="mt-2 text-sm text-muted-foreground">Em breve.</p>
             </div>
