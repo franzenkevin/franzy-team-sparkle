@@ -433,6 +433,20 @@ function AdminPage() {
 }
 
 function CheckinCard({ c, signedUrl }: { c: CheckinRow; signedUrl: (p: string | null) => Promise<string | null> }) {
+  // see below
+  return <CheckinCardImpl c={c} signedUrl={signedUrl} />;
+}
+
+function Metric({ label, value }: { label: string; value: number | string }) {
+  return (
+    <div className="rounded-md bg-background/50 p-2">
+      <p className="text-lg font-bold font-heading">{value}</p>
+      <p className="text-[10px] text-muted-foreground">{label}</p>
+    </div>
+  );
+}
+
+function CheckinCardImpl({ c, signedUrl }: { c: CheckinRow; signedUrl: (p: string | null) => Promise<string | null> }) {
   const [urls, setUrls] = useState<{ front?: string; side?: string; back?: string }>({});
   useEffect(() => {
     (async () => {
