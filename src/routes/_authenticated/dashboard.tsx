@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { LogOut, User } from "lucide-react";
+import { LogOut, User, Shield } from "lucide-react";
 import logo from "@/assets/logo.png";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -12,6 +12,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 function DashboardPage() {
   const [name, setName] = useState<string>("");
+  const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -25,6 +26,9 @@ function DashboardPage() {
         .maybeSingle();
       if (!p?.onboarding_complete) { navigate({ to: "/onboarding" }); return; }
       setName(p.full_name ?? user.email ?? "");
+      const { data: role } = await supabase
+        .from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle();
+      setIsAdmin(!!role);
     })();
   }, [navigate]);
 
@@ -41,6 +45,13 @@ function DashboardPage() {
           <span className="font-heading font-bold tracking-wide">FRANZEN TEAM</span>
         </Link>
         <div className="flex items-center gap-1">
+          {isAdmin && (
+            <Link to="/admin">
+              <Button variant="ghost" size="sm">
+                <Shield size={16} className="mr-2" /> Admin
+              </Button>
+            </Link>
+          )}
           <Link to="/profile">
             <Button variant="ghost" size="sm">
               <User size={16} className="mr-2" /> Perfil
