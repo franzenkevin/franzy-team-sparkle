@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
   LayoutDashboard, Dumbbell, Apple, LineChart, History, User, Sparkles,
-  Shield, Users, ClipboardList, MessageSquare, LogOut,
+  Shield, Users, ClipboardList, MessageSquare, LogOut, Library,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -18,6 +18,7 @@ const mainItems = [
   { title: "Nutrição", url: "/diet", icon: Apple },
   { title: "Progresso", url: "/progress", icon: LineChart },
   { title: "Histórico", url: "/history", icon: History },
+  { title: "Exercícios", url: "/exercises", icon: Library },
   { title: "Gerar (IA)", url: "/generate", icon: Sparkles },
   { title: "Perfil", url: "/profile", icon: User },
 ] as const;
