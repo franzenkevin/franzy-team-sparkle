@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { ArrowLeft, Save, Shield, Users, ClipboardList, MessageSquare, History as HistoryIcon } from "lucide-react";
+import { Save, Shield, Users, ClipboardList, MessageSquare, History as HistoryIcon } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({ meta: [{ title: "Admin — Franzen Team" }] }),
@@ -134,17 +134,7 @@ function AdminPage() {
   );
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="container mx-auto flex items-center justify-between px-4 py-4 border-b border-border">
-        <Link to="/dashboard" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft size={16} /> Dashboard
-        </Link>
-        <div className="inline-flex items-center gap-2 text-sm">
-          <Shield size={14} className="text-primary" />
-          <span className="font-heading font-semibold">Admin</span>
-        </div>
-      </header>
-
+    <div>
       <main className="container mx-auto px-4 py-6 grid gap-6 lg:grid-cols-[300px_1fr]">
         <aside className="space-y-3">
           <div className="flex items-center gap-2 text-sm font-heading font-semibold">

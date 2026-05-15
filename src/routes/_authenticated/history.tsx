@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, History as HistoryIcon, Dumbbell, Apple } from "lucide-react";
+import { Dumbbell, Apple } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/history")({
   head: () => ({ meta: [{ title: "Histórico — Franzen Team" }] }),
@@ -40,16 +40,7 @@ function HistoryPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="container mx-auto flex items-center justify-between px-4 py-5 border-b border-border">
-        <Link to="/dashboard" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft size={16} /> Dashboard
-        </Link>
-        <div className="inline-flex items-center gap-2 text-sm font-heading font-semibold">
-          <HistoryIcon size={14} className="text-primary" /> Histórico
-        </div>
-      </header>
-
+    <div>
       <main className="container mx-auto px-4 py-8 max-w-3xl">
         <h1 className="text-2xl md:text-3xl font-heading font-bold">Versões dos seus protocolos</h1>
         <p className="mt-2 text-sm text-muted-foreground">Veja todas as versões anteriores geradas para você.</p>
