@@ -25,6 +25,7 @@ import { Route as AuthenticatedExercisesRouteImport } from './routes/_authentica
 import { Route as AuthenticatedDietRouteImport } from './routes/_authenticated/diet'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedExercisesRouteImport } from './routes/_authenticated/exercises'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
