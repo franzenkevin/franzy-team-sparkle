@@ -1,10 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, Save, Dumbbell, Loader2 } from "lucide-react";
+import { ArrowLeft, Save, Dumbbell, Loader2, Timer, X } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 
@@ -54,6 +54,32 @@ function TrainingPage() {
   const [selectedDay, setSelectedDay] = useState(0);
   const [exerciseSets, setExerciseSets] = useState<Record<string, WorkoutSet[]>>({});
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [previousSets, setPreviousSets] = useState<Record<string, WorkoutSet[]>>({});
+  const [restSeconds, setRestSeconds] = useState<number | null>(null);
+  const restRef = useRef<number | null>(null);
+
+  // Rest timer countdown
+  useEffect(() => {
+    if (restSeconds === null) return;
+    if (restSeconds <= 0) {
+      try { new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=").play().catch(() => {}); } catch { /* noop */ }
+      toast.success("Descanso concluído!");
+      setRestSeconds(null);
+      return;
+    }
+    const t = window.setTimeout(() => setRestSeconds((s) => (s === null ? null : s - 1)), 1000);
+    restRef.current = t;
+    return () => window.clearTimeout(t);
+  }, [restSeconds]);
+
+  const parseRest = (rest?: string): number => {
+    if (!rest) return 90;
+    const m = String(rest).match(/(\d+)\s*(s|seg|min|m)?/i);
+    if (!m) return 90;
+    const n = Number(m[1]);
+    const unit = (m[2] ?? "s").toLowerCase();
+    return unit.startsWith("m") ? n * 60 : n;
+  };
 
   useEffect(() => {
     (async () => {
@@ -113,6 +139,24 @@ function TrainingPage() {
         }
       }
       setExerciseSets(initial);
+
+      // Load previous session per exercise (most recent before today)
+      const exerciseIds = day.exercises.map((e) => e.id);
+      if (exerciseIds.length > 0) {
+        const { data: prev } = await supabase
+          .from("workout_logs")
+          .select("exercise_id, sets, session_date")
+          .eq("user_id", user.id)
+          .in("exercise_id", exerciseIds)
+          .lt("session_date", todayISO)
+          .order("session_date", { ascending: false })
+          .limit(50);
+        const prevMap: Record<string, WorkoutSet[]> = {};
+        for (const row of prev ?? []) {
+          if (!prevMap[row.exercise_id]) prevMap[row.exercise_id] = row.sets as WorkoutSet[];
+        }
+        setPreviousSets(prevMap);
+      }
     })();
   }, [protocol?.id, selectedDay, day]);
 
@@ -122,6 +166,11 @@ function TrainingPage() {
       sets[i] = { ...sets[i], [field]: value as never };
       return { ...prev, [exId]: sets };
     });
+  };
+
+  const handleCompletedToggle = (ex: Exercise, i: number, checked: boolean) => {
+    updateSet(ex.id, i, "completed", checked);
+    if (checked) setRestSeconds(parseRest(ex.rest));
   };
 
   const saveExercise = async (ex: Exercise) => {
@@ -259,13 +308,16 @@ function TrainingPage() {
                           <span className="col-span-4">Reps</span>
                           <span className="col-span-3 text-right">Feito</span>
                         </div>
-                        {sets.map((s, i) => (
+                        {sets.map((s, i) => {
+                          const prev = previousSets[ex.id]?.[i];
+                          return (
                           <div key={i} className="grid grid-cols-12 gap-2 items-center">
                             <span className="col-span-1 text-sm text-muted-foreground">{i + 1}</span>
                             <Input
                               type="number"
                               inputMode="decimal"
                               value={s.weight || ""}
+                              placeholder={prev ? `${prev.weight || "—"}` : ""}
                               onChange={(e) => updateSet(ex.id, i, "weight", Number(e.target.value))}
                               className="col-span-4 h-9"
                             />
@@ -273,17 +325,24 @@ function TrainingPage() {
                               type="number"
                               inputMode="numeric"
                               value={s.reps || ""}
+                              placeholder={prev ? `${prev.reps || "—"}` : ""}
                               onChange={(e) => updateSet(ex.id, i, "reps", Number(e.target.value))}
                               className="col-span-4 h-9"
                             />
                             <div className="col-span-3 flex justify-end">
                               <Checkbox
                                 checked={s.completed}
-                                onCheckedChange={(v) => updateSet(ex.id, i, "completed", Boolean(v))}
+                                onCheckedChange={(v) => handleCompletedToggle(ex, i, Boolean(v))}
                               />
                             </div>
                           </div>
-                        ))}
+                          );
+                        })}
+                        {previousSets[ex.id] && (
+                          <p className="pt-1 text-xs text-muted-foreground">
+                            Última sessão: {previousSets[ex.id].map((p) => `${p.weight || "—"}×${p.reps || "—"}`).join(", ")}
+                          </p>
+                        )}
                       </div>
                     </div>
                   );
@@ -293,6 +352,23 @@ function TrainingPage() {
           </>
         )}
       </main>
+
+      {restSeconds !== null && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-full border border-primary/40 bg-card/95 backdrop-blur px-5 py-3 shadow-lg">
+          <Timer className="text-primary" size={18} />
+          <span className="font-heading text-2xl font-bold tabular-nums">
+            {Math.floor(restSeconds / 60)}:{String(restSeconds % 60).padStart(2, "0")}
+          </span>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="sm" onClick={() => setRestSeconds((s) => (s ?? 0) + 15)}>
+              +15s
+            </Button>
+            <Button variant="ghost" size="icon" onClick={() => setRestSeconds(null)}>
+              <X size={16} />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
