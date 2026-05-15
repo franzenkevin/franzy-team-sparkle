@@ -4,10 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, Save, Dumbbell, Loader2, Timer, X, Star, MessageSquare } from "lucide-react";
+import { ArrowLeft, Save, Dumbbell, Loader2, Timer, X, Star, MessageSquare, Replace, LineChart } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 import { Textarea } from "@/components/ui/textarea";
+import { SubstitutionDialog } from "@/components/SubstitutionDialog";
+import { evaluateWorkoutAchievements } from "@/lib/achievements";
 
 export const Route = createFileRoute("/_authenticated/training")({
   head: () => ({ meta: [{ title: "Treino — Franzen Team" }] }),
@@ -62,6 +64,7 @@ function TrainingPage() {
   const [feedbackNotes, setFeedbackNotes] = useState<string>("");
   const [feedbackId, setFeedbackId] = useState<string | null>(null);
   const [savingFeedback, setSavingFeedback] = useState(false);
+  const [swapFor, setSwapFor] = useState<Exercise | null>(null);
 
   // Rest timer countdown
   useEffect(() => {
@@ -271,6 +274,8 @@ function TrainingPage() {
         if (error) throw error;
       }
       toast.success("Exercício salvo!");
+      const { data: { user: u2 } } = await supabase.auth.getUser();
+      if (u2) evaluateWorkoutAchievements(u2.id).catch(() => {});
     } catch (e) {
       toast.error("Erro ao salvar");
       console.error(e);
