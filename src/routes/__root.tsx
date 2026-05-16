@@ -135,8 +135,10 @@ function RootComponent() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!("serviceWorker" in navigator)) return;
-    if (window.location.hostname === "localhost") return;
-    navigator.serviceWorker.register("/sw.js").catch(() => {});
+    // Unregister any previously installed SW (it cached stale chunk hashes).
+    navigator.serviceWorker.getRegistrations().then((regs) => {
+      regs.forEach((r) => r.unregister().catch(() => {}));
+    }).catch(() => {});
   }, []);
 
   return (
