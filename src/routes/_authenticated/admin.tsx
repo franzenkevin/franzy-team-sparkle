@@ -19,7 +19,7 @@ import {
   Save, Shield, Users, ClipboardList, MessageSquare, History as HistoryIcon,
   ShieldCheck, ShieldOff, BarChart3, AlertTriangle, Dumbbell, Plus, Pencil, Trash2,
   Search, Trophy, Bell, Send, Heart, Activity,
-  FileText, Sparkles, CalendarDays, Apple, Loader2,
+  FileText, Sparkles, CalendarDays, Apple, Loader2, CheckCircle2, XCircle, Clock,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { analyzeAnamnese, prescribeFromAnamnese, generateCoachFeedback } from "@/lib/anamnese.functions";
@@ -150,6 +150,7 @@ function AdminPage() {
         <Tabs defaultValue="overview">
           <TabsList className="w-full flex flex-wrap h-auto justify-start gap-1">
             <TabsTrigger value="overview" className="gap-1"><BarChart3 size={14} />Visão geral</TabsTrigger>
+            <TabsTrigger value="approvals" className="gap-1"><Clock size={14} />Aprovações</TabsTrigger>
             <TabsTrigger value="users" className="gap-1"><Users size={14} />Usuários</TabsTrigger>
             <TabsTrigger value="exercises" className="gap-1"><Dumbbell size={14} />Exercícios</TabsTrigger>
             <TabsTrigger value="checkins" className="gap-1"><ClipboardList size={14} />Check-ins</TabsTrigger>
@@ -166,6 +167,9 @@ function AdminPage() {
 
           <TabsContent value="overview" className="mt-4">
             <OverviewTab metrics={metrics} profiles={profiles} />
+          </TabsContent>
+          <TabsContent value="approvals" className="mt-4">
+            <ApprovalsTab profiles={profiles} />
           </TabsContent>
           <TabsContent value="users" className="mt-4">
             <UsersTab profiles={profiles} />
