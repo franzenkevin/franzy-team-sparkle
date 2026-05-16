@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { analyzeAnamnese, prescribeFromAnamnese, generateCoachFeedback } from "@/lib/anamnese.functions";
+import { adminSaveProtocol, adminSetAnalysisStatus } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({ meta: [{ title: "Painel do Criador — Franzen Team" }] }),
@@ -269,8 +270,11 @@ function UsersTab({ profiles }: { profiles: ProfileRow[] }) {
   const [dietText, setDietText] = useState("{}");
   const [hormonesText, setHormonesText] = useState("[]");
   const [saving, setSaving] = useState(false);
+  const [generatingAi, setGeneratingAi] = useState(false);
   const [isUserAdmin, setIsUserAdmin] = useState(false);
   const [togglingRole, setTogglingRole] = useState(false);
+  const saveProtocolFn = useServerFn(adminSaveProtocol);
+  const prescribeFn = useServerFn(prescribeFromAnamnese);
 
   const filtered = profiles.filter((p) =>
     !filter || (p.full_name ?? "").toLowerCase().includes(filter.toLowerCase()),
@@ -304,20 +308,38 @@ function UsersTab({ profiles }: { profiles: ProfileRow[] }) {
     try { hormones = JSON.parse(hormonesText); } catch { toast.error("JSON dos hormônios inválido"); return; }
     if (!Array.isArray(hormones)) { toast.error("Hormônios deve ser uma lista [ ]"); return; }
     setSaving(true);
-    if (protocol) {
-      const { error } = await supabase.from("protocols")
-        .update({ training, diet, hormones, version: protocol.version + 1 }).eq("id", protocol.id);
+    try {
+      await saveProtocolFn({ data: {
+        targetUserId: selectedUser.user_id,
+        protocolId: protocol?.id ?? null,
+        training,
+        diet,
+        hormones,
+        status: "active",
+        notify: true,
+      } });
+      toast.success(protocol ? "Protocolo atualizado e ativo" : "Protocolo criado e ativo");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro ao salvar protocolo");
       setSaving(false);
-      if (error) { toast.error(error.message); return; }
-      toast.success("Protocolo atualizado");
-    } else {
-      const { error } = await supabase.from("protocols")
-        .insert({ user_id: selectedUser.user_id, training, diet, hormones, status: "active" });
-      setSaving(false);
-      if (error) { toast.error(error.message); return; }
-      toast.success("Protocolo criado");
+      return;
     }
+    setSaving(false);
     await selectUser(selectedUser);
+  };
+
+  const generateAiProtocol = async () => {
+    if (!selectedUser) return;
+    setGeneratingAi(true);
+    try {
+      await prescribeFn({ data: { targetUserId: selectedUser.user_id } });
+      toast.success("Protocolo IA gerado para revisão. Abra a aba Aprovações ou histórico do aluno para editar/liberar.");
+      await selectUser(selectedUser);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro ao gerar protocolo IA");
+    } finally {
+      setGeneratingAi(false);
+    }
   };
 
   const toggleAdminRole = async () => {
