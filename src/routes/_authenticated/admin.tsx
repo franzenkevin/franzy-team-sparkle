@@ -244,6 +244,7 @@ function UsersTab({ profiles }: { profiles: ProfileRow[] }) {
   const [history, setHistory] = useState<ProtocolRow[]>([]);
   const [trainingText, setTrainingText] = useState("{}");
   const [dietText, setDietText] = useState("{}");
+  const [hormonesText, setHormonesText] = useState("[]");
   const [saving, setSaving] = useState(false);
   const [isUserAdmin, setIsUserAdmin] = useState(false);
   const [togglingRole, setTogglingRole] = useState(false);
@@ -264,8 +265,9 @@ function UsersTab({ profiles }: { profiles: ProfileRow[] }) {
       setProtocol(prot as ProtocolRow);
       setTrainingText(JSON.stringify(prot.training ?? {}, null, 2));
       setDietText(JSON.stringify(prot.diet ?? {}, null, 2));
+      setHormonesText(JSON.stringify((prot as any).hormones ?? [], null, 2));
     } else {
-      setProtocol(null); setTrainingText("{}"); setDietText("{}");
+      setProtocol(null); setTrainingText("{}"); setDietText("{}"); setHormonesText("[]");
     }
     setHistory((hist ?? []) as ProtocolRow[]);
     setIsUserAdmin(!!roleRow);
@@ -273,19 +275,21 @@ function UsersTab({ profiles }: { profiles: ProfileRow[] }) {
 
   const handleSave = async () => {
     if (!selectedUser) return;
-    let training: any, diet: any;
+    let training: any, diet: any, hormones: any;
     try { training = JSON.parse(trainingText); } catch { toast.error("JSON do treino inválido"); return; }
     try { diet = JSON.parse(dietText); } catch { toast.error("JSON da dieta inválido"); return; }
+    try { hormones = JSON.parse(hormonesText); } catch { toast.error("JSON dos hormônios inválido"); return; }
+    if (!Array.isArray(hormones)) { toast.error("Hormônios deve ser uma lista [ ]"); return; }
     setSaving(true);
     if (protocol) {
       const { error } = await supabase.from("protocols")
-        .update({ training, diet, version: protocol.version + 1 }).eq("id", protocol.id);
+        .update({ training, diet, hormones, version: protocol.version + 1 }).eq("id", protocol.id);
       setSaving(false);
       if (error) { toast.error(error.message); return; }
       toast.success("Protocolo atualizado");
     } else {
       const { error } = await supabase.from("protocols")
-        .insert({ user_id: selectedUser.user_id, training, diet, status: "active" });
+        .insert({ user_id: selectedUser.user_id, training, diet, hormones, status: "active" });
       setSaving(false);
       if (error) { toast.error(error.message); return; }
       toast.success("Protocolo criado");
