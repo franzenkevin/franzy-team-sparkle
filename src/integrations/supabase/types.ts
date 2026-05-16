@@ -303,6 +303,7 @@ export type Database = {
           created_at: string
           diet: Json
           end_date: string
+          hormones: Json
           id: string
           start_date: string
           status: string
@@ -315,6 +316,7 @@ export type Database = {
           created_at?: string
           diet?: Json
           end_date?: string
+          hormones?: Json
           id?: string
           start_date?: string
           status?: string
@@ -327,6 +329,7 @@ export type Database = {
           created_at?: string
           diet?: Json
           end_date?: string
+          hormones?: Json
           id?: string
           start_date?: string
           status?: string
