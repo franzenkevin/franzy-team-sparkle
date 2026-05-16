@@ -5,6 +5,7 @@ import { createLovableAiGatewayProvider } from "./ai-gateway";
 import { PROTOCOL_SYSTEM_PROMPT } from "./ai-prompts";
 import { getMethodologyPromptSection } from "./workoutRules";
 import { generateProtocol as fallbackProtocol, type ProfileLike } from "./generateProtocol";
+import { extractJsonFromResponse } from "./ai-json";
 
 export const generateProtocol = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -56,10 +57,7 @@ Aplique o CHECKLIST DO COMITÊ DE 3 PROFISSIONAIS antes de gerar o JSON. Respond
         prompt: userPrompt,
         abortSignal: AbortSignal.timeout(110_000),
       });
-      let content = text || "";
-      const m = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-      if (m) content = m[1].trim();
-      const parsed = JSON.parse(content);
+      const parsed = extractJsonFromResponse(text || "");
       if (!parsed.training || !parsed.diet) throw new Error("Estrutura inválida");
       out = {
         training: parsed.training,
