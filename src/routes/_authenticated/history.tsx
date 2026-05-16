@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Dumbbell, Apple } from "lucide-react";
+import { ProtocolPreviewTabs } from "@/components/ProtocolPreview";
 
 export const Route = createFileRoute("/_authenticated/history")({
   head: () => ({ meta: [{ title: "Histórico — Franzen Team" }] }),
@@ -18,6 +18,7 @@ type Protocol = {
   created_at: string;
   training: any;
   diet: any;
+  hormones?: any;
 };
 
 function HistoryPage() {
@@ -31,7 +32,7 @@ function HistoryPage() {
       if (!user) return;
       const { data } = await supabase
         .from("protocols")
-        .select("id, version, status, start_date, end_date, created_at, training, diet")
+        .select("id, version, status, start_date, end_date, created_at, training, diet, hormones")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
       setItems((data ?? []) as Protocol[]);
@@ -76,15 +77,8 @@ function HistoryPage() {
                   <span className="text-xs text-muted-foreground">{openId === p.id ? "Fechar" : "Abrir"}</span>
                 </button>
                 {openId === p.id && (
-                  <div className="border-t border-border p-4 grid gap-4 md:grid-cols-2">
-                    <div>
-                      <div className="flex items-center gap-2 text-sm font-semibold mb-2"><Dumbbell size={14} /> Treino</div>
-                      <pre className="text-xs bg-muted/40 p-3 rounded overflow-auto max-h-80">{JSON.stringify(p.training, null, 2)}</pre>
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 text-sm font-semibold mb-2"><Apple size={14} /> Dieta</div>
-                      <pre className="text-xs bg-muted/40 p-3 rounded overflow-auto max-h-80">{JSON.stringify(p.diet, null, 2)}</pre>
-                    </div>
+                  <div className="border-t border-border p-4">
+                    <ProtocolPreviewTabs training={p.training} diet={p.diet} hormones={p.hormones ?? []} />
                   </div>
                 )}
               </div>
