@@ -79,12 +79,12 @@ Aplique o CHECKLIST DO COMITÊ DE 3 PROFISSIONAIS antes de gerar o JSON. Respond
 
     if (existing) {
       const { error } = await supabase.from("protocols")
-        .update({ training: out.training, diet: out.diet, version: existing.version + 1 })
+        .update({ training: out.training as any, diet: out.diet as any, version: existing.version + 1 })
         .eq("id", existing.id);
       if (error) throw new Error(error.message);
     } else {
       const { error } = await supabase.from("protocols")
-        .insert({ user_id: userId, training: out.training, diet: out.diet, status: "active" });
+        .insert({ user_id: userId, training: out.training as any, diet: out.diet as any, status: "active" });
       if (error) throw new Error(error.message);
     }
 
