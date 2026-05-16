@@ -315,14 +315,16 @@ function UsersTab({ profiles }: { profiles: ProfileRow[] }) {
     setProfileDraft(prof ? { ...prof } : {});
   };
 
-  const handleSave = async () => {
+  const handleSave = async (statusOverride?: "active" | "pending_review") => {
     if (!selectedUser) return;
+    const status = statusOverride ?? editingStatus;
     let training: any, diet: any, hormones: any;
     try { training = JSON.parse(trainingText); } catch { toast.error("JSON do treino inválido"); return; }
     try { diet = JSON.parse(dietText); } catch { toast.error("JSON da dieta inválido"); return; }
     try { hormones = JSON.parse(hormonesText); } catch { toast.error("JSON dos hormônios inválido"); return; }
     if (!Array.isArray(hormones)) { toast.error("Hormônios deve ser uma lista [ ]"); return; }
     setSaving(true);
+    setEditingStatus(status);
     try {
       await saveProtocolFn({ data: {
         targetUserId: selectedUser.user_id,
@@ -330,11 +332,11 @@ function UsersTab({ profiles }: { profiles: ProfileRow[] }) {
         training,
         diet,
         hormones,
-        status: editingStatus,
-        notify: editingStatus === "active",
+        status,
+        notify: status === "active",
       } });
       toast.success(
-        editingStatus === "active"
+        status === "active"
           ? (protocol ? "Protocolo atualizado e liberado ao aluno" : "Protocolo criado e liberado")
           : "Rascunho salvo (não liberado ao aluno)"
       );
@@ -449,11 +451,11 @@ function UsersTab({ profiles }: { profiles: ProfileRow[] }) {
                   {generatingAi ? <Loader2 size={14} className="mr-1 animate-spin" /> : <Sparkles size={14} className="mr-1" />}
                   Gerar IA
                 </Button>
-                <Button variant="outline" onClick={() => { setEditingStatus("pending_review"); setTimeout(handleSave, 0); }} disabled={saving}>
+                <Button variant="outline" onClick={() => handleSave("pending_review")} disabled={saving}>
                   <Save size={14} className="mr-1" />
                   {saving && editingStatus === "pending_review" ? "Salvando…" : "Salvar rascunho"}
                 </Button>
-                <Button onClick={() => { setEditingStatus("active"); setTimeout(handleSave, 0); }} disabled={saving}>
+                <Button onClick={() => handleSave("active")} disabled={saving}>
                   <CheckCircle2 size={14} className="mr-1" />
                   {saving && editingStatus === "active" ? "Liberando…" : "Salvar e liberar"}
                 </Button>
