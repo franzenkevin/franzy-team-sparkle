@@ -633,6 +633,39 @@ export type Database = {
         }
         Relationships: []
       }
+      protocol_templates: {
+        Row: {
+          created_at: string
+          created_by: string
+          data: Json
+          id: string
+          kind: string
+          name: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          data?: Json
+          id?: string
+          kind: string
+          name: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          data?: Json
+          id?: string
+          kind?: string
+          name?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       protocols: {
         Row: {
           created_at: string

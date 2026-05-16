@@ -26,16 +26,20 @@ import { analyzeAnamnese, prescribeFromAnamnese, generateCoachFeedback } from "@
 import { adminSaveProtocol, adminSetAnalysisStatus, adminUpdateProfile } from "@/lib/admin.functions";
 import { TrainingEditor } from "@/components/admin/TrainingEditor";
 import { DietEditor } from "@/components/admin/DietEditor";
+import { HormonesEditor } from "@/components/admin/HormonesEditor";
+import { TemplateLibrary } from "@/components/admin/TemplateLibrary";
+import { ProtocolPreviewTabs } from "@/components/ProtocolPreview";
 
 function safeParse(text: string, fallback: any) {
   try { return JSON.parse(text); } catch { return fallback; }
 }
 
 function ProtocolPlanEditor({
-  trainingText, dietText, setTrainingText, setDietText,
+  trainingText, dietText, hormonesText,
+  setTrainingText, setDietText, setHormonesText,
 }: {
-  trainingText: string; dietText: string;
-  setTrainingText: (s: string) => void; setDietText: (s: string) => void;
+  trainingText: string; dietText: string; hormonesText: string;
+  setTrainingText: (s: string) => void; setDietText: (s: string) => void; setHormonesText: (s: string) => void;
 }) {
   const [mode, setMode] = useState<"visual" | "json">("visual");
   return (
@@ -51,22 +55,49 @@ function ProtocolPlanEditor({
           <TabsList>
             <TabsTrigger value="training"><Dumbbell size={14} className="mr-1" />Treino</TabsTrigger>
             <TabsTrigger value="diet"><Apple size={14} className="mr-1" />Dieta</TabsTrigger>
+            <TabsTrigger value="hormones"><Sparkles size={14} className="mr-1" />Hormônios</TabsTrigger>
+            <TabsTrigger value="preview"><FileText size={14} className="mr-1" />Preview</TabsTrigger>
           </TabsList>
           <TabsContent value="training" className="mt-3">
+            <div className="flex justify-end mb-2">
+              <TemplateLibrary kind="training" currentValue={safeParse(trainingText, {})}
+                onLoad={(v) => setTrainingText(JSON.stringify(v, null, 2))} />
+            </div>
             <TrainingEditor
               value={safeParse(trainingText, {})}
               onChange={(v) => setTrainingText(JSON.stringify(v, null, 2))}
             />
           </TabsContent>
           <TabsContent value="diet" className="mt-3">
+            <div className="flex justify-end mb-2">
+              <TemplateLibrary kind="diet" currentValue={safeParse(dietText, {})}
+                onLoad={(v) => setDietText(JSON.stringify(v, null, 2))} />
+            </div>
             <DietEditor
               value={safeParse(dietText, {})}
               onChange={(v) => setDietText(JSON.stringify(v, null, 2))}
             />
           </TabsContent>
+          <TabsContent value="hormones" className="mt-3">
+            <div className="flex justify-end mb-2">
+              <TemplateLibrary kind="hormones" currentValue={safeParse(hormonesText, [])}
+                onLoad={(v) => setHormonesText(JSON.stringify(Array.isArray(v) ? v : [], null, 2))} />
+            </div>
+            <HormonesEditor
+              value={safeParse(hormonesText, [])}
+              onChange={(v) => setHormonesText(JSON.stringify(v, null, 2))}
+            />
+          </TabsContent>
+          <TabsContent value="preview" className="mt-3">
+            <ProtocolPreviewTabs
+              training={safeParse(trainingText, {})}
+              diet={safeParse(dietText, {})}
+              hormones={safeParse(hormonesText, [])}
+            />
+          </TabsContent>
         </Tabs>
       ) : (
-        <div className="grid gap-3 lg:grid-cols-2">
+        <div className="grid gap-3 lg:grid-cols-3">
           <div>
             <Label className="text-xs">Treino (JSON)</Label>
             <Textarea value={trainingText} onChange={(e) => setTrainingText(e.target.value)} rows={20} className="font-mono text-xs mt-1" />
@@ -74,6 +105,10 @@ function ProtocolPlanEditor({
           <div>
             <Label className="text-xs">Dieta (JSON)</Label>
             <Textarea value={dietText} onChange={(e) => setDietText(e.target.value)} rows={20} className="font-mono text-xs mt-1" />
+          </div>
+          <div>
+            <Label className="text-xs">Hormônios (JSON array)</Label>
+            <Textarea value={hormonesText} onChange={(e) => setHormonesText(e.target.value)} rows={20} className="font-mono text-xs mt-1" />
           </div>
         </div>
       )}
@@ -333,6 +368,7 @@ function UsersTab({ profiles }: { profiles: ProfileRow[] }) {
   const [fullProfile, setFullProfile] = useState<any | null>(null);
   const [profileDraft, setProfileDraft] = useState<Record<string, any>>({});
   const [savingProfile, setSavingProfile] = useState(false);
+  const [autoSaved, setAutoSaved] = useState<string | null>(null);
   const saveProtocolFn = useServerFn(adminSaveProtocol);
   const prescribeFn = useServerFn(prescribeFromAnamnese);
   const updateProfileFn = useServerFn(adminUpdateProfile);
@@ -433,6 +469,31 @@ function UsersTab({ profiles }: { profiles: ProfileRow[] }) {
 
   const setPF = (k: string, v: any) => setProfileDraft((d) => ({ ...d, [k]: v }));
 
+  // Auto-save draft (pending_review) when the editor content changes.
+  useEffect(() => {
+    if (!selectedUser) return;
+    if (saving) return;
+    const handle = window.setTimeout(async () => {
+      let training: any, diet: any, hormones: any;
+      try { training = JSON.parse(trainingText); } catch { return; }
+      try { diet = JSON.parse(dietText); } catch { return; }
+      try { hormones = JSON.parse(hormonesText); } catch { return; }
+      if (!Array.isArray(hormones)) return;
+      try {
+        await saveProtocolFn({ data: {
+          targetUserId: selectedUser.user_id,
+          protocolId: protocol?.id ?? null,
+          training, diet, hormones,
+          status: "pending_review",
+          notify: false,
+        } });
+        setAutoSaved(new Date().toLocaleTimeString("pt-BR"));
+      } catch { /* silent */ }
+    }, 2500);
+    return () => window.clearTimeout(handle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trainingText, dietText, hormonesText]);
+
   const toggleAdminRole = async () => {
     if (!selectedUser) return;
     setTogglingRole(true);
@@ -503,6 +564,7 @@ function UsersTab({ profiles }: { profiles: ProfileRow[] }) {
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
+                {autoSaved && <span className="text-[11px] text-muted-foreground self-center">Rascunho salvo {autoSaved}</span>}
                 <Button variant="outline" onClick={generateAiProtocol} disabled={generatingAi}>
                   {generatingAi ? <Loader2 size={14} className="mr-1 animate-spin" /> : <Sparkles size={14} className="mr-1" />}
                   Gerar IA
@@ -519,16 +581,9 @@ function UsersTab({ profiles }: { profiles: ProfileRow[] }) {
               </div>
               <div className="mt-4">
                 <ProtocolPlanEditor
-                  trainingText={trainingText} dietText={dietText}
-                  setTrainingText={setTrainingText} setDietText={setDietText}
+                  trainingText={trainingText} dietText={dietText} hormonesText={hormonesText}
+                  setTrainingText={setTrainingText} setDietText={setDietText} setHormonesText={setHormonesText}
                 />
-              </div>
-              <div className="mt-4">
-                <Label className="text-sm">Hormônios (lista JSON)</Label>
-                <p className="text-[11px] text-muted-foreground mb-1">
-                  Ex.: <code>{`[{"substance":"Testosterona","dose":"200mg","route":"IM","frequency":"1x/sem","duration":"12 semanas","notes":"..."}]`}</code>
-                </p>
-                <Textarea value={hormonesText} onChange={(e) => setHormonesText(e.target.value)} rows={8} className="font-mono text-xs mt-1" />
               </div>
             </Card>
 
@@ -578,9 +633,18 @@ function UsersTab({ profiles }: { profiles: ProfileRow[] }) {
                 <h3 className="font-heading font-semibold flex items-center gap-2"><HistoryIcon size={16} /> Histórico ({history.length})</h3>
                 <div className="mt-3 space-y-2">
                   {history.map((h) => (
-                    <div key={h.id} className="flex justify-between text-sm border-b border-border py-1.5">
-                      <span>v{h.version} <span className={`ml-2 text-xs px-2 py-0.5 rounded ${h.status === "active" ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}>{h.status}</span></span>
-                      <span className="text-xs text-muted-foreground">{new Date(h.created_at).toLocaleDateString("pt-BR")}</span>
+                    <div key={h.id} className="flex justify-between items-center text-sm border-b border-border py-1.5 gap-2">
+                      <span className="min-w-0 truncate">v{h.version} <span className={`ml-2 text-xs px-2 py-0.5 rounded ${h.status === "active" ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}>{h.status}</span></span>
+                      <span className="text-xs text-muted-foreground shrink-0">{new Date(h.created_at).toLocaleDateString("pt-BR")}</span>
+                      <Button size="sm" variant="outline" className="h-7 text-xs shrink-0"
+                        onClick={() => {
+                          setTrainingText(JSON.stringify(h.training ?? {}, null, 2));
+                          setDietText(JSON.stringify(h.diet ?? {}, null, 2));
+                          setHormonesText(JSON.stringify((h as any).hormones ?? [], null, 2));
+                          toast.success(`v${h.version} carregada no editor — revise e salve para reverter`);
+                        }}>
+                        Reverter
+                      </Button>
                     </div>
                   ))}
                 </div>
@@ -1347,6 +1411,7 @@ function ApprovalsTab({ profiles }: { profiles: ProfileRow[] }) {
   const [selected, setSelected] = useState<ProtocolRow | null>(null);
   const [trainingText, setTrainingText] = useState("{}");
   const [dietText, setDietText] = useState("{}");
+  const [hormonesText, setHormonesText] = useState("[]");
   const [busy, setBusy] = useState(false);
   const saveProtocolFn = useServerFn(adminSaveProtocol);
   const setAnalysisFn = useServerFn(adminSetAnalysisStatus);
@@ -1369,13 +1434,16 @@ function ApprovalsTab({ profiles }: { profiles: ProfileRow[] }) {
     setSelected(p);
     setTrainingText(JSON.stringify(p.training ?? {}, null, 2));
     setDietText(JSON.stringify(p.diet ?? {}, null, 2));
+    setHormonesText(JSON.stringify((p as any).hormones ?? [], null, 2));
   };
 
   const approveProtocol = async () => {
     if (!selected) return;
-    let training: any, diet: any;
+    let training: any, diet: any, hormones: any;
     try { training = JSON.parse(trainingText); } catch { toast.error("JSON do treino inválido"); return; }
     try { diet = JSON.parse(dietText); } catch { toast.error("JSON da dieta inválido"); return; }
+    try { hormones = JSON.parse(hormonesText); } catch { toast.error("JSON dos hormônios inválido"); return; }
+    if (!Array.isArray(hormones)) { toast.error("Hormônios deve ser uma lista"); return; }
     setBusy(true);
     try {
       await saveProtocolFn({ data: {
@@ -1383,7 +1451,7 @@ function ApprovalsTab({ profiles }: { profiles: ProfileRow[] }) {
         protocolId: selected.id,
         training,
         diet,
-        hormones: (selected as any).hormones ?? [],
+        hormones,
         status: "active",
         notify: true,
       } });
@@ -1464,8 +1532,8 @@ function ApprovalsTab({ profiles }: { profiles: ProfileRow[] }) {
                   Edite o JSON se precisar ajustar antes de liberar. Aprovar arquiva o protocolo ativo atual e ativa este.
                 </p>
                 <ProtocolPlanEditor
-                  trainingText={trainingText} dietText={dietText}
-                  setTrainingText={setTrainingText} setDietText={setDietText}
+                  trainingText={trainingText} dietText={dietText} hormonesText={hormonesText}
+                  setTrainingText={setTrainingText} setDietText={setDietText} setHormonesText={setHormonesText}
                 />
               </Card>
             ) : (

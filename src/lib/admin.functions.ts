@@ -186,3 +186,69 @@ export const adminSetAnalysisStatus = createServerFn({ method: "POST" })
     }
     return { ok: true };
   });
+
+/* ============ Template library ============ */
+
+async function ensureAdmin(userId: string) {
+  const { data: role } = await supabaseAdmin
+    .from("user_roles")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("role", "admin")
+    .maybeSingle();
+  if (!role) throw new Error("Acesso restrito ao admin");
+}
+
+type TemplateKind = "training" | "diet" | "hormones";
+
+export const adminListTemplates = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { kind?: TemplateKind }) => data)
+  .handler(async ({ data, context }) => {
+    await ensureAdmin(context.userId);
+    let q = supabaseAdmin.from("protocol_templates").select("*").order("updated_at", { ascending: false });
+    if (data.kind) q = q.eq("kind", data.kind);
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+    return { templates: rows ?? [] };
+  });
+
+export const adminSaveTemplate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { id?: string | null; name: string; kind: TemplateKind; data: unknown; notes?: string }) => data)
+  .handler(async ({ data, context }) => {
+    await ensureAdmin(context.userId);
+    if (!data.name?.trim()) throw new Error("Nome obrigatório");
+    if (!["training", "diet", "hormones"].includes(data.kind)) throw new Error("Tipo inválido");
+    if (data.id) {
+      const { error } = await supabaseAdmin
+        .from("protocol_templates")
+        .update({ name: data.name.trim(), data: data.data as any, notes: data.notes ?? null })
+        .eq("id", data.id);
+      if (error) throw new Error(error.message);
+      return { ok: true, id: data.id };
+    }
+    const { data: row, error } = await supabaseAdmin
+      .from("protocol_templates")
+      .insert({
+        name: data.name.trim(),
+        kind: data.kind,
+        data: data.data as any,
+        notes: data.notes ?? null,
+        created_by: context.userId,
+      })
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+    return { ok: true, id: (row as any).id };
+  });
+
+export const adminDeleteTemplate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { id: string }) => data)
+  .handler(async ({ data, context }) => {
+    await ensureAdmin(context.userId);
+    const { error } = await supabaseAdmin.from("protocol_templates").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
