@@ -89,7 +89,7 @@ function OnboardingPage() {
       const { data: p } = await supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle();
       if (!p) return;
       if (p.onboarding_complete) { navigate({ to: "/dashboard" }); return; }
-      const next: Partial<FD> = {};
+      const next: FD = {};
       for (const k of Object.keys(d)) {
         const v = (p as any)[k];
         if (v !== undefined && v !== null) next[k] = String(v);
