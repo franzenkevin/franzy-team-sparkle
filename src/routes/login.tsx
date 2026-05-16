@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { toast } from "sonner";
 import { User as UserIcon, ShieldCheck } from "lucide-react";
 import logo from "@/assets/logo.png";
 
@@ -21,31 +20,25 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-  const [emailNotConfirmed, setEmailNotConfirmed] = useState(false);
-  const [resending, setResending] = useState(false);
-  const { signIn, signOut, resendConfirmationEmail } = useAuth();
+  const { signIn, signOut } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
-    setEmailNotConfirmed(false);
     setLoading(true);
-    const { error } = await signIn(email, password);
+    const { data, error } = await signIn(email.trim(), password);
     setLoading(false);
     if (error) {
       const msg = (error.message || "").toLowerCase();
-      if (msg.includes("email not confirmed") || msg.includes("email_not_confirmed")) {
-        setEmailNotConfirmed(true);
-        setErrorMsg("Seu e-mail ainda não foi confirmado. Verifique sua caixa de entrada.");
-      } else if (msg.includes("invalid login credentials") || msg.includes("invalid_credentials")) {
+      if (msg.includes("invalid login credentials") || msg.includes("invalid_credentials")) {
         setErrorMsg("E-mail ou senha incorretos.");
       } else {
         setErrorMsg(error.message ?? "Erro ao entrar.");
       }
       return;
     }
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = data?.user;
     if (user) {
       const { data: roleRow } = await supabase
         .from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle();
@@ -55,17 +48,8 @@ function LoginPage() {
         setErrorMsg("Esta conta não tem permissão de administrador.");
         return;
       }
-      navigate({ to: isAdmin ? "/admin" : "/dashboard" });
+      navigate({ to: isAdmin ? "/admin" : "/dashboard", replace: true });
     }
-  };
-
-  const handleResend = async () => {
-    if (!email) { toast.error("Informe o e-mail no campo acima."); return; }
-    setResending(true);
-    const { error } = await resendConfirmationEmail(email);
-    setResending(false);
-    if (error) toast.error(error.message);
-    else toast.success("E-mail reenviado!");
   };
 
   return (
@@ -100,11 +84,6 @@ function LoginPage() {
             <Input id="password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required className="mt-1" />
           </div>
           {errorMsg && <Alert variant="destructive"><AlertDescription>{errorMsg}</AlertDescription></Alert>}
-          {emailNotConfirmed && (
-            <Button type="button" variant="outline" className="w-full" disabled={resending} onClick={handleResend}>
-              {resending ? "Reenviando..." : "Reenviar e-mail de confirmação"}
-            </Button>
-          )}
           <Button type="submit" className="w-full glow" disabled={loading}>
             {loading ? "Entrando..." : "Entrar"}
           </Button>

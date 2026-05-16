@@ -32,8 +32,8 @@ function SignupPage() {
     const { error } = await signUp(email, password, fullName);
     setLoading(false);
     if (error) { setErrorMsg(error.message); return; }
-    toast.success("Conta criada! Verifique seu e-mail para confirmar.");
-    navigate({ to: "/login" });
+    toast.success("Conta criada! Você já pode entrar.");
+    navigate({ to: "/login", replace: true });
   };
 
   return (
