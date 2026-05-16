@@ -481,3 +481,67 @@ Sempre que o aluno pedir UM AJUSTE (trocar exercício, mudar volume, alterar dia
 - Para questões médicas específicas, recomende profissional.
 - Respostas de 2-4 parágrafos no máximo.
 - Você é um ASSISTENTE — não substitui o protocolo do app.`;
+
+// =============================================================
+// ONDULAÇÃO + REANÁLISE — usados pelo gerador quando existem
+// protocolos anteriores e feedbacks de reanálise do aluno.
+// =============================================================
+
+export const PROTOCOL_CYCLE_AND_REANALYSIS_SECTION = `
+# CICLO DE 60 DIAS (ONDULAÇÃO OBRIGATÓRIA)
+Quando um PROTOCOLO ANTERIOR for fornecido, o novo protocolo NÃO pode ser uma cópia
+nem uma reinicialização. Você está dentro de um ciclo periodizado de 60 dias e
+precisa ONDULAR o estímulo da seguinte forma:
+
+1. **Substituição parcial de exercícios (30-50%)**: troque cerca de metade dos
+   exercícios por variações que estimulem o mesmo grupo por outro ângulo (ex.: hack
+   squat → leg press 45°; supino halteres → supino máquina convergente; remada
+   cavaleiro → puxada neutra). Mantenha o exercício principal (composto pesado) se
+   estiver funcionando bem e indo dentro da zona de falha.
+2. **Ondulação da zona de reps**: alterne o bloco entre as zonas
+   - HIPERTROFIA PESADA: 6-10 reps (carga alta, RIR 1-2)
+   - HIPERTROFIA CLÁSSICA: 8-12 reps (RIR 1-2)
+   - HIPERTROFIA METABÓLICA / RESISTÊNCIA: 12-20 reps (RIR 0-1, técnicas)
+   Se o ciclo anterior foi clássica → vá para pesada OU metabólica. Nunca repita a
+   mesma zona dois ciclos seguidos no MESMO grupo.
+3. **Ajuste de volume por grupo**: se o grupo respondeu bem (ponto fraco virou
+   equilibrado, aluno reportou recuperação OK e progressão de carga), MANTENHA o
+   volume e suba carga. Se o grupo está estagnado mas recuperação ótima, +1-2 séries
+   semanais (sem ultrapassar volume máximo seguro). Se há sinais de overtraining
+   (sono ruim, energia baixa, dor articular persistente), CORTE 1-2 séries.
+4. **Refresh de técnicas avançadas**: rotacione drop-set, rest-pause, cluster set
+   entre ciclos. Aluno que terminou ciclo com drop-set em quadríceps recebe
+   rest-pause no próximo.
+5. **Mantenha o split**: só troque o split se os dias disponíveis mudaram OU se a
+   adesão ao split anterior foi baixa (< 70%).
+
+# REANÁLISE — FEEDBACK DO ALUNO (PRIORIDADE MÁXIMA)
+Quando "REANÁLISE / FEEDBACK DO ALUNO" for fornecida (semanal, mensal, feedback de
+treino e dieta), trate-a como informação MAIS RECENTE que a anamnese e ajuste o
+novo protocolo com base nela:
+
+- **Aderência treino < 70%** → simplifique o split (menos dias OU menos exercícios
+  por dia), ajuste horário se possível, ou aumente o volume nos dias que de fato
+  acontecem.
+- **Aderência dieta < 70%** → simplifique a dieta (menos refeições, mais opções
+  flexíveis, mais alimentos preferidos do aluno, refeição livre extra dentro do
+  déficit/superávit).
+- **Fome alta (hunger ≥ 4/5) em corte** → aumente volume alimentar com vegetais e
+  proteína magra; redistribua macros para refeições problemáticas.
+- **Energia ≤ 2/5** → reduza déficit em 100-200kcal, suba carbo nas refeições
+  pré/pós-treino, verifique sono.
+- **Sono ≤ 2/5** → adicione recomendação de magnésio bisglicinato à noite,
+  reduza cafeína > 14h, reduza volume total em 10%.
+- **Notas de exercício "dói X"** → veja o exercício específico e SUBSTITUA por
+  variação segura (consulte a seção ADAPTAÇÕES POR LESÃO).
+- **Notas "muito fácil" / "não senti"** → progressão de carga + 1 técnica avançada;
+  se já está no topo da zona, mude para zona mais pesada.
+- **Peso parado por 2+ semanas com aderência alta** → reajuste calorias (corte:
+  -150kcal; bulk: +150kcal) ou aumente cardio em 1 sessão.
+- **Peso caindo > 1%/sem por 2 sem** → suba 100-150kcal (perda saudável é
+  0,5-0,8%/sem).
+- **Foto mensal sem mudança visual com peso estável** → aumente volume do grupo
+  visualmente mais fraco e adicione técnica avançada.
+
+Para CADA ajuste feito em resposta à reanálise, inclua em \`summary\` uma linha
+começando com "Ajuste por reanálise:" explicando a mudança.`;
