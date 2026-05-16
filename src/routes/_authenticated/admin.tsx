@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { analyzeAnamnese, prescribeFromAnamnese, generateCoachFeedback } from "@/lib/anamnese.functions";
-import { adminSaveProtocol, adminSetAnalysisStatus } from "@/lib/admin.functions";
+import { adminSaveProtocol, adminSetAnalysisStatus, adminUpdateProfile } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({ meta: [{ title: "Painel do Criador — Franzen Team" }] }),
@@ -269,12 +269,17 @@ function UsersTab({ profiles }: { profiles: ProfileRow[] }) {
   const [trainingText, setTrainingText] = useState("{}");
   const [dietText, setDietText] = useState("{}");
   const [hormonesText, setHormonesText] = useState("[]");
+  const [editingStatus, setEditingStatus] = useState<"active" | "pending_review">("active");
   const [saving, setSaving] = useState(false);
   const [generatingAi, setGeneratingAi] = useState(false);
   const [isUserAdmin, setIsUserAdmin] = useState(false);
   const [togglingRole, setTogglingRole] = useState(false);
+  const [fullProfile, setFullProfile] = useState<any | null>(null);
+  const [profileDraft, setProfileDraft] = useState<Record<string, any>>({});
+  const [savingProfile, setSavingProfile] = useState(false);
   const saveProtocolFn = useServerFn(adminSaveProtocol);
   const prescribeFn = useServerFn(prescribeFromAnamnese);
+  const updateProfileFn = useServerFn(adminUpdateProfile);
 
   const filtered = profiles.filter((p) =>
     !filter || (p.full_name ?? "").toLowerCase().includes(filter.toLowerCase()),
@@ -282,32 +287,44 @@ function UsersTab({ profiles }: { profiles: ProfileRow[] }) {
 
   const selectUser = async (u: ProfileRow) => {
     setSelectedUser(u);
-    const [{ data: prot }, { data: hist }, { data: roleRow }] = await Promise.all([
-      supabase.from("protocols").select("*").eq("user_id", u.user_id).eq("status", "active")
-        .order("created_at", { ascending: false }).limit(1).maybeSingle(),
+    setProtocol(null); setHistory([]); setFullProfile(null); setProfileDraft({});
+    const [{ data: hist }, { data: roleRow }, { data: prof }] = await Promise.all([
       supabase.from("protocols").select("*").eq("user_id", u.user_id).order("created_at", { ascending: false }),
       supabase.from("user_roles").select("id").eq("user_id", u.user_id).eq("role", "admin").maybeSingle(),
+      supabase.from("profiles").select("*").eq("user_id", u.user_id).maybeSingle(),
     ]);
+    const list = (hist ?? []) as ProtocolRow[];
+    // Prioridade: pending_review > active > mais recente
+    const prot =
+      list.find((p) => p.status === "pending_review") ??
+      list.find((p) => p.status === "active") ??
+      list[0] ?? null;
     if (prot) {
-      setProtocol(prot as ProtocolRow);
+      setProtocol(prot);
       setTrainingText(JSON.stringify(prot.training ?? {}, null, 2));
       setDietText(JSON.stringify(prot.diet ?? {}, null, 2));
       setHormonesText(JSON.stringify((prot as any).hormones ?? [], null, 2));
+      setEditingStatus(prot.status === "pending_review" ? "pending_review" : "active");
     } else {
-      setProtocol(null); setTrainingText("{}"); setDietText("{}"); setHormonesText("[]");
+      setTrainingText("{}"); setDietText("{}"); setHormonesText("[]");
+      setEditingStatus("active");
     }
-    setHistory((hist ?? []) as ProtocolRow[]);
+    setHistory(list);
     setIsUserAdmin(!!roleRow);
+    setFullProfile(prof ?? null);
+    setProfileDraft(prof ? { ...prof } : {});
   };
 
-  const handleSave = async () => {
+  const handleSave = async (statusOverride?: "active" | "pending_review") => {
     if (!selectedUser) return;
+    const status = statusOverride ?? editingStatus;
     let training: any, diet: any, hormones: any;
     try { training = JSON.parse(trainingText); } catch { toast.error("JSON do treino inválido"); return; }
     try { diet = JSON.parse(dietText); } catch { toast.error("JSON da dieta inválido"); return; }
     try { hormones = JSON.parse(hormonesText); } catch { toast.error("JSON dos hormônios inválido"); return; }
     if (!Array.isArray(hormones)) { toast.error("Hormônios deve ser uma lista [ ]"); return; }
     setSaving(true);
+    setEditingStatus(status);
     try {
       await saveProtocolFn({ data: {
         targetUserId: selectedUser.user_id,
@@ -315,10 +332,14 @@ function UsersTab({ profiles }: { profiles: ProfileRow[] }) {
         training,
         diet,
         hormones,
-        status: "active",
-        notify: true,
+        status,
+        notify: status === "active",
       } });
-      toast.success(protocol ? "Protocolo atualizado e ativo" : "Protocolo criado e ativo");
+      toast.success(
+        status === "active"
+          ? (protocol ? "Protocolo atualizado e liberado ao aluno" : "Protocolo criado e liberado")
+          : "Rascunho salvo (não liberado ao aluno)"
+      );
     } catch (e: any) {
       toast.error(e?.message ?? "Erro ao salvar protocolo");
       setSaving(false);
@@ -333,7 +354,7 @@ function UsersTab({ profiles }: { profiles: ProfileRow[] }) {
     setGeneratingAi(true);
     try {
       await prescribeFn({ data: { targetUserId: selectedUser.user_id } });
-      toast.success("Protocolo IA gerado para revisão. Abra a aba Aprovações ou histórico do aluno para editar/liberar.");
+      toast.success("Protocolo IA gerado. Revise abaixo e clique Liberar quando aprovar.");
       await selectUser(selectedUser);
     } catch (e: any) {
       toast.error(e?.message ?? "Erro ao gerar protocolo IA");
@@ -341,6 +362,20 @@ function UsersTab({ profiles }: { profiles: ProfileRow[] }) {
       setGeneratingAi(false);
     }
   };
+
+  const saveProfile = async () => {
+    if (!selectedUser) return;
+    setSavingProfile(true);
+    try {
+      await updateProfileFn({ data: { targetUserId: selectedUser.user_id, profile: profileDraft } });
+      toast.success("Perfil atualizado");
+      await selectUser(selectedUser);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro ao salvar perfil");
+    } finally { setSavingProfile(false); }
+  };
+
+  const setPF = (k: string, v: any) => setProfileDraft((d) => ({ ...d, [k]: v }));
 
   const toggleAdminRole = async () => {
     if (!selectedUser) return;
@@ -404,9 +439,11 @@ function UsersTab({ profiles }: { profiles: ProfileRow[] }) {
             <Card className="p-5">
               <div className="flex justify-between items-start gap-3">
                 <div>
-                  <h3 className="font-heading font-semibold">Protocolo ativo</h3>
+                  <h3 className="font-heading font-semibold">Protocolo</h3>
                   <p className="text-xs text-muted-foreground">
-                    {protocol ? `v${protocol.version} • ${protocol.start_date} → ${protocol.end_date}` : "Sem protocolo ativo"}
+                    {protocol
+                      ? `v${protocol.version} • ${protocol.status} • ${protocol.start_date} → ${protocol.end_date}`
+                      : "Sem protocolo"}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -414,9 +451,13 @@ function UsersTab({ profiles }: { profiles: ProfileRow[] }) {
                   {generatingAi ? <Loader2 size={14} className="mr-1 animate-spin" /> : <Sparkles size={14} className="mr-1" />}
                   Gerar IA
                 </Button>
-                <Button onClick={handleSave} disabled={saving}>
+                <Button variant="outline" onClick={() => handleSave("pending_review")} disabled={saving}>
                   <Save size={14} className="mr-1" />
-                  {saving ? "Salvando…" : protocol ? "Nova versão" : "Criar"}
+                  {saving && editingStatus === "pending_review" ? "Salvando…" : "Salvar rascunho"}
+                </Button>
+                <Button onClick={() => handleSave("active")} disabled={saving}>
+                  <CheckCircle2 size={14} className="mr-1" />
+                  {saving && editingStatus === "active" ? "Liberando…" : "Salvar e liberar"}
                 </Button>
                 </div>
               </div>
@@ -438,6 +479,47 @@ function UsersTab({ profiles }: { profiles: ProfileRow[] }) {
                 <Textarea value={hormonesText} onChange={(e) => setHormonesText(e.target.value)} rows={8} className="font-mono text-xs mt-1" />
               </div>
             </Card>
+
+            {fullProfile && (
+              <Card className="p-5">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="font-heading font-semibold">Perfil do aluno</h3>
+                  <Button size="sm" onClick={saveProfile} disabled={savingProfile}>
+                    <Save size={14} className="mr-1" /> {savingProfile ? "Salvando…" : "Salvar perfil"}
+                  </Button>
+                </div>
+                <div className="grid gap-3 md:grid-cols-2">
+                  {([
+                    ["full_name", "Nome"], ["age", "Idade"], ["sex", "Sexo (M/F)"],
+                    ["weight", "Peso (kg)"], ["height", "Altura (cm)"],
+                    ["goal", "Objetivo"], ["activity_level", "Nível atividade"],
+                    ["neat", "NEAT"], ["experience", "Experiência"],
+                    ["gym_type", "Academia"], ["training_days", "Dias treino/sem"],
+                    ["training_time", "Horário treino"], ["meal_count", "Refeições/dia"],
+                    ["sleep_hours", "Sono (h)"], ["stress_level", "Estresse"],
+                    ["sweet_preference", "Pref. doce"], ["free_meals", "Refeições livres"],
+                  ] as const).map(([k, label]) => (
+                    <div key={k}>
+                      <Label className="text-xs">{label}</Label>
+                      <Input className="mt-1" value={profileDraft[k] ?? ""}
+                        onChange={(e) => setPF(k, e.target.value)} />
+                    </div>
+                  ))}
+                </div>
+                <div className="grid gap-3 mt-3">
+                  {([
+                    ["injuries", "Lesões"], ["disliked_foods", "Não gosta"],
+                    ["allergies", "Alergias"],
+                  ] as const).map(([k, label]) => (
+                    <div key={k}>
+                      <Label className="text-xs">{label}</Label>
+                      <Textarea className="mt-1" rows={2} value={profileDraft[k] ?? ""}
+                        onChange={(e) => setPF(k, e.target.value)} />
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            )}
 
             {history.length > 0 && (
               <Card className="p-5">
