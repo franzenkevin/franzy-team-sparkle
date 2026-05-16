@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
-  LayoutDashboard, Dumbbell, Apple, LineChart, History, User, Sparkles,
-  Shield, Users, ClipboardList, MessageSquare, LogOut, Library, Bot,
+  LayoutDashboard, Dumbbell, Apple, LineChart, History, User,
+  Shield, Users, ClipboardList, MessageSquare, LogOut, Library, Bot, Pill,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -16,12 +16,12 @@ const mainItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Treinos", url: "/training", icon: Dumbbell },
   { title: "Nutrição", url: "/diet", icon: Apple },
+  { title: "Hormônios", url: "/hormones", icon: Pill },
   { title: "Progresso", url: "/progress", icon: LineChart },
   { title: "Histórico", url: "/history", icon: History },
   { title: "Exercícios", url: "/exercises", icon: Library },
   { title: "Mensagens", url: "/messages", icon: MessageSquare },
   { title: "Coach IA", url: "/coach", icon: Bot },
-  { title: "Gerar (IA)", url: "/generate", icon: Sparkles },
   { title: "Perfil", url: "/profile", icon: User },
 ] as const;
 
