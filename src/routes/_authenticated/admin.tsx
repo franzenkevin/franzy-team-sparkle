@@ -554,16 +554,9 @@ function UsersTab({ profiles }: { profiles: ProfileRow[] }) {
               </div>
               <div className="mt-4">
                 <ProtocolPlanEditor
-                  trainingText={trainingText} dietText={dietText}
-                  setTrainingText={setTrainingText} setDietText={setDietText}
+                  trainingText={trainingText} dietText={dietText} hormonesText={hormonesText}
+                  setTrainingText={setTrainingText} setDietText={setDietText} setHormonesText={setHormonesText}
                 />
-              </div>
-              <div className="mt-4">
-                <Label className="text-sm">Hormônios (lista JSON)</Label>
-                <p className="text-[11px] text-muted-foreground mb-1">
-                  Ex.: <code>{`[{"substance":"Testosterona","dose":"200mg","route":"IM","frequency":"1x/sem","duration":"12 semanas","notes":"..."}]`}</code>
-                </p>
-                <Textarea value={hormonesText} onChange={(e) => setHormonesText(e.target.value)} rows={8} className="font-mono text-xs mt-1" />
               </div>
             </Card>
 
@@ -613,9 +606,18 @@ function UsersTab({ profiles }: { profiles: ProfileRow[] }) {
                 <h3 className="font-heading font-semibold flex items-center gap-2"><HistoryIcon size={16} /> Histórico ({history.length})</h3>
                 <div className="mt-3 space-y-2">
                   {history.map((h) => (
-                    <div key={h.id} className="flex justify-between text-sm border-b border-border py-1.5">
-                      <span>v{h.version} <span className={`ml-2 text-xs px-2 py-0.5 rounded ${h.status === "active" ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}>{h.status}</span></span>
-                      <span className="text-xs text-muted-foreground">{new Date(h.created_at).toLocaleDateString("pt-BR")}</span>
+                    <div key={h.id} className="flex justify-between items-center text-sm border-b border-border py-1.5 gap-2">
+                      <span className="min-w-0 truncate">v{h.version} <span className={`ml-2 text-xs px-2 py-0.5 rounded ${h.status === "active" ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}>{h.status}</span></span>
+                      <span className="text-xs text-muted-foreground shrink-0">{new Date(h.created_at).toLocaleDateString("pt-BR")}</span>
+                      <Button size="sm" variant="outline" className="h-7 text-xs shrink-0"
+                        onClick={() => {
+                          setTrainingText(JSON.stringify(h.training ?? {}, null, 2));
+                          setDietText(JSON.stringify(h.diet ?? {}, null, 2));
+                          setHormonesText(JSON.stringify((h as any).hormones ?? [], null, 2));
+                          toast.success(`v${h.version} carregada no editor — revise e salve para reverter`);
+                        }}>
+                        Reverter
+                      </Button>
                     </div>
                   ))}
                 </div>
