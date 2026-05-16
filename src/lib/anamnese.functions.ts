@@ -165,15 +165,15 @@ export const generateCoachFeedback = createServerFn({ method: "POST" })
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("LOVABLE_API_KEY ausente");
 
-    let table = "weekly_feedbacks";
+    let table: "weekly_feedbacks" | "monthly_analyses" | "diet_feedback" = "weekly_feedbacks";
     if (data.kind === "monthly") table = "monthly_analyses";
     if (data.kind === "diet") table = "diet_feedback";
 
-    const { data: row } = await supabase.from(table).select("*").eq("id", data.refId).maybeSingle();
+    const { data: row } = await (supabase.from(table) as any).select("*").eq("id", data.refId).maybeSingle();
     if (!row) throw new Error("Registro não encontrado");
 
     const { data: profile } = await supabase.from("profiles").select("full_name, sex, age, weight, height, goal, experience")
-      .eq("user_id", row.user_id).maybeSingle();
+      .eq("user_id", (row as any).user_id).maybeSingle();
 
     const prompt = `Você é o coach. Escreva um feedback ESCRITO curto (4-8 frases), motivador, direto, em PT-BR, para o aluno abaixo.
 
