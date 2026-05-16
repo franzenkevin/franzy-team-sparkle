@@ -60,11 +60,11 @@ export const adminUpdateProfile = createServerFn({ method: "POST" })
       "allergies", "sleep_hours", "stress_level", "sweet_preference", "free_meals", "meal_count",
       "cardio_enabled", "cardio_frequency", "cardio_duration", "cardio_timing", "cardio_type_preference",
     ]);
-    const updates: Record<string, unknown> = {};
+    const updates: Record<string, any> = {};
     for (const [key, value] of Object.entries(data.profile ?? {})) {
       if (allowed.has(key)) updates[key] = value === "" ? null : value;
     }
-    const { error } = await supabaseAdmin.from("profiles").update(updates).eq("user_id", data.targetUserId);
+    const { error } = await supabaseAdmin.from("profiles").update(updates as any).eq("user_id", data.targetUserId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
