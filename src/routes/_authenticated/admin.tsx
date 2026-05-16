@@ -564,6 +564,7 @@ function UsersTab({ profiles }: { profiles: ProfileRow[] }) {
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
+                {autoSaved && <span className="text-[11px] text-muted-foreground self-center">Rascunho salvo {autoSaved}</span>}
                 <Button variant="outline" onClick={generateAiProtocol} disabled={generatingAi}>
                   {generatingAi ? <Loader2 size={14} className="mr-1 animate-spin" /> : <Sparkles size={14} className="mr-1" />}
                   Gerar IA
