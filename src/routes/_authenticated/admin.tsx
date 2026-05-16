@@ -409,10 +409,16 @@ function UsersTab({ profiles }: { profiles: ProfileRow[] }) {
                     {protocol ? `v${protocol.version} • ${protocol.start_date} → ${protocol.end_date}` : "Sem protocolo ativo"}
                   </p>
                 </div>
+                <div className="flex flex-wrap gap-2">
+                <Button variant="outline" onClick={generateAiProtocol} disabled={generatingAi}>
+                  {generatingAi ? <Loader2 size={14} className="mr-1 animate-spin" /> : <Sparkles size={14} className="mr-1" />}
+                  Gerar IA
+                </Button>
                 <Button onClick={handleSave} disabled={saving}>
                   <Save size={14} className="mr-1" />
                   {saving ? "Salvando…" : protocol ? "Nova versão" : "Criar"}
                 </Button>
+                </div>
               </div>
               <div className="mt-4 grid gap-4 lg:grid-cols-2">
                 <div>
