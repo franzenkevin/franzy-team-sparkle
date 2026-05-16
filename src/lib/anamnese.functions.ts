@@ -5,6 +5,7 @@ import { createLovableAiGatewayProvider } from "./ai-gateway";
 import { BODY_ANALYSIS_SYSTEM_PROMPT, PROTOCOL_SYSTEM_PROMPT } from "./ai-prompts";
 import { getMethodologyPromptSection } from "./workoutRules";
 import { generateProtocol as fallbackProtocol, type ProfileLike } from "./generateProtocol";
+import { extractJsonFromResponse } from "./ai-json";
 
 function profileToText(p: any) {
   return `## DADOS DA ANAMNESE
@@ -85,8 +86,12 @@ export const analyzeAnamnese = createServerFn({ method: "POST" })
         muscle_development: {}, recommendations: [],
       });
     }
-    const m = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-    const jsonText = m ? m[1].trim() : content.trim();
+    let jsonText: string;
+    try {
+      jsonText = JSON.stringify(extractJsonFromResponse(content));
+    } catch {
+      jsonText = content.trim();
+    }
 
     const { error } = await supabase.from("ai_analyses").insert({
       user_id: uid, kind: "anamnese_analysis", content: jsonText, meta: { photos: photoUrls.length },
@@ -124,10 +129,7 @@ export const prescribeFromAnamnese = createServerFn({ method: "POST" })
         model, system: systemPrompt, prompt: userPrompt,
         abortSignal: AbortSignal.timeout(110_000),
       });
-      let c = text || "";
-      const m = c.match(/```(?:json)?\s*([\s\S]*?)```/);
-      if (m) c = m[1].trim();
-      const parsed = JSON.parse(c);
+      const parsed = extractJsonFromResponse(text || "");
       if (!parsed.training || !parsed.diet) throw new Error("estrutura inválida");
       out = { training: parsed.training, diet: parsed.diet, summary: parsed.summary ?? "Prescrição automática IA." };
     } catch (e) {
