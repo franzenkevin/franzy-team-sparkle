@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -46,25 +46,31 @@ type Metrics = {
 };
 
 function AdminPage() {
-  const navigate = useNavigate();
   const [checking, setChecking] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [profiles, setProfiles] = useState<ProfileRow[]>([]);
   const [metrics, setMetrics] = useState<Metrics | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { navigate({ to: "/login" }); return; }
+      // Parent _authenticated layout already guarantees a session.
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
+      if (!user) { if (!cancelled) setChecking(false); return; }
       const { data: roles } = await supabase
         .from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle();
+      if (cancelled) return;
       if (!roles) { setChecking(false); return; }
       setIsAdmin(true);
+      setChecking(false);
+
+      // Load profiles and metrics in background — do NOT block access gate.
       const { data: rows } = await supabase
         .from("profiles").select("user_id, full_name, goal, age, sex, weight, height")
         .order("created_at", { ascending: false });
+      if (cancelled) return;
       setProfiles(rows ?? []);
-      setChecking(false);
 
       const sevenAgo = new Date(Date.now() - 7 * 86400_000).toISOString();
       const [
@@ -82,6 +88,7 @@ function AdminPage() {
         supabase.from("checkins").select("adherence").not("adherence", "is", null).gte("created_at", sevenAgo),
         supabase.from("checkins").select("user_id, created_at").order("created_at", { ascending: false }).limit(1000),
       ]);
+      if (cancelled) return;
       const adherenceVals = (adherence ?? []).map((r: any) => Number(r.adherence)).filter((n: number) => !isNaN(n));
       const avgAdherence = adherenceVals.length
         ? Math.round(adherenceVals.reduce((a: number, b: number) => a + b, 0) / adherenceVals.length)
@@ -108,7 +115,8 @@ function AdminPage() {
         atRisk,
       });
     })();
-  }, [navigate]);
+    return () => { cancelled = true; };
+  }, []);
 
   if (checking) {
     return <div className="min-h-screen grid place-items-center text-muted-foreground">Verificando acesso…</div>;
