@@ -24,6 +24,62 @@ import {
 import { useServerFn } from "@tanstack/react-start";
 import { analyzeAnamnese, prescribeFromAnamnese, generateCoachFeedback } from "@/lib/anamnese.functions";
 import { adminSaveProtocol, adminSetAnalysisStatus, adminUpdateProfile } from "@/lib/admin.functions";
+import { TrainingEditor } from "@/components/admin/TrainingEditor";
+import { DietEditor } from "@/components/admin/DietEditor";
+
+function safeParse(text: string, fallback: any) {
+  try { return JSON.parse(text); } catch { return fallback; }
+}
+
+function ProtocolPlanEditor({
+  trainingText, dietText, setTrainingText, setDietText,
+}: {
+  trainingText: string; dietText: string;
+  setTrainingText: (s: string) => void; setDietText: (s: string) => void;
+}) {
+  const [mode, setMode] = useState<"visual" | "json">("visual");
+  return (
+    <div className="space-y-3">
+      <div className="flex justify-end">
+        <div className="inline-flex rounded-md border border-border p-0.5 text-xs">
+          <button onClick={() => setMode("visual")} className={`px-3 py-1 rounded ${mode === "visual" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>Visual</button>
+          <button onClick={() => setMode("json")} className={`px-3 py-1 rounded ${mode === "json" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>JSON</button>
+        </div>
+      </div>
+      {mode === "visual" ? (
+        <Tabs defaultValue="training">
+          <TabsList>
+            <TabsTrigger value="training"><Dumbbell size={14} className="mr-1" />Treino</TabsTrigger>
+            <TabsTrigger value="diet"><Apple size={14} className="mr-1" />Dieta</TabsTrigger>
+          </TabsList>
+          <TabsContent value="training" className="mt-3">
+            <TrainingEditor
+              value={safeParse(trainingText, {})}
+              onChange={(v) => setTrainingText(JSON.stringify(v, null, 2))}
+            />
+          </TabsContent>
+          <TabsContent value="diet" className="mt-3">
+            <DietEditor
+              value={safeParse(dietText, {})}
+              onChange={(v) => setDietText(JSON.stringify(v, null, 2))}
+            />
+          </TabsContent>
+        </Tabs>
+      ) : (
+        <div className="grid gap-3 lg:grid-cols-2">
+          <div>
+            <Label className="text-xs">Treino (JSON)</Label>
+            <Textarea value={trainingText} onChange={(e) => setTrainingText(e.target.value)} rows={20} className="font-mono text-xs mt-1" />
+          </div>
+          <div>
+            <Label className="text-xs">Dieta (JSON)</Label>
+            <Textarea value={dietText} onChange={(e) => setDietText(e.target.value)} rows={20} className="font-mono text-xs mt-1" />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({ meta: [{ title: "Painel do Criador — Franzen Team" }] }),
@@ -461,15 +517,11 @@ function UsersTab({ profiles }: { profiles: ProfileRow[] }) {
                 </Button>
                 </div>
               </div>
-              <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                <div>
-                  <Label className="text-sm">Treino (JSON)</Label>
-                  <Textarea value={trainingText} onChange={(e) => setTrainingText(e.target.value)} rows={14} className="font-mono text-xs mt-1" />
-                </div>
-                <div>
-                  <Label className="text-sm">Dieta (JSON)</Label>
-                  <Textarea value={dietText} onChange={(e) => setDietText(e.target.value)} rows={14} className="font-mono text-xs mt-1" />
-                </div>
+              <div className="mt-4">
+                <ProtocolPlanEditor
+                  trainingText={trainingText} dietText={dietText}
+                  setTrainingText={setTrainingText} setDietText={setDietText}
+                />
               </div>
               <div className="mt-4">
                 <Label className="text-sm">Hormônios (lista JSON)</Label>
@@ -1411,16 +1463,10 @@ function ApprovalsTab({ profiles }: { profiles: ProfileRow[] }) {
                 <p className="text-xs text-muted-foreground mb-3">
                   Edite o JSON se precisar ajustar antes de liberar. Aprovar arquiva o protocolo ativo atual e ativa este.
                 </p>
-                <div className="grid gap-3 lg:grid-cols-2">
-                  <div>
-                    <Label className="text-xs">Treino (JSON)</Label>
-                    <Textarea value={trainingText} onChange={(e) => setTrainingText(e.target.value)} rows={14} className="font-mono text-xs mt-1"/>
-                  </div>
-                  <div>
-                    <Label className="text-xs">Dieta (JSON)</Label>
-                    <Textarea value={dietText} onChange={(e) => setDietText(e.target.value)} rows={14} className="font-mono text-xs mt-1"/>
-                  </div>
-                </div>
+                <ProtocolPlanEditor
+                  trainingText={trainingText} dietText={dietText}
+                  setTrainingText={setTrainingText} setDietText={setDietText}
+                />
               </Card>
             ) : (
               <Card className="p-10 text-center text-muted-foreground text-sm">Selecione um protocolo para revisar.</Card>
