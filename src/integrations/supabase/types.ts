@@ -35,6 +35,86 @@ export type Database = {
         }
         Relationships: []
       }
+      challenge_participations: {
+        Row: {
+          challenge_id: string
+          completed_at: string | null
+          id: string
+          joined_at: string
+          progress: number
+          user_id: string
+        }
+        Insert: {
+          challenge_id: string
+          completed_at?: string | null
+          id?: string
+          joined_at?: string
+          progress?: number
+          user_id: string
+        }
+        Update: {
+          challenge_id?: string
+          completed_at?: string | null
+          id?: string
+          joined_at?: string
+          progress?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_participations_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      challenges: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          ends_at: string
+          id: string
+          reward_badge: string | null
+          reward_points: number
+          starts_at: string
+          target_metric: string
+          target_value: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          ends_at: string
+          id?: string
+          reward_badge?: string | null
+          reward_points?: number
+          starts_at?: string
+          target_metric?: string
+          target_value?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          ends_at?: string
+          id?: string
+          reward_badge?: string | null
+          reward_points?: number
+          starts_at?: string
+          target_metric?: string
+          target_value?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       checkins: {
         Row: {
           adherence: number | null
@@ -112,6 +192,42 @@ export type Database = {
           name?: string
           updated_at?: string
           video_url?: string | null
+        }
+        Relationships: []
+      }
+      journal_entries: {
+        Row: {
+          created_at: string
+          energy: number | null
+          entry_date: string
+          id: string
+          mood: number | null
+          notes: string | null
+          sleep_hours: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          energy?: number | null
+          entry_date?: string
+          id?: string
+          mood?: number | null
+          notes?: string | null
+          sleep_hours?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          energy?: number | null
+          entry_date?: string
+          id?: string
+          mood?: number | null
+          notes?: string | null
+          sleep_hours?: number | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
