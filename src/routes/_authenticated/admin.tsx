@@ -368,6 +368,7 @@ function UsersTab({ profiles }: { profiles: ProfileRow[] }) {
   const [fullProfile, setFullProfile] = useState<any | null>(null);
   const [profileDraft, setProfileDraft] = useState<Record<string, any>>({});
   const [savingProfile, setSavingProfile] = useState(false);
+  const [autoSaved, setAutoSaved] = useState<string | null>(null);
   const saveProtocolFn = useServerFn(adminSaveProtocol);
   const prescribeFn = useServerFn(prescribeFromAnamnese);
   const updateProfileFn = useServerFn(adminUpdateProfile);
@@ -467,6 +468,31 @@ function UsersTab({ profiles }: { profiles: ProfileRow[] }) {
   };
 
   const setPF = (k: string, v: any) => setProfileDraft((d) => ({ ...d, [k]: v }));
+
+  // Auto-save draft (pending_review) when the editor content changes.
+  useEffect(() => {
+    if (!selectedUser) return;
+    if (saving) return;
+    const handle = window.setTimeout(async () => {
+      let training: any, diet: any, hormones: any;
+      try { training = JSON.parse(trainingText); } catch { return; }
+      try { diet = JSON.parse(dietText); } catch { return; }
+      try { hormones = JSON.parse(hormonesText); } catch { return; }
+      if (!Array.isArray(hormones)) return;
+      try {
+        await saveProtocolFn({ data: {
+          targetUserId: selectedUser.user_id,
+          protocolId: protocol?.id ?? null,
+          training, diet, hormones,
+          status: "pending_review",
+          notify: false,
+        } });
+        setAutoSaved(new Date().toLocaleTimeString("pt-BR"));
+      } catch { /* silent */ }
+    }, 2500);
+    return () => window.clearTimeout(handle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trainingText, dietText, hormonesText]);
 
   const toggleAdminRole = async () => {
     if (!selectedUser) return;
