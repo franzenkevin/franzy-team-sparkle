@@ -629,3 +629,25 @@ function TrainingPage() {
     </div>
   );
 }
+
+function EmbeddedVideo({ url }: { url: string }) {
+  const ytMatch = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/);
+  if (ytMatch) {
+    return (
+      <div className="aspect-video w-full rounded-lg overflow-hidden border border-border">
+        <iframe
+          src={`https://www.youtube.com/embed/${ytMatch[1]}`}
+          title="Vídeo do exercício"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          className="w-full h-full"
+        />
+      </div>
+    );
+  }
+  return (
+    <a href={url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm text-primary hover:underline">
+      <Play size={14} /> Abrir vídeo
+    </a>
+  );
+}
