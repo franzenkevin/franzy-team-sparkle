@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ export const Route = createFileRoute("/_authenticated/notifications")({
 type N = { id: string; type: string; title: string; body: string | null; link: string | null; read_at: string | null; created_at: string };
 
 function NotificationsPage() {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<N[]>([]);
   const [me, setMe] = useState<string | null>(null);
@@ -64,7 +65,14 @@ function NotificationsPage() {
                 <p className="font-medium">{n.title}</p>
                 {n.body && <p className="text-sm text-muted-foreground mt-1">{n.body}</p>}
                 <p className="text-[10px] text-muted-foreground mt-2">{new Date(n.created_at).toLocaleString("pt-BR")}</p>
-                {n.link && <Link to={n.link} onClick={() => markOne(n.id)} className="text-xs text-primary mt-1 inline-block">Abrir →</Link>}
+                {n.link && (
+                  <button
+                    onClick={() => { markOne(n.id); navigate({ to: n.link as string }); }}
+                    className="text-xs text-primary mt-1 inline-block"
+                  >
+                    Abrir →
+                  </button>
+                )}
               </div>
               <div className="flex flex-col gap-1">
                 {!n.read_at && <Button size="icon" variant="ghost" onClick={() => markOne(n.id)}><Check size={14} /></Button>}
