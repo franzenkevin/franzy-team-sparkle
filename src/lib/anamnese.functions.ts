@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { generateText } from "ai";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createLovableAiGatewayProvider } from "./ai-gateway";
-import { BODY_ANALYSIS_SYSTEM_PROMPT, PROTOCOL_SYSTEM_PROMPT } from "./ai-prompts";
+import { BODY_ANALYSIS_SYSTEM_PROMPT, PROTOCOL_SYSTEM_PROMPT, PROTOCOL_CYCLE_AND_REANALYSIS_SECTION } from "./ai-prompts";
 import { getMethodologyPromptSection } from "./workoutRules";
 import { generateProtocol as fallbackProtocol, type ProfileLike } from "./generateProtocol";
 import { extractJsonFromResponse } from "./ai-json";
@@ -94,7 +94,8 @@ export const analyzeAnamnese = createServerFn({ method: "POST" })
     }
 
     const { error } = await supabase.from("ai_analyses").insert({
-      user_id: uid, kind: "anamnese_analysis", content: jsonText, meta: { photos: photoUrls.length },
+      user_id: uid, kind: "anamnese_analysis", content: jsonText, status: "pending",
+      meta: { photos: photoUrls.length },
     });
     if (error) throw new Error(error.message);
     return { content: jsonText };
@@ -114,12 +115,60 @@ export const prescribeFromAnamnese = createServerFn({ method: "POST" })
       .from("ai_analyses").select("content").eq("user_id", uid).eq("kind", "anamnese_analysis")
       .order("created_at", { ascending: false }).limit(1).maybeSingle();
 
+    // Contexto histórico para ondulação + reanálise
+    const { data: previousProtocol } = await supabase
+      .from("protocols").select("id, version, training, diet, start_date, end_date")
+      .eq("user_id", uid).in("status", ["active", "archived", "pending_review"])
+      .order("created_at", { ascending: false }).limit(1).maybeSingle();
+
+    const sinceIso = new Date(Date.now() - 70 * 86400_000).toISOString();
+    const [{ data: weekly }, { data: monthly }, { data: dietFb }, { data: workoutFb }] = await Promise.all([
+      supabase.from("weekly_feedbacks").select("week_start, weight, adherence_training, adherence_diet, energy, sleep_quality, notes, measurements")
+        .eq("user_id", uid).gte("created_at", sinceIso).order("week_start", { ascending: false }).limit(8),
+      supabase.from("monthly_analyses").select("analysis_date, weight, measurements, coach_notes, ai_summary")
+        .eq("user_id", uid).gte("created_at", sinceIso).order("analysis_date", { ascending: false }).limit(3),
+      supabase.from("diet_feedback").select("session_date, meal_index, rating, hunger, notes")
+        .eq("user_id", uid).gte("created_at", sinceIso).order("session_date", { ascending: false }).limit(20),
+      supabase.from("workout_feedback").select("session_date, day_index, rating, notes")
+        .eq("user_id", uid).gte("created_at", sinceIso).order("session_date", { ascending: false }).limit(20),
+    ]);
+    const hasHistory = !!previousProtocol || (weekly?.length ?? 0) > 0 || (monthly?.length ?? 0) > 0
+      || (dietFb?.length ?? 0) > 0 || (workoutFb?.length ?? 0) > 0;
+
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("LOVABLE_API_KEY ausente");
 
     const sex: "M" | "F" = profile.sex === "F" ? "F" : "M";
-    const systemPrompt = `${PROTOCOL_SYSTEM_PROMPT}\n\n${getMethodologyPromptSection(sex)}`;
-    const userPrompt = `${profileToText(profile)}\n\n## AVALIAÇÃO IA PRÉVIA\n${lastAnalysis?.content ?? "—"}\n\nGere o JSON completo do protocolo (treino + dieta + summary).`;
+    const systemPrompt = hasHistory
+      ? `${PROTOCOL_SYSTEM_PROMPT}\n\n${getMethodologyPromptSection(sex)}\n\n${PROTOCOL_CYCLE_AND_REANALYSIS_SECTION}`
+      : `${PROTOCOL_SYSTEM_PROMPT}\n\n${getMethodologyPromptSection(sex)}`;
+
+    const historyBlock = hasHistory ? `
+
+## PROTOCOLO ANTERIOR
+${previousProtocol ? JSON.stringify({
+      version: previousProtocol.version,
+      start_date: previousProtocol.start_date,
+      end_date: previousProtocol.end_date,
+      training: previousProtocol.training,
+      diet: previousProtocol.diet,
+    }, null, 2) : "—"}
+
+## REANÁLISE / FEEDBACK DO ALUNO (últimos 70 dias)
+- Semanais: ${JSON.stringify(weekly ?? [])}
+- Mensais: ${JSON.stringify(monthly ?? [])}
+- Treino: ${JSON.stringify(workoutFb ?? [])}
+- Dieta: ${JSON.stringify(dietFb ?? [])}
+
+APLIQUE as regras de "CICLO DE 60 DIAS" e "REANÁLISE — FEEDBACK DO ALUNO".` : "";
+
+    const userPrompt = `${profileToText(profile)}
+
+## AVALIAÇÃO IA PRÉVIA
+${lastAnalysis?.content ?? "—"}
+${historyBlock}
+
+Gere o JSON completo do protocolo (treino + dieta + summary).`;
 
     let out: { training: any; diet: any; summary: string };
     try {
@@ -138,22 +187,23 @@ export const prescribeFromAnamnese = createServerFn({ method: "POST" })
       out = { training: fb.training, diet: fb.diet, summary: fb.summary };
     }
 
-    const { data: existing } = await supabase
-      .from("protocols").select("id, version").eq("user_id", uid).eq("status", "active")
+    // Cria como pending_review (admin prescreveu via IA, mas precisa revisar/ajustar antes de liberar).
+    const { data: existingPending } = await supabase
+      .from("protocols").select("id").eq("user_id", uid).eq("status", "pending_review")
       .order("created_at", { ascending: false }).limit(1).maybeSingle();
-
-    if (existing) {
+    const nextVersion = (previousProtocol?.version ?? 0) + 1;
+    if (existingPending) {
       const { error } = await supabase.from("protocols")
-        .update({ training: out.training, diet: out.diet, version: existing.version + 1 }).eq("id", existing.id);
+        .update({ training: out.training, diet: out.diet, version: nextVersion }).eq("id", existingPending.id);
       if (error) throw new Error(error.message);
     } else {
       const { error } = await supabase.from("protocols")
-        .insert({ user_id: uid, training: out.training, diet: out.diet, status: "active" });
+        .insert({ user_id: uid, training: out.training, diet: out.diet, status: "pending_review", version: nextVersion });
       if (error) throw new Error(error.message);
     }
 
     await supabase.from("ai_analyses").insert({
-      user_id: uid, kind: "prescription", content: out.summary, meta: { auto: true },
+      user_id: uid, kind: "prescription", content: out.summary, status: "pending", meta: { auto: true },
     });
 
     return { summary: out.summary };
