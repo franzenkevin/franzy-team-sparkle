@@ -1384,6 +1384,7 @@ function ApprovalsTab({ profiles }: { profiles: ProfileRow[] }) {
   const [selected, setSelected] = useState<ProtocolRow | null>(null);
   const [trainingText, setTrainingText] = useState("{}");
   const [dietText, setDietText] = useState("{}");
+  const [hormonesText, setHormonesText] = useState("[]");
   const [busy, setBusy] = useState(false);
   const saveProtocolFn = useServerFn(adminSaveProtocol);
   const setAnalysisFn = useServerFn(adminSetAnalysisStatus);
@@ -1406,13 +1407,16 @@ function ApprovalsTab({ profiles }: { profiles: ProfileRow[] }) {
     setSelected(p);
     setTrainingText(JSON.stringify(p.training ?? {}, null, 2));
     setDietText(JSON.stringify(p.diet ?? {}, null, 2));
+    setHormonesText(JSON.stringify((p as any).hormones ?? [], null, 2));
   };
 
   const approveProtocol = async () => {
     if (!selected) return;
-    let training: any, diet: any;
+    let training: any, diet: any, hormones: any;
     try { training = JSON.parse(trainingText); } catch { toast.error("JSON do treino inválido"); return; }
     try { diet = JSON.parse(dietText); } catch { toast.error("JSON da dieta inválido"); return; }
+    try { hormones = JSON.parse(hormonesText); } catch { toast.error("JSON dos hormônios inválido"); return; }
+    if (!Array.isArray(hormones)) { toast.error("Hormônios deve ser uma lista"); return; }
     setBusy(true);
     try {
       await saveProtocolFn({ data: {
@@ -1420,7 +1424,7 @@ function ApprovalsTab({ profiles }: { profiles: ProfileRow[] }) {
         protocolId: selected.id,
         training,
         diet,
-        hormones: (selected as any).hormones ?? [],
+        hormones,
         status: "active",
         notify: true,
       } });
@@ -1501,8 +1505,8 @@ function ApprovalsTab({ profiles }: { profiles: ProfileRow[] }) {
                   Edite o JSON se precisar ajustar antes de liberar. Aprovar arquiva o protocolo ativo atual e ativa este.
                 </p>
                 <ProtocolPlanEditor
-                  trainingText={trainingText} dietText={dietText}
-                  setTrainingText={setTrainingText} setDietText={setDietText}
+                  trainingText={trainingText} dietText={dietText} hormonesText={hormonesText}
+                  setTrainingText={setTrainingText} setDietText={setDietText} setHormonesText={setHormonesText}
                 />
               </Card>
             ) : (
