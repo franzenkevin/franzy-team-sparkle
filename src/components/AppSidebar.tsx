@@ -3,7 +3,7 @@ import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
   LayoutDashboard, Dumbbell, Apple, LineChart, History, User,
   Shield, Users, ClipboardList, MessageSquare, LogOut, Library, Bot, Pill,
-  Trophy, Flame, Award, BookHeart, Bell,
+  Trophy, Flame, Award, BookHeart, Bell, CalendarDays, Activity, FileText,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -19,6 +19,9 @@ const mainItems = [
   { title: "Nutrição", url: "/diet", icon: Apple },
   { title: "Hormônios", url: "/hormones", icon: Pill },
   { title: "Progresso", url: "/progress", icon: LineChart },
+  { title: "Feedback semanal", url: "/feedback/weekly", icon: CalendarDays },
+  { title: "Feedback dieta", url: "/feedback/diet", icon: Apple },
+  { title: "Análise mensal", url: "/monthly-analysis", icon: Activity },
   { title: "Diário", url: "/journal", icon: BookHeart },
   { title: "Histórico", url: "/history", icon: History },
   { title: "Conquistas", url: "/achievements", icon: Award },
@@ -33,10 +36,14 @@ const mainItems = [
 
 const adminItems = [
   { title: "Painel admin", url: "/admin", icon: Shield, hash: "" },
+  { title: "Anamnese", url: "/admin", icon: FileText, hash: "anamnese" },
   { title: "Usuários", url: "/admin", icon: Users, hash: "users" },
   { title: "Protocolos", url: "/admin", icon: ClipboardList, hash: "protocol" },
   { title: "Check-ins", url: "/admin", icon: ClipboardList, hash: "checkins" },
   { title: "Feedback", url: "/admin", icon: MessageSquare, hash: "feedback" },
+  { title: "Semanal", url: "/admin", icon: CalendarDays, hash: "weekly" },
+  { title: "Mensal", url: "/admin", icon: Activity, hash: "monthly" },
+  { title: "Dieta", url: "/admin", icon: Apple, hash: "diet-fb" },
 ] as const;
 
 export function AppSidebar() {
