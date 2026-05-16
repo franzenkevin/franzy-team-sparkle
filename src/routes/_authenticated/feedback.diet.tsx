@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { ArrowLeft, Save } from "lucide-react";
+import { useDraftAutoSave } from "@/hooks/useDraftAutoSave";
 
 export const Route = createFileRoute("/_authenticated/feedback/diet")({
   head: () => ({ meta: [{ title: "Feedback de dieta — Franzen Team" }] }),
@@ -21,6 +22,17 @@ function DietFbPage() {
   const [hunger, setHunger] = useState("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const { savedAt, clearDraft } = useDraftAutoSave(
+    "feedback-diet",
+    { meal, rating, hunger, notes },
+    (s) => {
+      if (typeof s.meal === "string") setMeal(s.meal);
+      if (typeof s.rating === "string") setRating(s.rating);
+      if (typeof s.hunger === "string") setHunger(s.hunger);
+      if (typeof s.notes === "string") setNotes(s.notes);
+    },
+  );
 
   const load = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -45,7 +57,7 @@ function DietFbPage() {
     });
     setSaving(false);
     if (error) toast.error(error.message);
-    else { toast.success("Feedback enviado"); setMeal(""); setRating(""); setHunger(""); setNotes(""); load(); }
+    else { toast.success("Feedback enviado"); setMeal(""); setRating(""); setHunger(""); setNotes(""); clearDraft(); load(); }
   };
 
   return (
@@ -65,6 +77,7 @@ function DietFbPage() {
           <Textarea rows={4} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Saciedade, digestão, sabor, sugestões…" />
         </div>
         <Button onClick={save} disabled={saving} className="w-full"><Save size={14} className="mr-2" />{saving ? "Salvando…" : "Enviar"}</Button>
+        {savedAt && <p className="text-[11px] text-muted-foreground text-center">Rascunho salvo {savedAt}</p>}
       </Card>
 
       <h2 className="font-heading font-semibold mt-8 mb-3">Histórico</h2>
