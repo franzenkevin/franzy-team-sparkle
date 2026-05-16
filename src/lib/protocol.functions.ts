@@ -117,21 +117,30 @@ Aplique o CHECKLIST DO COMITÊ DE 3 PROFISSIONAIS antes de gerar o JSON. Respond
       out = { training: fb.training, diet: fb.diet, summary: fb.summary };
     }
 
-    // Nunca substitui o ativo: insere SEMPRE como pending_review.
+    // Nunca substitui o ativo: cria/atualiza um registro pending_review.
     // O admin aprova manualmente (arquiva o anterior e ativa o novo).
-    // Remove pending anterior do mesmo aluno (mantém só o mais recente para revisar).
-    await supabase.from("protocols").delete().eq("user_id", userId).eq("status", "pending_review");
+    const { data: existingPending } = await supabase
+      .from("protocols").select("id, version")
+      .eq("user_id", userId).eq("status", "pending_review")
+      .order("created_at", { ascending: false }).limit(1).maybeSingle();
 
     const nextVersion = (previousProtocol?.version ?? 0) + 1;
-    const { error } = await supabase.from("protocols")
-      .insert({
-        user_id: userId,
-        training: out.training as any,
-        diet: out.diet as any,
-        status: "pending_review",
-        version: nextVersion,
-      });
-    if (error) throw new Error(error.message);
+    if (existingPending) {
+      const { error } = await supabase.from("protocols")
+        .update({ training: out.training as any, diet: out.diet as any, version: nextVersion })
+        .eq("id", existingPending.id);
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await supabase.from("protocols")
+        .insert({
+          user_id: userId,
+          training: out.training as any,
+          diet: out.diet as any,
+          status: "pending_review",
+          version: nextVersion,
+        });
+      if (error) throw new Error(error.message);
+    }
 
     return { summary: out.summary, pendingReview: true };
   });
