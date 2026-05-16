@@ -379,6 +379,13 @@ function UsersTab({ profiles }: { profiles: ProfileRow[] }) {
                   <Textarea value={dietText} onChange={(e) => setDietText(e.target.value)} rows={14} className="font-mono text-xs mt-1" />
                 </div>
               </div>
+              <div className="mt-4">
+                <Label className="text-sm">Hormônios (lista JSON)</Label>
+                <p className="text-[11px] text-muted-foreground mb-1">
+                  Ex.: <code>{`[{"substance":"Testosterona","dose":"200mg","route":"IM","frequency":"1x/sem","duration":"12 semanas","notes":"..."}]`}</code>
+                </p>
+                <Textarea value={hormonesText} onChange={(e) => setHormonesText(e.target.value)} rows={8} className="font-mono text-xs mt-1" />
+              </div>
             </Card>
 
             {history.length > 0 && (
