@@ -43,7 +43,7 @@ export function useAuth() {
   };
 
   const signIn = (email: string, password: string) =>
-    supabase.auth.signInWithPassword({ email, password }).then((r) => ({ error: r.error }));
+    supabase.auth.signInWithPassword({ email, password }).then((r) => ({ data: r.data, error: r.error }));
 
   const signOut = () => supabase.auth.signOut();
 
@@ -55,8 +55,5 @@ export function useAuth() {
   const updatePassword = (password: string) =>
     supabase.auth.updateUser({ password }).then((r) => ({ error: r.error }));
 
-  const resendConfirmationEmail = (email: string) =>
-    supabase.auth.resend({ type: "signup", email }).then((r) => ({ error: r.error }));
-
-  return { user, session, loading, signUp, signIn, signOut, resetPassword, updatePassword, resendConfirmationEmail };
+  return { user, session, loading, signUp, signIn, signOut, resetPassword, updatePassword };
 }
