@@ -22,6 +22,7 @@ import { Route as AuthenticatedProgressRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedMessagesRouteImport } from './routes/_authenticated/messages'
+import { Route as AuthenticatedHormonesRouteImport } from './routes/_authenticated/hormones'
 import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticated/history'
 import { Route as AuthenticatedGenerateRouteImport } from './routes/_authenticated/generate'
 import { Route as AuthenticatedExercisesRouteImport } from './routes/_authenticated/exercises'
@@ -97,6 +98,11 @@ const AuthenticatedMessagesRoute = AuthenticatedMessagesRouteImport.update({
   path: '/messages',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedHormonesRoute = AuthenticatedHormonesRouteImport.update({
+  id: '/hormones',
+  path: '/hormones',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedHistoryRoute = AuthenticatedHistoryRouteImport.update({
   id: '/history',
   path: '/history',
@@ -162,6 +168,7 @@ export interface FileRoutesByFullPath {
   '/exercises': typeof AuthenticatedExercisesRoute
   '/generate': typeof AuthenticatedGenerateRoute
   '/history': typeof AuthenticatedHistoryRoute
+  '/hormones': typeof AuthenticatedHormonesRoute
   '/messages': typeof AuthenticatedMessagesRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/profile': typeof AuthenticatedProfileRoute
@@ -186,6 +193,7 @@ export interface FileRoutesByTo {
   '/exercises': typeof AuthenticatedExercisesRoute
   '/generate': typeof AuthenticatedGenerateRoute
   '/history': typeof AuthenticatedHistoryRoute
+  '/hormones': typeof AuthenticatedHormonesRoute
   '/messages': typeof AuthenticatedMessagesRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/profile': typeof AuthenticatedProfileRoute
@@ -212,6 +220,7 @@ export interface FileRoutesById {
   '/_authenticated/exercises': typeof AuthenticatedExercisesRoute
   '/_authenticated/generate': typeof AuthenticatedGenerateRoute
   '/_authenticated/history': typeof AuthenticatedHistoryRoute
+  '/_authenticated/hormones': typeof AuthenticatedHormonesRoute
   '/_authenticated/messages': typeof AuthenticatedMessagesRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
@@ -238,6 +247,7 @@ export interface FileRouteTypes {
     | '/exercises'
     | '/generate'
     | '/history'
+    | '/hormones'
     | '/messages'
     | '/onboarding'
     | '/profile'
@@ -262,6 +272,7 @@ export interface FileRouteTypes {
     | '/exercises'
     | '/generate'
     | '/history'
+    | '/hormones'
     | '/messages'
     | '/onboarding'
     | '/profile'
@@ -287,6 +298,7 @@ export interface FileRouteTypes {
     | '/_authenticated/exercises'
     | '/_authenticated/generate'
     | '/_authenticated/history'
+    | '/_authenticated/hormones'
     | '/_authenticated/messages'
     | '/_authenticated/onboarding'
     | '/_authenticated/profile'
@@ -405,6 +417,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMessagesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/hormones': {
+      id: '/_authenticated/hormones'
+      path: '/hormones'
+      fullPath: '/hormones'
+      preLoaderRoute: typeof AuthenticatedHormonesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/history': {
       id: '/_authenticated/history'
       path: '/history'
@@ -486,6 +505,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedExercisesRoute: typeof AuthenticatedExercisesRoute
   AuthenticatedGenerateRoute: typeof AuthenticatedGenerateRoute
   AuthenticatedHistoryRoute: typeof AuthenticatedHistoryRoute
+  AuthenticatedHormonesRoute: typeof AuthenticatedHormonesRoute
   AuthenticatedMessagesRoute: typeof AuthenticatedMessagesRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
@@ -502,6 +522,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedExercisesRoute: AuthenticatedExercisesRoute,
   AuthenticatedGenerateRoute: AuthenticatedGenerateRoute,
   AuthenticatedHistoryRoute: AuthenticatedHistoryRoute,
+  AuthenticatedHormonesRoute: AuthenticatedHormonesRoute,
   AuthenticatedMessagesRoute: AuthenticatedMessagesRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,

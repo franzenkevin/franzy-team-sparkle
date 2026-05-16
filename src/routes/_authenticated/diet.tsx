@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ChevronDown, ChevronUp, Utensils, Loader2, Info, Leaf } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronUp, Utensils, Loader2, Info, Leaf, Zap } from "lucide-react";
 import logo from "@/assets/logo.png";
 
 export const Route = createFileRoute("/_authenticated/diet")({
@@ -20,6 +20,7 @@ type Diet = {
   fat?: number;
   meals?: Meal[];
   notes?: string[];
+  intro?: string;
 };
 
 function DietPage() {
@@ -84,11 +85,18 @@ function DietPage() {
               <h3 className="font-heading font-semibold mb-3">Resumo do dia</h3>
               <div className="grid grid-cols-4 gap-2 text-center">
                 <Stat label="Kcal" value={diet.totalCalories} accent="text-primary" />
-                <Stat label="Prot" value={diet.protein && `${diet.protein}g`} />
-                <Stat label="Carb" value={diet.carbs && `${diet.carbs}g`} />
-                <Stat label="Gord" value={diet.fat && `${diet.fat}g`} />
+                <Stat label="Prot" value={diet.protein != null ? `${diet.protein}g` : undefined} accent="text-sky-400" />
+                <Stat label="Carb" value={diet.carbs != null ? `${diet.carbs}g` : undefined} accent="text-amber-400" />
+                <Stat label="Gord" value={diet.fat != null ? `${diet.fat}g` : undefined} accent="text-rose-400" />
               </div>
             </div>
+
+            {diet.intro && (
+              <div className="mt-4 rounded-xl border border-primary/30 bg-primary/5 p-4 flex gap-3">
+                <Zap className="text-primary shrink-0 mt-0.5" size={16} />
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{diet.intro}</p>
+              </div>
+            )}
 
             <div className="mt-6 space-y-3">
               {meals.map((meal, idx) => {

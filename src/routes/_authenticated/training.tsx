@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, Save, Dumbbell, Loader2, Timer, X, Star, MessageSquare, Replace, LineChart } from "lucide-react";
+import { ArrowLeft, Save, Dumbbell, Loader2, Timer, X, Star, MessageSquare, Replace, LineChart, Coffee, Flame, ChevronDown, ChevronUp, Activity, Play, Info } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 import { Textarea } from "@/components/ui/textarea";
@@ -30,9 +30,21 @@ type Exercise = {
   reps?: string | number;
   rest?: string;
   notes?: string;
+  warmupSets?: number;
+  videoUrl?: string;
+  video_url?: string;
+  rationale?: string;
 };
 
-type TrainingDay = { weekday?: string; name?: string; exercises: Exercise[] };
+type MobilityItem = { name: string; prescription?: string; corrects?: string; tag?: string };
+type TrainingDay = {
+  weekday?: string;
+  name?: string;
+  exercises: Exercise[];
+  rationale?: string;
+  mobility?: MobilityItem[];
+  cardio?: { duration?: string; frequency?: string; notes?: string };
+};
 
 const WEEKDAYS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 const todayWeekday = WEEKDAYS[new Date().getDay()];
@@ -47,6 +59,9 @@ function normalizeTraining(training: unknown): TrainingDay[] {
     weekday: d.weekday,
     name: d.name ?? d.title ?? `Treino ${i + 1}`,
     exercises: Array.isArray(d.exercises) ? d.exercises : [],
+    rationale: d.rationale ?? d.why,
+    mobility: Array.isArray(d.mobility) ? d.mobility : undefined,
+    cardio: d.cardio,
   }));
 }
 
@@ -65,6 +80,9 @@ function TrainingPage() {
   const [feedbackId, setFeedbackId] = useState<string | null>(null);
   const [savingFeedback, setSavingFeedback] = useState(false);
   const [swapFor, setSwapFor] = useState<Exercise | null>(null);
+  const [showWhy, setShowWhy] = useState(false);
+  const [expandedEx, setExpandedEx] = useState<Record<string, boolean>>({});
+  const [exerciseVideos, setExerciseVideos] = useState<Record<string, string>>({});
 
   // Rest timer countdown
   useEffect(() => {
@@ -137,9 +155,10 @@ function TrainingPage() {
         if (saved) {
           initial[ex.id] = saved.sets as WorkoutSet[];
         } else {
-          const count = Math.min(Math.max(Number(ex.sets) || 3, 1), 6);
-          initial[ex.id] = Array.from({ length: count }, () => ({
-            type: "valid" as const,
+          const validCount = Math.min(Math.max(Number(ex.sets) || 3, 1), 6);
+          const warmupCount = Math.min(Math.max(Number(ex.warmupSets) || 0, 0), 3);
+          initial[ex.id] = Array.from({ length: warmupCount + validCount }, (_, idx) => ({
+            type: (idx < warmupCount ? "warmup" : "valid") as "warmup" | "valid",
             weight: 0,
             reps: 0,
             completed: false,
@@ -177,6 +196,18 @@ function TrainingPage() {
           if (!prevMap[row.exercise_id]) prevMap[row.exercise_id] = row.sets as WorkoutSet[];
         }
         setPreviousSets(prevMap);
+
+        // Fetch missing video URLs from exercises catalog
+        const needsVideo = day.exercises.filter((e) => !e.videoUrl && !e.video_url).map((e) => e.id);
+        if (needsVideo.length > 0) {
+          const { data: cat } = await supabase
+            .from("exercises").select("id, video_url").in("id", needsVideo);
+          const map: Record<string, string> = {};
+          for (const c of cat ?? []) if (c.video_url) map[c.id as string] = c.video_url as string;
+          setExerciseVideos(map);
+        } else {
+          setExerciseVideos({});
+        }
       }
     })();
   }, [protocol?.id, selectedDay, day]);
@@ -320,6 +351,36 @@ function TrainingPage() {
           </div>
         ) : (
           <>
+            {/* Today banner */}
+            {(() => {
+              const todayIdx = days.findIndex((d) => d.weekday === todayWeekday);
+              const isToday = todayIdx === selectedDay && todayIdx !== -1;
+              const todayDayObj = todayIdx >= 0 ? days[todayIdx] : null;
+              if (todayDayObj && (todayDayObj.exercises?.length ?? 0) > 0) {
+                if (!isToday) return null;
+                return (
+                  <div className="mt-6 rounded-xl border border-primary/30 bg-primary/5 p-4 flex gap-3 items-start">
+                    <Flame className="text-primary shrink-0 mt-0.5" size={18} />
+                    <div>
+                      <h3 className="font-heading font-semibold">Hoje — {todayDayObj.name}</h3>
+                      <p className="text-xs text-muted-foreground mt-0.5">Vamos lá! {todayDayObj.exercises.length} exercícios programados.</p>
+                    </div>
+                  </div>
+                );
+              }
+              return (
+                <div className="mt-6 rounded-xl border border-border bg-card p-4 flex gap-3 items-start">
+                  <Coffee className="text-primary shrink-0 mt-0.5" size={18} />
+                  <div>
+                    <h3 className="font-heading font-semibold">Hoje é dia de descanso</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Aproveite para recuperar. Veja abaixo seus treinos da semana.
+                    </p>
+                  </div>
+                </div>
+              );
+            })()}
+
             <div className="mt-6 flex gap-2 overflow-x-auto pb-2">
               {days.map((d, i) => (
                 <button
@@ -338,12 +399,55 @@ function TrainingPage() {
 
             {day && (
               <div className="mt-6 space-y-4">
-                <h2 className="font-heading text-xl font-semibold">{day.name}</h2>
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="font-heading text-xl font-semibold">{day.name}</h2>
+                  <span className="text-xs text-muted-foreground">{day.exercises.length} exerc.</span>
+                </div>
+
+                {day.rationale && (
+                  <div className="rounded-xl border border-border bg-card overflow-hidden">
+                    <button
+                      onClick={() => setShowWhy((s) => !s)}
+                      className="w-full p-3 flex items-center justify-between text-left"
+                    >
+                      <span className="text-sm font-medium inline-flex items-center gap-2">
+                        <Info size={14} className="text-primary" /> Por que esse treino?
+                      </span>
+                      {showWhy ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                    </button>
+                    {showWhy && (
+                      <div className="px-4 pb-4 border-t border-border pt-3 text-sm text-muted-foreground whitespace-pre-wrap">
+                        {day.rationale}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {Array.isArray(day.mobility) && day.mobility.length > 0 && (
+                  <div className="rounded-xl border border-warning/30 bg-warning/5 p-4">
+                    <h3 className="font-heading font-semibold flex items-center gap-2 text-warning">
+                      <Activity size={16} /> Mobilidade & alongamento
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-1 mb-3">Faça antes das séries válidas.</p>
+                    <div className="space-y-2">
+                      {day.mobility.map((m, i) => (
+                        <div key={i} className="rounded-md border border-border bg-card p-3">
+                          <p className="text-sm font-medium">{m.name}</p>
+                          {m.tag && <span className="inline-block mt-1 text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border border-warning/40 text-warning">{m.tag}</span>}
+                          {m.prescription && <p className="text-xs text-muted-foreground mt-1">{m.prescription}{m.corrects ? ` · corrige: ${m.corrects}` : ""}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {day.exercises.length === 0 && (
                   <p className="text-muted-foreground">Sem exercícios cadastrados neste dia.</p>
                 )}
                 {day.exercises.map((ex) => {
                   const sets = exerciseSets[ex.id] ?? [];
+                  const video = ex.videoUrl || ex.video_url || exerciseVideos[ex.id];
+                  const isExpanded = expandedEx[ex.id] ?? false;
                   return (
                     <div key={ex.id} className="rounded-xl border border-border bg-card p-5">
                       <div className="flex items-start justify-between gap-3">
@@ -356,6 +460,9 @@ function TrainingPage() {
                           </p>
                         </div>
                         <div className="flex gap-2">
+                          <Button size="sm" variant="ghost" onClick={() => setExpandedEx((p) => ({ ...p, [ex.id]: !isExpanded }))}>
+                            {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                          </Button>
                           <Link
                             to="/exercise-history/$exerciseId"
                             params={{ exerciseId: ex.id }}
@@ -379,18 +486,46 @@ function TrainingPage() {
                         </div>
                       </div>
 
+                      {isExpanded && (ex.rationale || video) && (
+                        <div className="mt-3 space-y-3 border-t border-border pt-3">
+                          {ex.rationale && (
+                            <div className="text-sm text-muted-foreground whitespace-pre-wrap">
+                              <span className="inline-flex items-center gap-1 text-primary text-xs font-medium mb-1">
+                                <Info size={12} /> Por que este exercício?
+                              </span>
+                              <p>{ex.rationale}</p>
+                            </div>
+                          )}
+                          {video && (
+                            <EmbeddedVideo url={video} />
+                          )}
+                        </div>
+                      )}
+                      {isExpanded && !ex.rationale && !video && (
+                        <p className="mt-3 border-t border-border pt-3 text-xs text-muted-foreground">
+                          Sem vídeo ou observações para este exercício.
+                        </p>
+                      )}
+
                       <div className="mt-4 space-y-2">
                         <div className="grid grid-cols-12 gap-2 text-xs text-muted-foreground px-1">
-                          <span className="col-span-1">#</span>
+                          <span className="col-span-1">Série</span>
                           <span className="col-span-4">Carga (kg)</span>
                           <span className="col-span-4">Reps</span>
                           <span className="col-span-3 text-right">Feito</span>
                         </div>
                         {sets.map((s, i) => {
                           const prev = previousSets[ex.id]?.[i];
+                          const warmupCount = sets.filter((x) => x.type === "warmup").length;
+                          const isWarmup = s.type === "warmup";
+                          const label = isWarmup
+                            ? `AQ${i + 1}`
+                            : `${i - warmupCount + 1}`;
                           return (
                           <div key={i} className="grid grid-cols-12 gap-2 items-center">
-                            <span className="col-span-1 text-sm text-muted-foreground">{i + 1}</span>
+                            <span className={`col-span-1 text-xs font-semibold px-1.5 py-0.5 rounded text-center ${isWarmup ? "text-warning border border-warning/40" : "text-primary border border-primary/40"}`}>
+                              {label}
+                            </span>
                             <Input
                               type="number"
                               inputMode="decimal"
@@ -492,5 +627,27 @@ function TrainingPage() {
         />
       )}
     </div>
+  );
+}
+
+function EmbeddedVideo({ url }: { url: string }) {
+  const ytMatch = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/);
+  if (ytMatch) {
+    return (
+      <div className="aspect-video w-full rounded-lg overflow-hidden border border-border">
+        <iframe
+          src={`https://www.youtube.com/embed/${ytMatch[1]}`}
+          title="Vídeo do exercício"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          className="w-full h-full"
+        />
+      </div>
+    );
+  }
+  return (
+    <a href={url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm text-primary hover:underline">
+      <Play size={14} /> Abrir vídeo
+    </a>
   );
 }
