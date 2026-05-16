@@ -19,7 +19,10 @@ import {
   Save, Shield, Users, ClipboardList, MessageSquare, History as HistoryIcon,
   ShieldCheck, ShieldOff, BarChart3, AlertTriangle, Dumbbell, Plus, Pencil, Trash2,
   Search, Trophy, Bell, Send, Heart, Activity,
+  FileText, Sparkles, CalendarDays, Apple, Loader2,
 } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { analyzeAnamnese, prescribeFromAnamnese, generateCoachFeedback } from "@/lib/anamnese.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({ meta: [{ title: "Painel do Criador — Franzen Team" }] }),
@@ -155,6 +158,10 @@ function AdminPage() {
             <TabsTrigger value="ranking" className="gap-1"><Trophy size={14} />Ranking</TabsTrigger>
             <TabsTrigger value="messages" className="gap-1"><MessageSquare size={14} />Mensagens</TabsTrigger>
             <TabsTrigger value="notifications" className="gap-1"><Bell size={14} />Notificações</TabsTrigger>
+            <TabsTrigger value="anamnese" className="gap-1"><FileText size={14} />Anamnese</TabsTrigger>
+            <TabsTrigger value="weekly" className="gap-1"><CalendarDays size={14} />Semanal</TabsTrigger>
+            <TabsTrigger value="monthly" className="gap-1"><Activity size={14} />Mensal</TabsTrigger>
+            <TabsTrigger value="diet-fb" className="gap-1"><Apple size={14} />Dieta</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="mt-4">
@@ -183,6 +190,18 @@ function AdminPage() {
           </TabsContent>
           <TabsContent value="notifications" className="mt-4">
             <NotificationsTab profiles={profiles} />
+          </TabsContent>
+          <TabsContent value="anamnese" className="mt-4">
+            <AnamneseTab profiles={profiles} />
+          </TabsContent>
+          <TabsContent value="weekly" className="mt-4">
+            <WeeklyAdminTab profiles={profiles} />
+          </TabsContent>
+          <TabsContent value="monthly" className="mt-4">
+            <MonthlyAdminTab profiles={profiles} />
+          </TabsContent>
+          <TabsContent value="diet-fb" className="mt-4">
+            <DietFbAdminTab profiles={profiles} />
           </TabsContent>
         </Tabs>
       </main>
@@ -793,5 +812,363 @@ function NotificationsTab({ profiles }: { profiles: ProfileRow[] }) {
         <Send size={14} className="mr-1" /> {sending ? "Enviando…" : "Enviar"}
       </Button>
     </Card>
+  );
+}
+/* ============ ANAMNESE TAB ============ */
+function AnamneseTab({ profiles }: { profiles: ProfileRow[] }) {
+  const [filter, setFilter] = useState("");
+  const [list, setList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<any>(null);
+  const [analyses, setAnalyses] = useState<any[]>([]);
+  const [signed, setSigned] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState<"analyze" | "prescribe" | null>(null);
+  const analyzeFn = useServerFn(analyzeAnamnese);
+  const prescribeFn = useServerFn(prescribeFromAnamnese);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from("profiles").select("*")
+        .not("anamnese_completed_at", "is", null).order("anamnese_completed_at", { ascending: false });
+      setList(data ?? []);
+      setLoading(false);
+    })();
+  }, []);
+
+  const select = async (p: any) => {
+    setSelected(p);
+    const { data: an } = await supabase.from("ai_analyses").select("*")
+      .eq("user_id", p.user_id).order("created_at", { ascending: false });
+    setAnalyses(an ?? []);
+    const urls: Record<string, string> = {};
+    for (const k of ["photo_front_url", "photo_side_url", "photo_back_url"]) {
+      const path = p[k];
+      if (!path) continue;
+      if (/^https?:/.test(path)) { urls[path] = path; continue; }
+      const { data: u } = await supabase.storage.from("photos").createSignedUrl(path, 3600);
+      if (u?.signedUrl) urls[path] = u.signedUrl;
+    }
+    setSigned(urls);
+  };
+
+  const runAnalyze = async () => {
+    if (!selected) return;
+    setBusy("analyze");
+    try {
+      await analyzeFn({ data: { targetUserId: selected.user_id } });
+      toast.success("Análise IA gerada");
+      await select(selected);
+    } catch (e: any) { toast.error(e?.message ?? "Erro"); }
+    finally { setBusy(null); }
+  };
+  const runPrescribe = async () => {
+    if (!selected) return;
+    setBusy("prescribe");
+    try {
+      await prescribeFn({ data: { targetUserId: selected.user_id } });
+      toast.success("Protocolo prescrito (edite na aba Usuários)");
+      await select(selected);
+    } catch (e: any) { toast.error(e?.message ?? "Erro"); }
+    finally { setBusy(null); }
+  };
+
+  const filtered = list.filter((p) => !filter || (p.full_name ?? "").toLowerCase().includes(filter.toLowerCase()));
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
+      <div className="space-y-2">
+        <Input placeholder="Buscar…" value={filter} onChange={(e) => setFilter(e.target.value)} />
+        {loading ? <p className="text-sm text-muted-foreground">Carregando…</p> : (
+          <div className="space-y-1 max-h-[75vh] overflow-y-auto">
+            {filtered.map((p) => (
+              <button key={p.user_id} onClick={() => select(p)}
+                className={`w-full text-left rounded-md border p-3 transition ${selected?.user_id === p.user_id ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}>
+                <div className="text-sm font-medium truncate">{p.full_name ?? "(sem nome)"}</div>
+                <div className="text-xs text-muted-foreground">{new Date(p.anamnese_completed_at).toLocaleDateString("pt-BR")}</div>
+              </button>
+            ))}
+            {filtered.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">Nenhuma anamnese concluída.</p>}
+          </div>
+        )}
+      </div>
+
+      {!selected ? (
+        <Card className="p-10 text-center text-muted-foreground">Selecione um aluno.</Card>
+      ) : (
+        <div className="space-y-4">
+          <Card className="p-5">
+            <div className="flex justify-between items-start gap-3 flex-wrap">
+              <div>
+                <h2 className="text-xl font-heading font-bold">{selected.full_name ?? "(sem nome)"}</h2>
+                <p className="text-xs text-muted-foreground mt-1">{selected.sex ?? "—"} · {selected.age ?? "—"}a · {selected.weight ?? "—"}kg · {selected.height ?? "—"}cm · {selected.goal ?? "—"}</p>
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" onClick={runAnalyze} disabled={busy !== null}>
+                  {busy === "analyze" ? <Loader2 className="animate-spin mr-1" size={14}/> : <Sparkles size={14} className="mr-1"/>}
+                  Análise IA
+                </Button>
+                <Button size="sm" variant="default" onClick={runPrescribe} disabled={busy !== null}>
+                  {busy === "prescribe" ? <Loader2 className="animate-spin mr-1" size={14}/> : <Sparkles size={14} className="mr-1"/>}
+                  Prescrição IA
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 mt-4">
+              {["photo_front_url", "photo_side_url", "photo_back_url"].map((k) => {
+                const path = selected[k];
+                const url = path ? signed[path] : null;
+                return (
+                  <div key={k} className="aspect-[3/4] rounded-lg bg-muted overflow-hidden">
+                    {url ? <img src={url} alt={k} className="w-full h-full object-cover"/> : <div className="w-full h-full grid place-items-center text-xs text-muted-foreground">{k.replace("photo_", "").replace("_url", "")}</div>}
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+
+          <Card className="p-5">
+            <h3 className="font-heading font-semibold mb-3">Anamnese completa</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1 text-xs">
+              {Object.entries(selected).filter(([k, v]) => v != null && v !== "" && !k.startsWith("photo_") && !["id", "user_id", "avatar_url", "created_at", "updated_at"].includes(k)).map(([k, v]) => (
+                <div key={k} className="flex gap-2 border-b border-border py-1">
+                  <span className="text-muted-foreground min-w-[140px]">{k}:</span>
+                  <span className="break-words flex-1">{Array.isArray(v) ? v.join(", ") : typeof v === "object" ? JSON.stringify(v) : String(v)}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          {analyses.length > 0 && (
+            <Card className="p-5">
+              <h3 className="font-heading font-semibold mb-3 flex items-center gap-2"><Sparkles size={14} className="text-primary"/> Histórico IA</h3>
+              <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                {analyses.map((a) => (
+                  <div key={a.id} className="border-l-2 border-primary pl-3 py-1">
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span className="font-semibold">{a.kind}</span>
+                      <span>{new Date(a.created_at).toLocaleString("pt-BR")}</span>
+                    </div>
+                    <pre className="text-xs whitespace-pre-wrap mt-1 max-h-40 overflow-y-auto">{a.content}</pre>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ============ WEEKLY FEEDBACK ADMIN ============ */
+function WeeklyAdminTab({ profiles }: { profiles: ProfileRow[] }) {
+  const [items, setItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from("weekly_feedbacks").select("*").order("week_start", { ascending: false }).limit(100);
+      setItems(data ?? []); setLoading(false);
+    })();
+  }, []);
+  const nameOf = (uid: string) => profiles.find((p) => p.user_id === uid)?.full_name ?? uid.slice(0, 8);
+  if (loading) return <p className="text-sm text-muted-foreground">Carregando…</p>;
+  if (!items.length) return <p className="text-sm text-muted-foreground">Sem feedbacks semanais.</p>;
+  return (
+    <div className="space-y-2">
+      {items.map((f) => (
+        <Card key={f.id} className="p-3">
+          <div className="flex justify-between text-sm">
+            <span className="font-semibold">{nameOf(f.user_id)}</span>
+            <span className="text-muted-foreground text-xs">{f.week_start}</span>
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">
+            {f.weight ?? "—"}kg · Treino {f.adherence_training ?? "—"}% · Dieta {f.adherence_diet ?? "—"}% · Energia {f.energy ?? "—"}/5 · Sono {f.sleep_quality ?? "—"}/5
+          </div>
+          {f.notes && <p className="text-sm mt-2 whitespace-pre-wrap">{f.notes}</p>}
+          <CoachReplyBlock kind="weekly" refId={f.id} />
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+/* ============ MONTHLY ADMIN ============ */
+function MonthlyAdminTab({ profiles }: { profiles: ProfileRow[] }) {
+  const [items, setItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [signed, setSigned] = useState<Record<string, string>>({});
+  const generateFn = useServerFn(generateCoachFeedback);
+
+  const load = async () => {
+    const { data } = await supabase.from("monthly_analyses").select("*").order("analysis_date", { ascending: false }).limit(100);
+    setItems(data ?? []); setLoading(false);
+    const paths = (data ?? []).flatMap((r: any) => ["photo_front", "photo_side", "photo_back"].map((k) => r[k]).filter(Boolean));
+    const out: Record<string, string> = {};
+    for (const p of paths) {
+      const { data: u } = await supabase.storage.from("photos").createSignedUrl(p, 3600);
+      if (u?.signedUrl) out[p] = u.signedUrl;
+    }
+    setSigned(out);
+  };
+  useEffect(() => { load(); }, []);
+  const nameOf = (uid: string) => profiles.find((p) => p.user_id === uid)?.full_name ?? uid.slice(0, 8);
+
+  if (loading) return <p className="text-sm text-muted-foreground">Carregando…</p>;
+  if (!items.length) return <p className="text-sm text-muted-foreground">Sem análises mensais.</p>;
+  return (
+    <div className="space-y-3">
+      {items.map((m) => (
+        <MonthlyRow key={m.id} m={m} signed={signed} nameOf={nameOf} generateFn={generateFn} reload={load} />
+      ))}
+    </div>
+  );
+}
+
+function MonthlyRow({ m, signed, nameOf, generateFn, reload }: any) {
+  const [aiText, setAiText] = useState(m.ai_summary ?? "");
+  const [coachText, setCoachText] = useState(m.coach_notes ?? "");
+  const [busy, setBusy] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const generate = async () => {
+    setBusy(true);
+    try {
+      const { text } = await generateFn({ data: { kind: "monthly", refId: m.id } });
+      setAiText(text);
+    } catch (e: any) { toast.error(e?.message ?? "Erro"); }
+    finally { setBusy(false); }
+  };
+  const save = async () => {
+    setSaving(true);
+    const { error } = await supabase.from("monthly_analyses").update({
+      ai_summary: aiText || null, coach_notes: coachText || null,
+    }).eq("id", m.id);
+    setSaving(false);
+    if (error) toast.error(error.message); else { toast.success("Salvo"); reload(); }
+  };
+
+  return (
+    <Card className="p-4">
+      <div className="flex justify-between text-sm">
+        <span className="font-semibold">{nameOf(m.user_id)}</span>
+        <span className="text-muted-foreground text-xs">{m.analysis_date} · {m.weight ?? "—"}kg</span>
+      </div>
+      {(m.photo_front || m.photo_side || m.photo_back) && (
+        <div className="grid grid-cols-3 gap-2 mt-3 max-w-md">
+          {["photo_front", "photo_side", "photo_back"].map((k) => {
+            const path = m[k]; const url = path ? signed[path] : null;
+            return (
+              <div key={k} className="aspect-[3/4] rounded-md bg-muted overflow-hidden">
+                {url ? <img src={url} alt={k} className="w-full h-full object-cover"/> : null}
+              </div>
+            );
+          })}
+        </div>
+      )}
+      <div className="mt-3 space-y-2">
+        <div className="flex items-center justify-between">
+          <Label className="text-xs">Análise IA</Label>
+          <Button size="sm" variant="outline" onClick={generate} disabled={busy}>
+            {busy ? <Loader2 size={12} className="animate-spin mr-1"/> : <Sparkles size={12} className="mr-1"/>} Gerar
+          </Button>
+        </div>
+        <Textarea rows={4} value={aiText} onChange={(e) => setAiText(e.target.value)} placeholder="Resumo IA editável…" />
+        <Label className="text-xs">Feedback do coach (visível ao aluno)</Label>
+        <Textarea rows={3} value={coachText} onChange={(e) => setCoachText(e.target.value)} />
+        <Button size="sm" onClick={save} disabled={saving}><Save size={12} className="mr-1"/>{saving ? "Salvando…" : "Salvar"}</Button>
+      </div>
+    </Card>
+  );
+}
+
+/* ============ DIET FEEDBACK ADMIN ============ */
+function DietFbAdminTab({ profiles }: { profiles: ProfileRow[] }) {
+  const [items, setItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from("diet_feedback").select("*").order("session_date", { ascending: false }).limit(150);
+      setItems(data ?? []); setLoading(false);
+    })();
+  }, []);
+  const nameOf = (uid: string) => profiles.find((p) => p.user_id === uid)?.full_name ?? uid.slice(0, 8);
+  if (loading) return <p className="text-sm text-muted-foreground">Carregando…</p>;
+  if (!items.length) return <p className="text-sm text-muted-foreground">Sem feedbacks de dieta.</p>;
+  return (
+    <div className="space-y-2">
+      {items.map((f) => (
+        <Card key={f.id} className="p-3">
+          <div className="flex justify-between text-sm">
+            <span className="font-semibold">{nameOf(f.user_id)}</span>
+            <span className="text-muted-foreground text-xs">{f.session_date}</span>
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">
+            Refeição {f.meal_index ?? "—"} · Avaliação {f.rating}/5 · Fome {f.hunger ?? "—"}/5
+          </div>
+          {f.notes && <p className="text-sm mt-2 whitespace-pre-wrap">{f.notes}</p>}
+          <CoachReplyBlock kind="diet" refId={f.id} />
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+/* ============ Coach reply (AI-assisted) used in weekly/diet ============ */
+function CoachReplyBlock({ kind, refId }: { kind: "weekly" | "diet"; refId: string }) {
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [sending, setSending] = useState(false);
+  const generateFn = useServerFn(generateCoachFeedback);
+
+  const generate = async () => {
+    setBusy(true);
+    try {
+      const { text: t } = await generateFn({ data: { kind, refId } });
+      setText(t);
+    } catch (e: any) { toast.error(e?.message ?? "Erro"); }
+    finally { setBusy(false); }
+  };
+  const send = async () => {
+    if (!text.trim()) return;
+    setSending(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    const { data: row } = await (supabase.from(kind === "weekly" ? "weekly_feedbacks" : "diet_feedback") as any)
+      .select("user_id").eq("id", refId).maybeSingle();
+    if (!user || !row) { setSending(false); return; }
+    const { error } = await supabase.from("messages").insert({
+      sender_id: user.id, recipient_id: (row as any).user_id, body: text.trim(),
+    });
+    setSending(false);
+    if (error) toast.error(error.message);
+    else { toast.success("Mensagem enviada ao aluno"); setText(""); setOpen(false); }
+  };
+
+  if (!open) {
+    return (
+      <div className="mt-2">
+        <Button size="sm" variant="ghost" onClick={() => setOpen(true)} className="h-7 text-xs">
+          <MessageSquare size={12} className="mr-1"/> Responder
+        </Button>
+      </div>
+    );
+  }
+  return (
+    <div className="mt-3 space-y-2 border-t border-border pt-3">
+      <div className="flex justify-between">
+        <Label className="text-xs">Resposta ao aluno</Label>
+        <Button size="sm" variant="outline" onClick={generate} disabled={busy} className="h-7 text-xs">
+          {busy ? <Loader2 size={12} className="animate-spin mr-1"/> : <Sparkles size={12} className="mr-1"/>} Sugestão IA
+        </Button>
+      </div>
+      <Textarea rows={3} value={text} onChange={(e) => setText(e.target.value)} placeholder="Escreva ou clique em Sugestão IA…" />
+      <div className="flex gap-2 justify-end">
+        <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
+        <Button size="sm" onClick={send} disabled={sending || !text.trim()}>
+          <Send size={12} className="mr-1"/> {sending ? "Enviando…" : "Enviar"}
+        </Button>
+      </div>
+    </div>
   );
 }
