@@ -1,59 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
-import { generateText, Output } from "ai";
-import { z } from "zod";
+import { generateText } from "ai";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createLovableAiGatewayProvider } from "./ai-gateway";
-
-const SetSchema = z.object({
-  reps: z.string().describe("Faixa de repetições, ex: '8-12'"),
-  rest_seconds: z.number().describe("Descanso em segundos"),
-});
-
-const ExerciseSchema = z.object({
-  name: z.string(),
-  sets: z.number(),
-  scheme: SetSchema,
-  notes: z.string().optional(),
-});
-
-const TrainingDaySchema = z.object({
-  day: z.string().describe("Ex: 'Dia A — Peito/Tríceps'"),
-  focus: z.string(),
-  exercises: z.array(ExerciseSchema).min(4).max(8),
-});
-
-const MealSchema = z.object({
-  name: z.string().describe("Ex: 'Café da manhã'"),
-  time: z.string().optional(),
-  items: z.array(z.object({
-    food: z.string(),
-    amount: z.string(),
-  })).min(1),
-  macros: z.object({
-    kcal: z.number(),
-    protein_g: z.number(),
-    carbs_g: z.number(),
-    fat_g: z.number(),
-  }),
-});
-
-const ProtocolSchema = z.object({
-  training: z.object({
-    split: z.string().describe("Ex: 'Push/Pull/Legs'"),
-    days_per_week: z.number(),
-    days: z.array(TrainingDaySchema),
-    notes: z.string().optional(),
-  }),
-  diet: z.object({
-    target_kcal: z.number(),
-    target_protein_g: z.number(),
-    target_carbs_g: z.number(),
-    target_fat_g: z.number(),
-    meals: z.array(MealSchema).min(3),
-    notes: z.string().optional(),
-  }),
-  summary: z.string().describe("Resumo curto do raciocínio do protocolo"),
-});
+import { PROTOCOL_SYSTEM_PROMPT } from "./ai-prompts";
+import { getMethodologyPromptSection } from "./workoutRules";
+import { generateProtocol as fallbackProtocol, type ProfileLike } from "./generateProtocol";
 
 export const generateProtocol = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -67,41 +18,59 @@ export const generateProtocol = createServerFn({ method: "POST" })
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("LOVABLE_API_KEY ausente");
 
-    const gateway = createLovableAiGatewayProvider(apiKey);
-    const model = gateway("google/gemini-2.5-pro");
+    const sex: "M" | "F" = profile.sex === "F" ? "F" : "M";
+    const methodology = getMethodologyPromptSection(sex);
+    const systemPrompt = `${PROTOCOL_SYSTEM_PROMPT}\n\n${methodology}`;
 
-    const prompt = `Você é um coach de hipertrofia da Franzen Team. Crie um protocolo COMPLETO e personalizado (treino + dieta) para o atleta abaixo.
+    const userPrompt = `Gere um protocolo completo (treino + dieta) para este aluno:
 
-PERFIL:
-- Nome: ${profile.full_name ?? "—"}
-- Idade: ${profile.age ?? "—"} | Sexo: ${profile.sex ?? "—"}
-- Peso: ${profile.weight ?? "—"} kg | Altura: ${profile.height ?? "—"} cm
+## DADOS DO ALUNO
+- Nome: ${profile.full_name || "Aluno"}
+- Sexo: ${sex === "M" ? "Masculino" : "Feminino"}
+- Idade: ${profile.age ?? "—"} anos | Peso: ${profile.weight ?? "—"}kg | Altura: ${profile.height ?? "—"}cm
 - Objetivo: ${profile.goal ?? "—"}
 - Nível de atividade: ${profile.activity_level ?? "—"} | NEAT: ${profile.neat ?? "—"}
-- Experiência: ${profile.experience ?? "—"} | Academia: ${profile.gym_type ?? "—"}
-- Dias de treino: ${profile.training_days ?? "—"} (${(profile.training_weekdays ?? []).join(", ")})
-- Tempo por sessão: ${profile.training_time ?? "—"}
-- Lesões: ${profile.injuries ?? "nenhuma"}
-- Refeições/dia: ${profile.meal_count ?? "—"}
-- Alergias: ${profile.allergies ?? "—"} | Não gosta: ${profile.disliked_foods ?? "—"}
-- Suplementos: ${(profile.supplements ?? []).join(", ") || "—"}
-- Cardio: ${profile.cardio_enabled ? `${profile.cardio_frequency}, ${profile.cardio_duration}, ${profile.cardio_type_preference}` : "não"}
-- Sono: ${profile.sleep_hours ?? "—"} h | Estresse: ${profile.stress_level ?? "—"}
+- Experiência: ${profile.experience ?? "—"}
+- Tipo de academia: ${profile.gym_type ?? "Academia completa"}
+- Lesões: ${profile.injuries || "Nenhuma"}
+- Dias de treino: ${profile.training_days ?? 4}x/semana (${(profile.training_weekdays || []).join(", ") || "flexível"})
+- Horário do treino: ${profile.training_time ?? "—"}
+- Refeições/dia: ${profile.meal_count ?? 4}
+- Alimentos preferidos (USE EXCLUSIVAMENTE ESTES): ${(profile.preferred_foods || []).join(", ") || "—"}
+- Não gosta: ${profile.disliked_foods || "—"} | Alergias: ${profile.allergies || "—"}
+- Preferência de doce: ${profile.sweet_preference || "Nenhum"}
+- Suplementos: ${(profile.supplements || []).join(", ") || "—"}
+- Refeições livres: ${profile.free_meals ?? "—"}
+- Sono: ${profile.sleep_hours ?? "—"}h | Estresse: ${profile.stress_level ?? "—"}
+- Cardio: ${profile.cardio_enabled ? `SIM — ${profile.cardio_frequency ?? "?"}, ${profile.cardio_duration ?? "?"}, ${profile.cardio_timing ?? "?"}, tipo: ${profile.cardio_type_preference ?? "?"}` : "NÃO"}
 
-REGRAS:
-- Treino com split coerente para os dias semanais.
-- 4-8 exercícios por sessão, com séries, repetições e descanso.
-- Dieta com kcal e macros calculados a partir do peso, altura, idade, sexo e objetivo.
-- ≥3 refeições, respeitando alergias e alimentos não preferidos.
-- Resumo curto explicando as escolhas.`;
+Aplique o CHECKLIST DO COMITÊ DE 3 PROFISSIONAIS antes de gerar o JSON. Responda APENAS com o JSON.`;
 
-    const { experimental_output } = await generateText({
-      model,
-      prompt,
-      experimental_output: Output.object({ schema: ProtocolSchema }),
-    });
-
-    const out = experimental_output;
+    let out: { training: unknown; diet: unknown; summary: string };
+    try {
+      const gateway = createLovableAiGatewayProvider(apiKey);
+      const model = gateway("google/gemini-2.5-flash");
+      const { text } = await generateText({
+        model,
+        system: systemPrompt,
+        prompt: userPrompt,
+        abortSignal: AbortSignal.timeout(110_000),
+      });
+      let content = text || "";
+      const m = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (m) content = m[1].trim();
+      const parsed = JSON.parse(content);
+      if (!parsed.training || !parsed.diet) throw new Error("Estrutura inválida");
+      out = {
+        training: parsed.training,
+        diet: parsed.diet,
+        summary: typeof parsed.summary === "string" ? parsed.summary : "Protocolo gerado pelo Comitê (IA).",
+      };
+    } catch (e) {
+      console.warn("[generateProtocol] IA falhou — usando fallback rule-based:", e);
+      const fb = fallbackProtocol(profile as ProfileLike);
+      out = { training: fb.training, diet: fb.diet, summary: fb.summary };
+    }
 
     const { data: existing } = await supabase
       .from("protocols").select("id, version")
