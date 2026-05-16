@@ -19,7 +19,10 @@ import {
   Save, Shield, Users, ClipboardList, MessageSquare, History as HistoryIcon,
   ShieldCheck, ShieldOff, BarChart3, AlertTriangle, Dumbbell, Plus, Pencil, Trash2,
   Search, Trophy, Bell, Send, Heart, Activity,
+  FileText, Sparkles, CalendarDays, Apple, Loader2,
 } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { analyzeAnamnese, prescribeFromAnamnese, generateCoachFeedback } from "@/lib/anamnese.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({ meta: [{ title: "Painel do Criador — Franzen Team" }] }),
@@ -155,6 +158,10 @@ function AdminPage() {
             <TabsTrigger value="ranking" className="gap-1"><Trophy size={14} />Ranking</TabsTrigger>
             <TabsTrigger value="messages" className="gap-1"><MessageSquare size={14} />Mensagens</TabsTrigger>
             <TabsTrigger value="notifications" className="gap-1"><Bell size={14} />Notificações</TabsTrigger>
+            <TabsTrigger value="anamnese" className="gap-1"><FileText size={14} />Anamnese</TabsTrigger>
+            <TabsTrigger value="weekly" className="gap-1"><CalendarDays size={14} />Semanal</TabsTrigger>
+            <TabsTrigger value="monthly" className="gap-1"><Activity size={14} />Mensal</TabsTrigger>
+            <TabsTrigger value="diet-fb" className="gap-1"><Apple size={14} />Dieta</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="mt-4">
@@ -183,6 +190,18 @@ function AdminPage() {
           </TabsContent>
           <TabsContent value="notifications" className="mt-4">
             <NotificationsTab profiles={profiles} />
+          </TabsContent>
+          <TabsContent value="anamnese" className="mt-4">
+            <AnamneseTab profiles={profiles} />
+          </TabsContent>
+          <TabsContent value="weekly" className="mt-4">
+            <WeeklyAdminTab profiles={profiles} />
+          </TabsContent>
+          <TabsContent value="monthly" className="mt-4">
+            <MonthlyAdminTab profiles={profiles} />
+          </TabsContent>
+          <TabsContent value="diet-fb" className="mt-4">
+            <DietFbAdminTab profiles={profiles} />
           </TabsContent>
         </Tabs>
       </main>
