@@ -35,6 +35,33 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_analyses: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          kind: string
+          meta: Json | null
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          kind: string
+          meta?: Json | null
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          meta?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       challenge_participations: {
         Row: {
           challenge_id: string
@@ -162,6 +189,42 @@ export type Database = {
           },
         ]
       }
+      diet_feedback: {
+        Row: {
+          created_at: string
+          hunger: number | null
+          id: string
+          meal_index: number | null
+          notes: string | null
+          protocol_id: string | null
+          rating: number
+          session_date: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          hunger?: number | null
+          id?: string
+          meal_index?: number | null
+          notes?: string | null
+          protocol_id?: string | null
+          rating: number
+          session_date?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          hunger?: number | null
+          id?: string
+          meal_index?: number | null
+          notes?: string | null
+          protocol_id?: string | null
+          rating?: number
+          session_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       exercises: {
         Row: {
           category: string
@@ -258,6 +321,51 @@ export type Database = {
         }
         Relationships: []
       }
+      monthly_analyses: {
+        Row: {
+          ai_summary: string | null
+          analysis_date: string
+          coach_notes: string | null
+          created_at: string
+          id: string
+          measurements: Json | null
+          photo_back: string | null
+          photo_front: string | null
+          photo_side: string | null
+          updated_at: string
+          user_id: string
+          weight: number | null
+        }
+        Insert: {
+          ai_summary?: string | null
+          analysis_date?: string
+          coach_notes?: string | null
+          created_at?: string
+          id?: string
+          measurements?: Json | null
+          photo_back?: string | null
+          photo_front?: string | null
+          photo_side?: string | null
+          updated_at?: string
+          user_id: string
+          weight?: number | null
+        }
+        Update: {
+          ai_summary?: string | null
+          analysis_date?: string
+          coach_notes?: string | null
+          created_at?: string
+          id?: string
+          measurements?: Json | null
+          photo_back?: string | null
+          photo_front?: string | null
+          photo_side?: string | null
+          updated_at?: string
+          user_id?: string
+          weight?: number | null
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           body: string | null
@@ -294,34 +402,69 @@ export type Database = {
       profiles: {
         Row: {
           activity_level: string | null
+          address: string | null
+          aerobic_fasted: boolean | null
+          aerobic_protocol: string | null
           age: number | null
           ai_data_consent: boolean | null
           ai_data_consent_at: string | null
           allergies: string | null
+          anamnese_completed_at: string | null
+          anamnese_extra: Json | null
           avatar_url: string | null
+          birth_date: string | null
+          bowel_routine: string | null
           cardio_duration: string | null
           cardio_enabled: boolean | null
           cardio_frequency: string | null
           cardio_timing: string | null
           cardio_type_preference: string | null
+          cpf: string | null
           created_at: string
+          current_diet_text: string | null
+          current_split: string | null
+          daily_discomfort: string | null
+          daily_routine: string | null
+          diet_status: string | null
+          digestibility: string | null
           disliked_foods: string | null
+          ergogenics_history: string | null
+          exercise_discomfort: string | null
           experience: string | null
+          fasting_morning: string | null
           free_meals: string | null
           full_name: string | null
           goal: string | null
+          goal_1y: string | null
+          goal_3m: string | null
+          gym_brand: string | null
           gym_type: string | null
+          hard_meal_times: string | null
           height: number | null
+          hormonal_side_effects: string | null
           id: string
           injuries: string | null
+          junk_food_choice: string | null
+          liked_foods: string | null
+          manipulated_fitoterapics: string | null
           meal_count: number | null
           neat: string | null
           onboarding_complete: boolean
+          photo_back_url: string | null
+          photo_front_url: string | null
+          photo_side_url: string | null
           preferred_foods: string[] | null
+          previous_consultation: string | null
+          profession: string | null
+          psych_meds: string | null
+          referral_source: string | null
           sex: string | null
           sleep_hours: number | null
+          sleep_quality: string | null
           stress_level: string | null
+          structural_limit: string | null
           supplements: string[] | null
+          sweet_anxiety_times: string | null
           sweet_preference: string | null
           terms_accepted_at: string | null
           terms_version: string | null
@@ -330,38 +473,74 @@ export type Database = {
           training_weekdays: string[] | null
           updated_at: string
           user_id: string
+          weekend_routine: string | null
           weight: number | null
         }
         Insert: {
           activity_level?: string | null
+          address?: string | null
+          aerobic_fasted?: boolean | null
+          aerobic_protocol?: string | null
           age?: number | null
           ai_data_consent?: boolean | null
           ai_data_consent_at?: string | null
           allergies?: string | null
+          anamnese_completed_at?: string | null
+          anamnese_extra?: Json | null
           avatar_url?: string | null
+          birth_date?: string | null
+          bowel_routine?: string | null
           cardio_duration?: string | null
           cardio_enabled?: boolean | null
           cardio_frequency?: string | null
           cardio_timing?: string | null
           cardio_type_preference?: string | null
+          cpf?: string | null
           created_at?: string
+          current_diet_text?: string | null
+          current_split?: string | null
+          daily_discomfort?: string | null
+          daily_routine?: string | null
+          diet_status?: string | null
+          digestibility?: string | null
           disliked_foods?: string | null
+          ergogenics_history?: string | null
+          exercise_discomfort?: string | null
           experience?: string | null
+          fasting_morning?: string | null
           free_meals?: string | null
           full_name?: string | null
           goal?: string | null
+          goal_1y?: string | null
+          goal_3m?: string | null
+          gym_brand?: string | null
           gym_type?: string | null
+          hard_meal_times?: string | null
           height?: number | null
+          hormonal_side_effects?: string | null
           id?: string
           injuries?: string | null
+          junk_food_choice?: string | null
+          liked_foods?: string | null
+          manipulated_fitoterapics?: string | null
           meal_count?: number | null
           neat?: string | null
           onboarding_complete?: boolean
+          photo_back_url?: string | null
+          photo_front_url?: string | null
+          photo_side_url?: string | null
           preferred_foods?: string[] | null
+          previous_consultation?: string | null
+          profession?: string | null
+          psych_meds?: string | null
+          referral_source?: string | null
           sex?: string | null
           sleep_hours?: number | null
+          sleep_quality?: string | null
           stress_level?: string | null
+          structural_limit?: string | null
           supplements?: string[] | null
+          sweet_anxiety_times?: string | null
           sweet_preference?: string | null
           terms_accepted_at?: string | null
           terms_version?: string | null
@@ -370,38 +549,74 @@ export type Database = {
           training_weekdays?: string[] | null
           updated_at?: string
           user_id: string
+          weekend_routine?: string | null
           weight?: number | null
         }
         Update: {
           activity_level?: string | null
+          address?: string | null
+          aerobic_fasted?: boolean | null
+          aerobic_protocol?: string | null
           age?: number | null
           ai_data_consent?: boolean | null
           ai_data_consent_at?: string | null
           allergies?: string | null
+          anamnese_completed_at?: string | null
+          anamnese_extra?: Json | null
           avatar_url?: string | null
+          birth_date?: string | null
+          bowel_routine?: string | null
           cardio_duration?: string | null
           cardio_enabled?: boolean | null
           cardio_frequency?: string | null
           cardio_timing?: string | null
           cardio_type_preference?: string | null
+          cpf?: string | null
           created_at?: string
+          current_diet_text?: string | null
+          current_split?: string | null
+          daily_discomfort?: string | null
+          daily_routine?: string | null
+          diet_status?: string | null
+          digestibility?: string | null
           disliked_foods?: string | null
+          ergogenics_history?: string | null
+          exercise_discomfort?: string | null
           experience?: string | null
+          fasting_morning?: string | null
           free_meals?: string | null
           full_name?: string | null
           goal?: string | null
+          goal_1y?: string | null
+          goal_3m?: string | null
+          gym_brand?: string | null
           gym_type?: string | null
+          hard_meal_times?: string | null
           height?: number | null
+          hormonal_side_effects?: string | null
           id?: string
           injuries?: string | null
+          junk_food_choice?: string | null
+          liked_foods?: string | null
+          manipulated_fitoterapics?: string | null
           meal_count?: number | null
           neat?: string | null
           onboarding_complete?: boolean
+          photo_back_url?: string | null
+          photo_front_url?: string | null
+          photo_side_url?: string | null
           preferred_foods?: string[] | null
+          previous_consultation?: string | null
+          profession?: string | null
+          psych_meds?: string | null
+          referral_source?: string | null
           sex?: string | null
           sleep_hours?: number | null
+          sleep_quality?: string | null
           stress_level?: string | null
+          structural_limit?: string | null
           supplements?: string[] | null
+          sweet_anxiety_times?: string | null
           sweet_preference?: string | null
           terms_accepted_at?: string | null
           terms_version?: string | null
@@ -410,6 +625,7 @@ export type Database = {
           training_weekdays?: string[] | null
           updated_at?: string
           user_id?: string
+          weekend_routine?: string | null
           weight?: number | null
         }
         Relationships: []
@@ -513,6 +729,51 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      weekly_feedbacks: {
+        Row: {
+          adherence_diet: number | null
+          adherence_training: number | null
+          created_at: string
+          energy: number | null
+          id: string
+          measurements: Json | null
+          notes: string | null
+          sleep_quality: number | null
+          updated_at: string
+          user_id: string
+          week_start: string
+          weight: number | null
+        }
+        Insert: {
+          adherence_diet?: number | null
+          adherence_training?: number | null
+          created_at?: string
+          energy?: number | null
+          id?: string
+          measurements?: Json | null
+          notes?: string | null
+          sleep_quality?: number | null
+          updated_at?: string
+          user_id: string
+          week_start?: string
+          weight?: number | null
+        }
+        Update: {
+          adherence_diet?: number | null
+          adherence_training?: number | null
+          created_at?: string
+          energy?: number | null
+          id?: string
+          measurements?: Json | null
+          notes?: string | null
+          sleep_quality?: number | null
+          updated_at?: string
+          user_id?: string
+          week_start?: string
+          weight?: number | null
         }
         Relationships: []
       }
