@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { ArrowLeft, Save } from "lucide-react";
+import { useDraftAutoSave } from "@/hooks/useDraftAutoSave";
 
 export const Route = createFileRoute("/_authenticated/feedback/weekly")({
   head: () => ({ meta: [{ title: "Feedback semanal — Franzen Team" }] }),
@@ -23,6 +24,19 @@ function WeeklyPage() {
   const [sleep, setSleep] = useState("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const { savedAt, clearDraft } = useDraftAutoSave(
+    "feedback-weekly",
+    { weight, aTrain, aDiet, energy, sleep, notes },
+    (s) => {
+      if (typeof s.weight === "string") setWeight(s.weight);
+      if (typeof s.aTrain === "string") setATrain(s.aTrain);
+      if (typeof s.aDiet === "string") setADiet(s.aDiet);
+      if (typeof s.energy === "string") setEnergy(s.energy);
+      if (typeof s.sleep === "string") setSleep(s.sleep);
+      if (typeof s.notes === "string") setNotes(s.notes);
+    },
+  );
 
   const load = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -53,6 +67,7 @@ function WeeklyPage() {
     else {
       toast.success("Feedback enviado!");
       setWeight(""); setATrain(""); setADiet(""); setEnergy(""); setSleep(""); setNotes("");
+      clearDraft();
       load();
     }
   };
@@ -76,6 +91,7 @@ function WeeklyPage() {
           <Textarea rows={4} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Dificuldades, vitórias, dores, fome…" />
         </div>
         <Button onClick={save} disabled={saving} className="w-full"><Save size={14} className="mr-2" />{saving ? "Salvando…" : "Enviar feedback"}</Button>
+        {savedAt && <p className="text-[11px] text-muted-foreground text-center">Rascunho salvo {savedAt}</p>}
       </Card>
 
       <h2 className="font-heading font-semibold mt-8 mb-3">Histórico</h2>

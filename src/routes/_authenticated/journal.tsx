@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, BookHeart, Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
+import { useDraftAutoSave } from "@/hooks/useDraftAutoSave";
 
 export const Route = createFileRoute("/_authenticated/journal")({
   head: () => ({ meta: [{ title: "Diário — Franzen Team" }] }),
@@ -29,6 +30,18 @@ function JournalPage() {
   const [energy, setEnergy] = useState<number | null>(null);
   const [sleep, setSleep] = useState("");
   const [notes, setNotes] = useState("");
+
+  const { savedAt, clearDraft } = useDraftAutoSave(
+    "journal-today",
+    { mood, energy, sleep, notes },
+    (s) => {
+      if (typeof s.mood === "number" || s.mood === null) setMood(s.mood as number | null);
+      if (typeof s.energy === "number" || s.energy === null) setEnergy(s.energy as number | null);
+      if (typeof s.sleep === "string") setSleep(s.sleep);
+      if (typeof s.notes === "string") setNotes(s.notes);
+    },
+    { ready: !loading && !todayE },
+  );
 
   const load = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -62,6 +75,7 @@ function JournalPage() {
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success("Diário salvo");
+    clearDraft();
     load();
   };
 
@@ -108,6 +122,7 @@ function JournalPage() {
           <Button onClick={save} disabled={saving} className="w-full">
             <Save size={16} className="mr-2" />{todayE ? "Atualizar de hoje" : "Salvar de hoje"}
           </Button>
+          {savedAt && !todayE && <p className="text-[11px] text-muted-foreground text-center">Rascunho salvo {savedAt}</p>}
         </div>
 
         <h2 className="mt-8 font-heading font-semibold text-lg">Histórico</h2>

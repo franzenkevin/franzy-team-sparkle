@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { ArrowLeft, Camera, Save, Loader2 } from "lucide-react";
+import { useDraftAutoSave } from "@/hooks/useDraftAutoSave";
 
 export const Route = createFileRoute("/_authenticated/monthly-analysis")({
   head: () => ({ meta: [{ title: "Análise mensal — Franzen Team" }] }),
@@ -32,6 +33,20 @@ function MonthlyPage() {
   const [files, setFiles] = useState<Record<string, File | null>>({});
   const [saving, setSaving] = useState(false);
   const [signed, setSigned] = useState<Record<string, string>>({});
+
+  const { savedAt, clearDraft } = useDraftAutoSave(
+    "monthly-analysis",
+    { weight, chest, waist, hip, arm, thigh, notes },
+    (s) => {
+      if (typeof s.weight === "string") setWeight(s.weight);
+      if (typeof s.chest === "string") setChest(s.chest);
+      if (typeof s.waist === "string") setWaist(s.waist);
+      if (typeof s.hip === "string") setHip(s.hip);
+      if (typeof s.arm === "string") setArm(s.arm);
+      if (typeof s.thigh === "string") setThigh(s.thigh);
+      if (typeof s.notes === "string") setNotes(s.notes);
+    },
+  );
 
   const load = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -79,6 +94,7 @@ function MonthlyPage() {
     else {
       toast.success("Análise enviada! O coach vai revisar.");
       setWeight(""); setChest(""); setWaist(""); setHip(""); setArm(""); setThigh(""); setNotes(""); setFiles({});
+      clearDraft();
       load();
     }
   };
@@ -119,6 +135,7 @@ function MonthlyPage() {
           {saving ? <Loader2 className="animate-spin mr-2" size={14}/> : <Save size={14} className="mr-2" />}
           {saving ? "Salvando…" : "Enviar análise"}
         </Button>
+        {savedAt && <p className="text-[11px] text-muted-foreground text-center">Rascunho salvo {savedAt} (textos; fotos não)</p>}
       </Card>
 
       <h2 className="font-heading font-semibold mt-8 mb-3">Histórico</h2>
