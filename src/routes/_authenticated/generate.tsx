@@ -16,14 +16,17 @@ function GeneratePage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [summary, setSummary] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
 
   const handleGenerate = async () => {
     setLoading(true);
     setSummary(null);
+    setPending(false);
     try {
       const res = await run();
       setSummary(res.summary);
-      toast.success("Protocolo gerado com sucesso");
+      setPending(!!(res as any).pendingReview);
+      toast.success("Protocolo gerado — aguardando revisão do coach");
     } catch (e: any) {
       const msg = String(e?.message ?? e);
       if (msg.includes("429")) toast.error("Limite de uso da IA atingido. Tente novamente em instantes.");
@@ -69,7 +72,15 @@ function GeneratePage() {
 
         {summary && (
           <div className="mt-6 rounded-xl border border-primary/40 bg-primary/5 p-6 animate-fade-in">
-            <h2 className="font-heading text-lg font-semibold">Resumo</h2>
+            <h2 className="font-heading text-lg font-semibold">
+              {pending ? "Enviado para revisão" : "Resumo"}
+            </h2>
+            {pending && (
+              <p className="mt-2 text-sm text-warning">
+                Seu novo protocolo foi gerado pela IA e está aguardando revisão e aprovação do coach.
+                Enquanto isso, continue seguindo o protocolo ativo atual.
+              </p>
+            )}
             <p className="mt-2 text-sm text-muted-foreground whitespace-pre-line">{summary}</p>
             <div className="mt-5 flex gap-3">
               <Button onClick={() => navigate({ to: "/training" })} variant="outline" size="sm">Ver treino</Button>

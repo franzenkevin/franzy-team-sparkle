@@ -19,7 +19,7 @@ import {
   Save, Shield, Users, ClipboardList, MessageSquare, History as HistoryIcon,
   ShieldCheck, ShieldOff, BarChart3, AlertTriangle, Dumbbell, Plus, Pencil, Trash2,
   Search, Trophy, Bell, Send, Heart, Activity,
-  FileText, Sparkles, CalendarDays, Apple, Loader2,
+  FileText, Sparkles, CalendarDays, Apple, Loader2, CheckCircle2, XCircle, Clock,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { analyzeAnamnese, prescribeFromAnamnese, generateCoachFeedback } from "@/lib/anamnese.functions";
@@ -150,6 +150,7 @@ function AdminPage() {
         <Tabs defaultValue="overview">
           <TabsList className="w-full flex flex-wrap h-auto justify-start gap-1">
             <TabsTrigger value="overview" className="gap-1"><BarChart3 size={14} />Visão geral</TabsTrigger>
+            <TabsTrigger value="approvals" className="gap-1"><Clock size={14} />Aprovações</TabsTrigger>
             <TabsTrigger value="users" className="gap-1"><Users size={14} />Usuários</TabsTrigger>
             <TabsTrigger value="exercises" className="gap-1"><Dumbbell size={14} />Exercícios</TabsTrigger>
             <TabsTrigger value="checkins" className="gap-1"><ClipboardList size={14} />Check-ins</TabsTrigger>
@@ -166,6 +167,9 @@ function AdminPage() {
 
           <TabsContent value="overview" className="mt-4">
             <OverviewTab metrics={metrics} profiles={profiles} />
+          </TabsContent>
+          <TabsContent value="approvals" className="mt-4">
+            <ApprovalsTab profiles={profiles} />
           </TabsContent>
           <TabsContent value="users" className="mt-4">
             <UsersTab profiles={profiles} />
@@ -1168,6 +1172,186 @@ function CoachReplyBlock({ kind, refId }: { kind: "weekly" | "diet"; refId: stri
         <Button size="sm" onClick={send} disabled={sending || !text.trim()}>
           <Send size={12} className="mr-1"/> {sending ? "Enviando…" : "Enviar"}
         </Button>
+      </div>
+    </div>
+  );
+}
+
+/* ============ APPROVALS TAB (protocolos e análises pendentes) ============ */
+function ApprovalsTab({ profiles }: { profiles: ProfileRow[] }) {
+  const [pendingProts, setPendingProts] = useState<ProtocolRow[]>([]);
+  const [pendingAns, setPendingAns] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<ProtocolRow | null>(null);
+  const [trainingText, setTrainingText] = useState("{}");
+  const [dietText, setDietText] = useState("{}");
+  const [busy, setBusy] = useState(false);
+
+  const nameOf = (uid: string) => profiles.find((p) => p.user_id === uid)?.full_name ?? uid.slice(0, 8);
+
+  const load = async () => {
+    setLoading(true);
+    const [{ data: prots }, { data: ans }] = await Promise.all([
+      supabase.from("protocols").select("*").eq("status", "pending_review").order("created_at", { ascending: false }),
+      supabase.from("ai_analyses").select("*").eq("status", "pending").order("created_at", { ascending: false }).limit(50),
+    ]);
+    setPendingProts((prots ?? []) as ProtocolRow[]);
+    setPendingAns(ans ?? []);
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, []);
+
+  const pick = (p: ProtocolRow) => {
+    setSelected(p);
+    setTrainingText(JSON.stringify(p.training ?? {}, null, 2));
+    setDietText(JSON.stringify(p.diet ?? {}, null, 2));
+  };
+
+  const approveProtocol = async () => {
+    if (!selected) return;
+    let training: any, diet: any;
+    try { training = JSON.parse(trainingText); } catch { toast.error("JSON do treino inválido"); return; }
+    try { diet = JSON.parse(dietText); } catch { toast.error("JSON da dieta inválido"); return; }
+    setBusy(true);
+    try {
+      // Arquiva todos os ativos anteriores do mesmo aluno
+      const { error: arcErr } = await supabase.from("protocols")
+        .update({ status: "archived" })
+        .eq("user_id", selected.user_id).eq("status", "active");
+      if (arcErr) throw arcErr;
+      // Aplica edições e ativa
+      const { error } = await supabase.from("protocols")
+        .update({ training, diet, status: "active" }).eq("id", selected.id);
+      if (error) throw error;
+      await supabase.from("notifications").insert({
+        user_id: selected.user_id, type: "protocol",
+        title: "Novo protocolo liberado",
+        body: `Sua versão v${selected.version} foi aprovada pelo coach e já está ativa.`,
+        link: "/training",
+      });
+      toast.success("Protocolo aprovado e ativado");
+      setSelected(null);
+      await load();
+    } catch (e: any) { toast.error(e?.message ?? "Erro"); }
+    finally { setBusy(false); }
+  };
+
+  const rejectProtocol = async () => {
+    if (!selected) return;
+    setBusy(true);
+    try {
+      const { error } = await supabase.from("protocols")
+        .update({ status: "rejected" }).eq("id", selected.id);
+      if (error) throw error;
+      toast.success("Protocolo rejeitado");
+      setSelected(null);
+      await load();
+    } catch (e: any) { toast.error(e?.message ?? "Erro"); }
+    finally { setBusy(false); }
+  };
+
+  const approveAnalysis = async (a: any) => {
+    const { error } = await supabase.from("ai_analyses").update({ status: "approved" }).eq("id", a.id);
+    if (error) { toast.error(error.message); return; }
+    await supabase.from("notifications").insert({
+      user_id: a.user_id, type: "analysis",
+      title: "Nova análise IA disponível",
+      body: "Seu coach revisou e liberou uma nova análise sua.",
+      link: "/progress",
+    });
+    toast.success("Análise aprovada");
+    load();
+  };
+
+  const rejectAnalysis = async (a: any) => {
+    const { error } = await supabase.from("ai_analyses").update({ status: "rejected" }).eq("id", a.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Análise rejeitada");
+    load();
+  };
+
+  if (loading) return <p className="text-sm text-muted-foreground">Carregando fila…</p>;
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h3 className="font-heading font-semibold mb-2 flex items-center gap-2">
+          <Clock size={16} className="text-warning" /> Protocolos aguardando revisão ({pendingProts.length})
+        </h3>
+        {pendingProts.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nenhum protocolo na fila.</p>
+        ) : (
+          <div className="grid gap-3 lg:grid-cols-[300px_1fr]">
+            <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+              {pendingProts.map((p) => (
+                <button key={p.id} onClick={() => pick(p)}
+                  className={`w-full text-left rounded-md border p-3 transition ${selected?.id === p.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}>
+                  <div className="text-sm font-medium truncate">{nameOf(p.user_id)}</div>
+                  <div className="text-xs text-muted-foreground">v{p.version} · {new Date(p.created_at).toLocaleString("pt-BR")}</div>
+                </button>
+              ))}
+            </div>
+            {selected ? (
+              <Card className="p-4">
+                <div className="flex justify-between items-center mb-3">
+                  <h4 className="font-semibold">{nameOf(selected.user_id)} — v{selected.version}</h4>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={rejectProtocol} disabled={busy}>
+                      <XCircle size={14} className="mr-1"/> Rejeitar
+                    </Button>
+                    <Button size="sm" onClick={approveProtocol} disabled={busy}>
+                      {busy ? <Loader2 size={14} className="animate-spin mr-1"/> : <CheckCircle2 size={14} className="mr-1"/>}
+                      Aprovar e ativar
+                    </Button>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Edite o JSON se precisar ajustar antes de liberar. Aprovar arquiva o protocolo ativo atual e ativa este.
+                </p>
+                <div className="grid gap-3 lg:grid-cols-2">
+                  <div>
+                    <Label className="text-xs">Treino (JSON)</Label>
+                    <Textarea value={trainingText} onChange={(e) => setTrainingText(e.target.value)} rows={14} className="font-mono text-xs mt-1"/>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Dieta (JSON)</Label>
+                    <Textarea value={dietText} onChange={(e) => setDietText(e.target.value)} rows={14} className="font-mono text-xs mt-1"/>
+                  </div>
+                </div>
+              </Card>
+            ) : (
+              <Card className="p-10 text-center text-muted-foreground text-sm">Selecione um protocolo para revisar.</Card>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div>
+        <h3 className="font-heading font-semibold mb-2 flex items-center gap-2">
+          <Sparkles size={16} className="text-primary" /> Análises IA pendentes ({pendingAns.length})
+        </h3>
+        {pendingAns.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nenhuma análise pendente.</p>
+        ) : (
+          <div className="space-y-2">
+            {pendingAns.map((a) => (
+              <Card key={a.id} className="p-3">
+                <div className="flex justify-between text-sm flex-wrap gap-2">
+                  <div>
+                    <span className="font-semibold">{nameOf(a.user_id)}</span>
+                    <span className="ml-2 text-xs text-muted-foreground">{a.kind}</span>
+                    <span className="ml-2 text-xs text-muted-foreground">{new Date(a.created_at).toLocaleString("pt-BR")}</span>
+                  </div>
+                  <div className="flex gap-1">
+                    <Button size="sm" variant="outline" onClick={() => rejectAnalysis(a)}><XCircle size={14} className="mr-1"/>Rejeitar</Button>
+                    <Button size="sm" onClick={() => approveAnalysis(a)}><CheckCircle2 size={14} className="mr-1"/>Aprovar</Button>
+                  </div>
+                </div>
+                <pre className="text-xs whitespace-pre-wrap mt-2 max-h-48 overflow-y-auto bg-muted/30 rounded p-2">{a.content}</pre>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
