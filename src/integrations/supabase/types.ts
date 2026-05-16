@@ -42,6 +42,7 @@ export type Database = {
           id: string
           kind: string
           meta: Json | null
+          status: string
           user_id: string
         }
         Insert: {
@@ -50,6 +51,7 @@ export type Database = {
           id?: string
           kind: string
           meta?: Json | null
+          status?: string
           user_id: string
         }
         Update: {
@@ -58,6 +60,7 @@ export type Database = {
           id?: string
           kind?: string
           meta?: Json | null
+          status?: string
           user_id?: string
         }
         Relationships: []
