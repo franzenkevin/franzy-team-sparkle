@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { analyzeAnamnese, prescribeFromAnamnese, generateCoachFeedback } from "@/lib/anamnese.functions";
+import { adminSaveProtocol, adminSetAnalysisStatus } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({ meta: [{ title: "Painel do Criador — Franzen Team" }] }),
@@ -269,8 +270,11 @@ function UsersTab({ profiles }: { profiles: ProfileRow[] }) {
   const [dietText, setDietText] = useState("{}");
   const [hormonesText, setHormonesText] = useState("[]");
   const [saving, setSaving] = useState(false);
+  const [generatingAi, setGeneratingAi] = useState(false);
   const [isUserAdmin, setIsUserAdmin] = useState(false);
   const [togglingRole, setTogglingRole] = useState(false);
+  const saveProtocolFn = useServerFn(adminSaveProtocol);
+  const prescribeFn = useServerFn(prescribeFromAnamnese);
 
   const filtered = profiles.filter((p) =>
     !filter || (p.full_name ?? "").toLowerCase().includes(filter.toLowerCase()),
@@ -304,20 +308,38 @@ function UsersTab({ profiles }: { profiles: ProfileRow[] }) {
     try { hormones = JSON.parse(hormonesText); } catch { toast.error("JSON dos hormônios inválido"); return; }
     if (!Array.isArray(hormones)) { toast.error("Hormônios deve ser uma lista [ ]"); return; }
     setSaving(true);
-    if (protocol) {
-      const { error } = await supabase.from("protocols")
-        .update({ training, diet, hormones, version: protocol.version + 1 }).eq("id", protocol.id);
+    try {
+      await saveProtocolFn({ data: {
+        targetUserId: selectedUser.user_id,
+        protocolId: protocol?.id ?? null,
+        training,
+        diet,
+        hormones,
+        status: "active",
+        notify: true,
+      } });
+      toast.success(protocol ? "Protocolo atualizado e ativo" : "Protocolo criado e ativo");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro ao salvar protocolo");
       setSaving(false);
-      if (error) { toast.error(error.message); return; }
-      toast.success("Protocolo atualizado");
-    } else {
-      const { error } = await supabase.from("protocols")
-        .insert({ user_id: selectedUser.user_id, training, diet, hormones, status: "active" });
-      setSaving(false);
-      if (error) { toast.error(error.message); return; }
-      toast.success("Protocolo criado");
+      return;
     }
+    setSaving(false);
     await selectUser(selectedUser);
+  };
+
+  const generateAiProtocol = async () => {
+    if (!selectedUser) return;
+    setGeneratingAi(true);
+    try {
+      await prescribeFn({ data: { targetUserId: selectedUser.user_id } });
+      toast.success("Protocolo IA gerado para revisão. Abra a aba Aprovações ou histórico do aluno para editar/liberar.");
+      await selectUser(selectedUser);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro ao gerar protocolo IA");
+    } finally {
+      setGeneratingAi(false);
+    }
   };
 
   const toggleAdminRole = async () => {
@@ -387,10 +409,16 @@ function UsersTab({ profiles }: { profiles: ProfileRow[] }) {
                     {protocol ? `v${protocol.version} • ${protocol.start_date} → ${protocol.end_date}` : "Sem protocolo ativo"}
                   </p>
                 </div>
+                <div className="flex flex-wrap gap-2">
+                <Button variant="outline" onClick={generateAiProtocol} disabled={generatingAi}>
+                  {generatingAi ? <Loader2 size={14} className="mr-1 animate-spin" /> : <Sparkles size={14} className="mr-1" />}
+                  Gerar IA
+                </Button>
                 <Button onClick={handleSave} disabled={saving}>
                   <Save size={14} className="mr-1" />
                   {saving ? "Salvando…" : protocol ? "Nova versão" : "Criar"}
                 </Button>
+                </div>
               </div>
               <div className="mt-4 grid gap-4 lg:grid-cols-2">
                 <div>
@@ -1186,6 +1214,8 @@ function ApprovalsTab({ profiles }: { profiles: ProfileRow[] }) {
   const [trainingText, setTrainingText] = useState("{}");
   const [dietText, setDietText] = useState("{}");
   const [busy, setBusy] = useState(false);
+  const saveProtocolFn = useServerFn(adminSaveProtocol);
+  const setAnalysisFn = useServerFn(adminSetAnalysisStatus);
 
   const nameOf = (uid: string) => profiles.find((p) => p.user_id === uid)?.full_name ?? uid.slice(0, 8);
 
@@ -1214,21 +1244,15 @@ function ApprovalsTab({ profiles }: { profiles: ProfileRow[] }) {
     try { diet = JSON.parse(dietText); } catch { toast.error("JSON da dieta inválido"); return; }
     setBusy(true);
     try {
-      // Arquiva todos os ativos anteriores do mesmo aluno
-      const { error: arcErr } = await supabase.from("protocols")
-        .update({ status: "archived" })
-        .eq("user_id", selected.user_id).eq("status", "active");
-      if (arcErr) throw arcErr;
-      // Aplica edições e ativa
-      const { error } = await supabase.from("protocols")
-        .update({ training, diet, status: "active" }).eq("id", selected.id);
-      if (error) throw error;
-      await supabase.from("notifications").insert({
-        user_id: selected.user_id, type: "protocol",
-        title: "Novo protocolo liberado",
-        body: `Sua versão v${selected.version} foi aprovada pelo coach e já está ativa.`,
-        link: "/training",
-      });
+      await saveProtocolFn({ data: {
+        targetUserId: selected.user_id,
+        protocolId: selected.id,
+        training,
+        diet,
+        hormones: (selected as any).hormones ?? [],
+        status: "active",
+        notify: true,
+      } });
       toast.success("Protocolo aprovado e ativado");
       setSelected(null);
       await load();
@@ -1240,9 +1264,14 @@ function ApprovalsTab({ profiles }: { profiles: ProfileRow[] }) {
     if (!selected) return;
     setBusy(true);
     try {
-      const { error } = await supabase.from("protocols")
-        .update({ status: "rejected" }).eq("id", selected.id);
-      if (error) throw error;
+      await saveProtocolFn({ data: {
+        targetUserId: selected.user_id,
+        protocolId: selected.id,
+        training: selected.training ?? {},
+        diet: selected.diet ?? {},
+        hormones: (selected as any).hormones ?? [],
+        status: "rejected",
+      } });
       toast.success("Protocolo rejeitado");
       setSelected(null);
       await load();
@@ -1251,21 +1280,13 @@ function ApprovalsTab({ profiles }: { profiles: ProfileRow[] }) {
   };
 
   const approveAnalysis = async (a: any) => {
-    const { error } = await supabase.from("ai_analyses").update({ status: "approved" }).eq("id", a.id);
-    if (error) { toast.error(error.message); return; }
-    await supabase.from("notifications").insert({
-      user_id: a.user_id, type: "analysis",
-      title: "Nova análise IA disponível",
-      body: "Seu coach revisou e liberou uma nova análise sua.",
-      link: "/progress",
-    });
+    await setAnalysisFn({ data: { analysisId: a.id, status: "approved", content: a.content } });
     toast.success("Análise aprovada");
     load();
   };
 
   const rejectAnalysis = async (a: any) => {
-    const { error } = await supabase.from("ai_analyses").update({ status: "rejected" }).eq("id", a.id);
-    if (error) { toast.error(error.message); return; }
+    await setAnalysisFn({ data: { analysisId: a.id, status: "rejected", content: a.content } });
     toast.success("Análise rejeitada");
     load();
   };
