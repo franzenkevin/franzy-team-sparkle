@@ -23,6 +23,7 @@ import { Route as AuthenticatedProgressRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
+import { Route as AuthenticatedMonthlyAnalysisRouteImport } from './routes/_authenticated/monthly-analysis'
 import { Route as AuthenticatedMessagesRouteImport } from './routes/_authenticated/messages'
 import { Route as AuthenticatedJournalRouteImport } from './routes/_authenticated/journal'
 import { Route as AuthenticatedHormonesRouteImport } from './routes/_authenticated/hormones'
@@ -35,6 +36,8 @@ import { Route as AuthenticatedCoachRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedChallengesRouteImport } from './routes/_authenticated/challenges'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAchievementsRouteImport } from './routes/_authenticated/achievements'
+import { Route as AuthenticatedFeedbackWeeklyRouteImport } from './routes/_authenticated/feedback.weekly'
+import { Route as AuthenticatedFeedbackDietRouteImport } from './routes/_authenticated/feedback.diet'
 import { Route as AuthenticatedExerciseHistoryExerciseIdRouteImport } from './routes/_authenticated/exercise-history.$exerciseId'
 import { Route as ApiPublicShareTokenRouteImport } from './routes/api/public/share.$token'
 import { Route as ApiPublicShareOgTokenRouteImport } from './routes/api/public/share-og.$token'
@@ -109,6 +112,12 @@ const AuthenticatedNotificationsRoute =
     path: '/notifications',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedMonthlyAnalysisRoute =
+  AuthenticatedMonthlyAnalysisRouteImport.update({
+    id: '/monthly-analysis',
+    path: '/monthly-analysis',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedMessagesRoute = AuthenticatedMessagesRouteImport.update({
   id: '/messages',
   path: '/messages',
@@ -170,6 +179,18 @@ const AuthenticatedAchievementsRoute =
     path: '/achievements',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedFeedbackWeeklyRoute =
+  AuthenticatedFeedbackWeeklyRouteImport.update({
+    id: '/feedback/weekly',
+    path: '/feedback/weekly',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedFeedbackDietRoute =
+  AuthenticatedFeedbackDietRouteImport.update({
+    id: '/feedback/diet',
+    path: '/feedback/diet',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedExerciseHistoryExerciseIdRoute =
   AuthenticatedExerciseHistoryExerciseIdRouteImport.update({
     id: '/exercise-history/$exerciseId',
@@ -205,6 +226,7 @@ export interface FileRoutesByFullPath {
   '/hormones': typeof AuthenticatedHormonesRoute
   '/journal': typeof AuthenticatedJournalRoute
   '/messages': typeof AuthenticatedMessagesRoute
+  '/monthly-analysis': typeof AuthenticatedMonthlyAnalysisRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/profile': typeof AuthenticatedProfileRoute
@@ -214,6 +236,8 @@ export interface FileRoutesByFullPath {
   '/api/coach': typeof ApiCoachRoute
   '/s/$token': typeof STokenRoute
   '/exercise-history/$exerciseId': typeof AuthenticatedExerciseHistoryExerciseIdRoute
+  '/feedback/diet': typeof AuthenticatedFeedbackDietRoute
+  '/feedback/weekly': typeof AuthenticatedFeedbackWeeklyRoute
   '/api/public/share-og/$token': typeof ApiPublicShareOgTokenRoute
   '/api/public/share/$token': typeof ApiPublicShareTokenRoute
 }
@@ -235,6 +259,7 @@ export interface FileRoutesByTo {
   '/hormones': typeof AuthenticatedHormonesRoute
   '/journal': typeof AuthenticatedJournalRoute
   '/messages': typeof AuthenticatedMessagesRoute
+  '/monthly-analysis': typeof AuthenticatedMonthlyAnalysisRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/profile': typeof AuthenticatedProfileRoute
@@ -244,6 +269,8 @@ export interface FileRoutesByTo {
   '/api/coach': typeof ApiCoachRoute
   '/s/$token': typeof STokenRoute
   '/exercise-history/$exerciseId': typeof AuthenticatedExerciseHistoryExerciseIdRoute
+  '/feedback/diet': typeof AuthenticatedFeedbackDietRoute
+  '/feedback/weekly': typeof AuthenticatedFeedbackWeeklyRoute
   '/api/public/share-og/$token': typeof ApiPublicShareOgTokenRoute
   '/api/public/share/$token': typeof ApiPublicShareTokenRoute
 }
@@ -267,6 +294,7 @@ export interface FileRoutesById {
   '/_authenticated/hormones': typeof AuthenticatedHormonesRoute
   '/_authenticated/journal': typeof AuthenticatedJournalRoute
   '/_authenticated/messages': typeof AuthenticatedMessagesRoute
+  '/_authenticated/monthly-analysis': typeof AuthenticatedMonthlyAnalysisRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
@@ -276,6 +304,8 @@ export interface FileRoutesById {
   '/api/coach': typeof ApiCoachRoute
   '/s/$token': typeof STokenRoute
   '/_authenticated/exercise-history/$exerciseId': typeof AuthenticatedExerciseHistoryExerciseIdRoute
+  '/_authenticated/feedback/diet': typeof AuthenticatedFeedbackDietRoute
+  '/_authenticated/feedback/weekly': typeof AuthenticatedFeedbackWeeklyRoute
   '/api/public/share-og/$token': typeof ApiPublicShareOgTokenRoute
   '/api/public/share/$token': typeof ApiPublicShareTokenRoute
 }
@@ -299,6 +329,7 @@ export interface FileRouteTypes {
     | '/hormones'
     | '/journal'
     | '/messages'
+    | '/monthly-analysis'
     | '/notifications'
     | '/onboarding'
     | '/profile'
@@ -308,6 +339,8 @@ export interface FileRouteTypes {
     | '/api/coach'
     | '/s/$token'
     | '/exercise-history/$exerciseId'
+    | '/feedback/diet'
+    | '/feedback/weekly'
     | '/api/public/share-og/$token'
     | '/api/public/share/$token'
   fileRoutesByTo: FileRoutesByTo
@@ -329,6 +362,7 @@ export interface FileRouteTypes {
     | '/hormones'
     | '/journal'
     | '/messages'
+    | '/monthly-analysis'
     | '/notifications'
     | '/onboarding'
     | '/profile'
@@ -338,6 +372,8 @@ export interface FileRouteTypes {
     | '/api/coach'
     | '/s/$token'
     | '/exercise-history/$exerciseId'
+    | '/feedback/diet'
+    | '/feedback/weekly'
     | '/api/public/share-og/$token'
     | '/api/public/share/$token'
   id:
@@ -360,6 +396,7 @@ export interface FileRouteTypes {
     | '/_authenticated/hormones'
     | '/_authenticated/journal'
     | '/_authenticated/messages'
+    | '/_authenticated/monthly-analysis'
     | '/_authenticated/notifications'
     | '/_authenticated/onboarding'
     | '/_authenticated/profile'
@@ -369,6 +406,8 @@ export interface FileRouteTypes {
     | '/api/coach'
     | '/s/$token'
     | '/_authenticated/exercise-history/$exerciseId'
+    | '/_authenticated/feedback/diet'
+    | '/_authenticated/feedback/weekly'
     | '/api/public/share-og/$token'
     | '/api/public/share/$token'
   fileRoutesById: FileRoutesById
@@ -486,6 +525,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/monthly-analysis': {
+      id: '/_authenticated/monthly-analysis'
+      path: '/monthly-analysis'
+      fullPath: '/monthly-analysis'
+      preLoaderRoute: typeof AuthenticatedMonthlyAnalysisRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/messages': {
       id: '/_authenticated/messages'
       path: '/messages'
@@ -570,6 +616,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAchievementsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/feedback/weekly': {
+      id: '/_authenticated/feedback/weekly'
+      path: '/feedback/weekly'
+      fullPath: '/feedback/weekly'
+      preLoaderRoute: typeof AuthenticatedFeedbackWeeklyRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/feedback/diet': {
+      id: '/_authenticated/feedback/diet'
+      path: '/feedback/diet'
+      fullPath: '/feedback/diet'
+      preLoaderRoute: typeof AuthenticatedFeedbackDietRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/exercise-history/$exerciseId': {
       id: '/_authenticated/exercise-history/$exerciseId'
       path: '/exercise-history/$exerciseId'
@@ -607,6 +667,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedHormonesRoute: typeof AuthenticatedHormonesRoute
   AuthenticatedJournalRoute: typeof AuthenticatedJournalRoute
   AuthenticatedMessagesRoute: typeof AuthenticatedMessagesRoute
+  AuthenticatedMonthlyAnalysisRoute: typeof AuthenticatedMonthlyAnalysisRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
@@ -614,6 +675,8 @@ interface AuthenticatedRouteChildren {
   AuthenticatedRankingRoute: typeof AuthenticatedRankingRoute
   AuthenticatedTrainingRoute: typeof AuthenticatedTrainingRoute
   AuthenticatedExerciseHistoryExerciseIdRoute: typeof AuthenticatedExerciseHistoryExerciseIdRoute
+  AuthenticatedFeedbackDietRoute: typeof AuthenticatedFeedbackDietRoute
+  AuthenticatedFeedbackWeeklyRoute: typeof AuthenticatedFeedbackWeeklyRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -629,6 +692,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedHormonesRoute: AuthenticatedHormonesRoute,
   AuthenticatedJournalRoute: AuthenticatedJournalRoute,
   AuthenticatedMessagesRoute: AuthenticatedMessagesRoute,
+  AuthenticatedMonthlyAnalysisRoute: AuthenticatedMonthlyAnalysisRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
@@ -637,6 +701,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedTrainingRoute: AuthenticatedTrainingRoute,
   AuthenticatedExerciseHistoryExerciseIdRoute:
     AuthenticatedExerciseHistoryExerciseIdRoute,
+  AuthenticatedFeedbackDietRoute: AuthenticatedFeedbackDietRoute,
+  AuthenticatedFeedbackWeeklyRoute: AuthenticatedFeedbackWeeklyRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
@@ -658,3 +724,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
