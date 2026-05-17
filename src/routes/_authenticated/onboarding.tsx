@@ -271,6 +271,7 @@ function OnboardingPage() {
     const { error: upErr } = await supabase.from("profiles").upsert(payload, { onConflict: "user_id" });
     setSaving(false);
     if (upErr) { setError(upErr.message); return; }
+    try { await clearDraftFn(); } catch { /* ignore */ }
     toast.success("Anamnese concluída! O treinador vai analisar e montar seu protocolo.");
     navigate({ to: "/dashboard" });
   };
@@ -280,7 +281,12 @@ function OnboardingPage() {
   return (
     <div className="min-h-screen bg-background py-10 px-4">
       <div className="container max-w-2xl mx-auto animate-fade-in">
-        <p className="text-sm text-muted-foreground mb-2">{STEPS[step]} — Passo {step + 1} de {STEPS.length}</p>
+        <div className="flex items-center justify-between mb-2 gap-3">
+          <p className="text-sm text-muted-foreground">{STEPS[step]} — Passo {step + 1} de {STEPS.length}</p>
+          <p className="text-[11px] text-muted-foreground">
+            {draftSaving ? "Salvando…" : draftSavedAt ? `Salvo ${draftSavedAt}` : ""}
+          </p>
+        </div>
         <Progress value={progress} className="mb-8" />
 
         <div className="rounded-xl border border-border bg-card p-6 space-y-4">
