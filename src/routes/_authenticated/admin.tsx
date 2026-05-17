@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -373,12 +373,14 @@ function UsersTab({ profiles }: { profiles: ProfileRow[] }) {
   const saveProtocolFn = useServerFn(adminSaveProtocol);
   const prescribeFn = useServerFn(prescribeFromAnamnese);
   const updateProfileFn = useServerFn(adminUpdateProfile);
+  const skipNextAutoSaveRef = useRef(false);
 
   const filtered = profiles.filter((p) =>
     !filter || (p.full_name ?? "").toLowerCase().includes(filter.toLowerCase()),
   );
 
   const selectUser = async (u: ProfileRow) => {
+    skipNextAutoSaveRef.current = true;
     setSelectedUser(u);
     setProtocol(null); setHistory([]); setFullProfile(null); setProfileDraft({});
     const [{ data: hist }, { data: roleRow }, { data: prof }] = await Promise.all([
