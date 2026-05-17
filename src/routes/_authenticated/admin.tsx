@@ -474,6 +474,13 @@ function UsersTab({ profiles }: { profiles: ProfileRow[] }) {
   useEffect(() => {
     if (!selectedUser) return;
     if (saving) return;
+    // Never auto-save over an active/archived protocol — only drafts.
+    if (protocol && protocol.status !== "pending_review") return;
+    // Skip the auto-save fired by the initial load of editor text.
+    if (skipNextAutoSaveRef.current) {
+      skipNextAutoSaveRef.current = false;
+      return;
+    }
     const handle = window.setTimeout(async () => {
       let training: any, diet: any, hormones: any;
       try { training = JSON.parse(trainingText); } catch { return; }
