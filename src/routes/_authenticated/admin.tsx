@@ -24,6 +24,8 @@ import {
 import { useServerFn } from "@tanstack/react-start";
 import { analyzeAnamnese, prescribeFromAnamnese, generateCoachFeedback } from "@/lib/anamnese.functions";
 import { adminSaveProtocol, adminSetAnalysisStatus, adminUpdateProfile } from "@/lib/admin.functions";
+import { adminGenerateBodyAnalysis, adminUpdateAnalysisContent } from "@/lib/body-analysis.functions";
+import { generateBodyAnalysisPdf } from "@/lib/bodyAnalysisPdf";
 import { TrainingEditor } from "@/components/admin/TrainingEditor";
 import { DietEditor } from "@/components/admin/DietEditor";
 import { HormonesEditor } from "@/components/admin/HormonesEditor";
@@ -1052,9 +1054,10 @@ function AnamneseTab({ profiles }: { profiles: ProfileRow[] }) {
   const [selected, setSelected] = useState<any>(null);
   const [analyses, setAnalyses] = useState<any[]>([]);
   const [signed, setSigned] = useState<Record<string, string>>({});
-  const [busy, setBusy] = useState<"analyze" | "prescribe" | null>(null);
+  const [busy, setBusy] = useState<"analyze" | "prescribe" | "body" | null>(null);
   const analyzeFn = useServerFn(analyzeAnamnese);
   const prescribeFn = useServerFn(prescribeFromAnamnese);
+  const bodyFn = useServerFn(adminGenerateBodyAnalysis);
 
   useEffect(() => {
     (async () => {
@@ -1101,6 +1104,16 @@ function AnamneseTab({ profiles }: { profiles: ProfileRow[] }) {
     } catch (e: any) { toast.error(e?.message ?? "Erro"); }
     finally { setBusy(null); }
   };
+  const runBodyAnalysis = async () => {
+    if (!selected) return;
+    setBusy("body");
+    try {
+      await bodyFn({ data: { targetUserId: selected.user_id } });
+      toast.success("Análise corporal IA gerada — revise abaixo e libere.");
+      await select(selected);
+    } catch (e: any) { toast.error(e?.message ?? "Erro"); }
+    finally { setBusy(null); }
+  };
 
   const filtered = list.filter((p) => !filter || (p.full_name ?? "").toLowerCase().includes(filter.toLowerCase()));
 
@@ -1141,6 +1154,10 @@ function AnamneseTab({ profiles }: { profiles: ProfileRow[] }) {
                   {busy === "prescribe" ? <Loader2 className="animate-spin mr-1" size={14}/> : <Sparkles size={14} className="mr-1"/>}
                   Prescrição IA
                 </Button>
+                <Button size="sm" variant="secondary" onClick={runBodyAnalysis} disabled={busy !== null}>
+                  {busy === "body" ? <Loader2 className="animate-spin mr-1" size={14}/> : <Sparkles size={14} className="mr-1"/>}
+                  Análise corporal IA
+                </Button>
               </div>
             </div>
 
@@ -1174,19 +1191,82 @@ function AnamneseTab({ profiles }: { profiles: ProfileRow[] }) {
               <h3 className="font-heading font-semibold mb-3 flex items-center gap-2"><Sparkles size={14} className="text-primary"/> Histórico IA</h3>
               <div className="space-y-2 max-h-[400px] overflow-y-auto">
                 {analyses.map((a) => (
-                  <div key={a.id} className="border-l-2 border-primary pl-3 py-1">
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span className="font-semibold">{a.kind}</span>
-                      <span>{new Date(a.created_at).toLocaleString("pt-BR")}</span>
-                    </div>
-                    <pre className="text-xs whitespace-pre-wrap mt-1 max-h-40 overflow-y-auto">{a.content}</pre>
-                  </div>
+                  <AdminAnalysisRow key={a.id} a={a} fullName={selected.full_name ?? "Aluno"} onChanged={() => select(selected)} />
                 ))}
               </div>
             </Card>
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function AdminAnalysisRow({ a, fullName, onChanged }: { a: any; fullName: string; onChanged: () => void }) {
+  const [editing, setEditing] = useState(false);
+  const [content, setContent] = useState<string>(() => {
+    try { return JSON.stringify(JSON.parse(a.content), null, 2); } catch { return a.content ?? ""; }
+  });
+  const [saving, setSaving] = useState(false);
+  const updateFn = useServerFn(adminUpdateAnalysisContent);
+  const statusFn = useServerFn(adminSetAnalysisStatus);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await updateFn({ data: { analysisId: a.id, content } });
+      toast.success("Conteúdo atualizado");
+      setEditing(false);
+      onChanged();
+    } catch (e: any) { toast.error(e?.message ?? "Erro"); }
+    finally { setSaving(false); }
+  };
+  const setStatus = async (status: "approved" | "rejected" | "pending") => {
+    try {
+      await statusFn({ data: { analysisId: a.id, status } });
+      toast.success(status === "approved" ? "Liberada para o aluno" : status === "rejected" ? "Rejeitada" : "Voltou para pendente");
+      onChanged();
+    } catch (e: any) { toast.error(e?.message ?? "Erro"); }
+  };
+  const downloadPdf = () => {
+    let parsed: any = {};
+    try { parsed = JSON.parse(a.content); } catch {}
+    generateBodyAnalysisPdf({ fullName, createdAt: a.created_at, analysis: parsed, meta: a.meta ?? {} });
+  };
+
+  return (
+    <div className="border-l-2 border-primary pl-3 py-2">
+      <div className="flex justify-between text-xs text-muted-foreground items-center gap-2">
+        <span className="font-semibold capitalize">{a.kind} · {a.status}</span>
+        <span>{new Date(a.created_at).toLocaleString("pt-BR")}</span>
+      </div>
+      {editing ? (
+        <Textarea className="mt-2 font-mono text-xs" rows={14} value={content} onChange={(e) => setContent(e.target.value)} />
+      ) : (
+        <pre className="text-xs whitespace-pre-wrap mt-1 max-h-40 overflow-y-auto">{(() => { try { return JSON.stringify(JSON.parse(a.content), null, 2); } catch { return a.content; } })()}</pre>
+      )}
+      <div className="flex flex-wrap gap-2 mt-2">
+        {editing ? (
+          <>
+            <Button size="sm" onClick={save} disabled={saving}>{saving ? "Salvando…" : "Salvar"}</Button>
+            <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>Cancelar</Button>
+          </>
+        ) : (
+          <Button size="sm" variant="outline" onClick={() => setEditing(true)}><Pencil size={12} className="mr-1"/>Editar</Button>
+        )}
+        {a.kind === "body_analysis" && (
+          <Button size="sm" variant="outline" onClick={downloadPdf}><FileText size={12} className="mr-1"/>PDF</Button>
+        )}
+        {a.status !== "approved" && (
+          <Button size="sm" onClick={() => setStatus("approved")}><CheckCircle2 size={12} className="mr-1"/>Liberar</Button>
+        )}
+        {a.status === "approved" && (
+          <Button size="sm" variant="ghost" onClick={() => setStatus("pending")}><Clock size={12} className="mr-1"/>Voltar p/ pendente</Button>
+        )}
+        {a.status !== "rejected" && (
+          <Button size="sm" variant="ghost" onClick={() => setStatus("rejected")}><XCircle size={12} className="mr-1"/>Rejeitar</Button>
+        )}
+      </div>
     </div>
   );
 }
