@@ -274,7 +274,7 @@ export const saveAnamneseDraft = createServerFn({ method: "POST" })
     };
     const { error } = await supabase
       .from("profiles")
-      .upsert({ user_id: userId, anamnese_extra: merged }, { onConflict: "user_id" });
+      .upsert({ user_id: userId, anamnese_extra: merged as any }, { onConflict: "user_id" });
     if (error) throw new Error(error.message);
     return { savedAt: (merged.draft as any).savedAt };
   });
@@ -298,6 +298,6 @@ export const clearAnamneseDraft = createServerFn({ method: "POST" })
       .from("profiles").select("anamnese_extra").eq("user_id", userId).maybeSingle();
     const extra = { ...((current?.anamnese_extra ?? {}) as Record<string, unknown>) };
     delete (extra as any).draft;
-    await supabase.from("profiles").update({ anamnese_extra: extra }).eq("user_id", userId);
+    await supabase.from("profiles").update({ anamnese_extra: extra as any }).eq("user_id", userId);
     return { ok: true };
   });
