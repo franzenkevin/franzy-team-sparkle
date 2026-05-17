@@ -34,6 +34,7 @@ import { Route as AuthenticatedDietRouteImport } from './routes/_authenticated/d
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCoachRouteImport } from './routes/_authenticated/coach'
 import { Route as AuthenticatedChallengesRouteImport } from './routes/_authenticated/challenges'
+import { Route as AuthenticatedBodyAnalysisRouteImport } from './routes/_authenticated/body-analysis'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAchievementsRouteImport } from './routes/_authenticated/achievements'
 import { Route as AuthenticatedFeedbackWeeklyRouteImport } from './routes/_authenticated/feedback.weekly'
@@ -168,6 +169,12 @@ const AuthenticatedChallengesRoute = AuthenticatedChallengesRouteImport.update({
   path: '/challenges',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedBodyAnalysisRoute =
+  AuthenticatedBodyAnalysisRouteImport.update({
+    id: '/body-analysis',
+    path: '/body-analysis',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -216,6 +223,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/achievements': typeof AuthenticatedAchievementsRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/body-analysis': typeof AuthenticatedBodyAnalysisRoute
   '/challenges': typeof AuthenticatedChallengesRoute
   '/coach': typeof AuthenticatedCoachRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -249,6 +257,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/achievements': typeof AuthenticatedAchievementsRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/body-analysis': typeof AuthenticatedBodyAnalysisRoute
   '/challenges': typeof AuthenticatedChallengesRoute
   '/coach': typeof AuthenticatedCoachRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -284,6 +293,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/_authenticated/achievements': typeof AuthenticatedAchievementsRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/body-analysis': typeof AuthenticatedBodyAnalysisRoute
   '/_authenticated/challenges': typeof AuthenticatedChallengesRoute
   '/_authenticated/coach': typeof AuthenticatedCoachRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
@@ -319,6 +329,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/achievements'
     | '/admin'
+    | '/body-analysis'
     | '/challenges'
     | '/coach'
     | '/dashboard'
@@ -352,6 +363,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/achievements'
     | '/admin'
+    | '/body-analysis'
     | '/challenges'
     | '/coach'
     | '/dashboard'
@@ -386,6 +398,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/_authenticated/achievements'
     | '/_authenticated/admin'
+    | '/_authenticated/body-analysis'
     | '/_authenticated/challenges'
     | '/_authenticated/coach'
     | '/_authenticated/dashboard'
@@ -602,6 +615,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedChallengesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/body-analysis': {
+      id: '/_authenticated/body-analysis'
+      path: '/body-analysis'
+      fullPath: '/body-analysis'
+      preLoaderRoute: typeof AuthenticatedBodyAnalysisRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin': {
       id: '/_authenticated/admin'
       path: '/admin'
@@ -657,6 +677,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteChildren {
   AuthenticatedAchievementsRoute: typeof AuthenticatedAchievementsRoute
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedBodyAnalysisRoute: typeof AuthenticatedBodyAnalysisRoute
   AuthenticatedChallengesRoute: typeof AuthenticatedChallengesRoute
   AuthenticatedCoachRoute: typeof AuthenticatedCoachRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
@@ -682,6 +703,7 @@ interface AuthenticatedRouteChildren {
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAchievementsRoute: AuthenticatedAchievementsRoute,
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedBodyAnalysisRoute: AuthenticatedBodyAnalysisRoute,
   AuthenticatedChallengesRoute: AuthenticatedChallengesRoute,
   AuthenticatedCoachRoute: AuthenticatedCoachRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
@@ -724,13 +746,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
