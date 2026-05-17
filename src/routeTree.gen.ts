@@ -17,6 +17,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as STokenRouteImport } from './routes/s.$token'
 import { Route as ApiCoachRouteImport } from './routes/api/coach'
+import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AuthenticatedTrainingRouteImport } from './routes/_authenticated/training'
 import { Route as AuthenticatedRankingRouteImport } from './routes/_authenticated/ranking'
 import { Route as AuthenticatedProgressRouteImport } from './routes/_authenticated/progress'
@@ -80,6 +81,11 @@ const STokenRoute = STokenRouteImport.update({
 const ApiCoachRoute = ApiCoachRouteImport.update({
   id: '/api/coach',
   path: '/api/coach',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/admin/login',
+  path: '/admin/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedTrainingRoute = AuthenticatedTrainingRouteImport.update({
@@ -241,6 +247,7 @@ export interface FileRoutesByFullPath {
   '/progress': typeof AuthenticatedProgressRoute
   '/ranking': typeof AuthenticatedRankingRoute
   '/training': typeof AuthenticatedTrainingRoute
+  '/admin/login': typeof AdminLoginRoute
   '/api/coach': typeof ApiCoachRoute
   '/s/$token': typeof STokenRoute
   '/exercise-history/$exerciseId': typeof AuthenticatedExerciseHistoryExerciseIdRoute
@@ -275,6 +282,7 @@ export interface FileRoutesByTo {
   '/progress': typeof AuthenticatedProgressRoute
   '/ranking': typeof AuthenticatedRankingRoute
   '/training': typeof AuthenticatedTrainingRoute
+  '/admin/login': typeof AdminLoginRoute
   '/api/coach': typeof ApiCoachRoute
   '/s/$token': typeof STokenRoute
   '/exercise-history/$exerciseId': typeof AuthenticatedExerciseHistoryExerciseIdRoute
@@ -311,6 +319,7 @@ export interface FileRoutesById {
   '/_authenticated/progress': typeof AuthenticatedProgressRoute
   '/_authenticated/ranking': typeof AuthenticatedRankingRoute
   '/_authenticated/training': typeof AuthenticatedTrainingRoute
+  '/admin/login': typeof AdminLoginRoute
   '/api/coach': typeof ApiCoachRoute
   '/s/$token': typeof STokenRoute
   '/_authenticated/exercise-history/$exerciseId': typeof AuthenticatedExerciseHistoryExerciseIdRoute
@@ -347,6 +356,7 @@ export interface FileRouteTypes {
     | '/progress'
     | '/ranking'
     | '/training'
+    | '/admin/login'
     | '/api/coach'
     | '/s/$token'
     | '/exercise-history/$exerciseId'
@@ -381,6 +391,7 @@ export interface FileRouteTypes {
     | '/progress'
     | '/ranking'
     | '/training'
+    | '/admin/login'
     | '/api/coach'
     | '/s/$token'
     | '/exercise-history/$exerciseId'
@@ -416,6 +427,7 @@ export interface FileRouteTypes {
     | '/_authenticated/progress'
     | '/_authenticated/ranking'
     | '/_authenticated/training'
+    | '/admin/login'
     | '/api/coach'
     | '/s/$token'
     | '/_authenticated/exercise-history/$exerciseId'
@@ -432,6 +444,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
+  AdminLoginRoute: typeof AdminLoginRoute
   ApiCoachRoute: typeof ApiCoachRoute
   STokenRoute: typeof STokenRoute
   ApiPublicShareOgTokenRoute: typeof ApiPublicShareOgTokenRoute
@@ -494,6 +507,13 @@ declare module '@tanstack/react-router' {
       path: '/api/coach'
       fullPath: '/api/coach'
       preLoaderRoute: typeof ApiCoachRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/login': {
+      id: '/admin/login'
+      path: '/admin/login'
+      fullPath: '/admin/login'
+      preLoaderRoute: typeof AdminLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/training': {
@@ -738,6 +758,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
+  AdminLoginRoute: AdminLoginRoute,
   ApiCoachRoute: ApiCoachRoute,
   STokenRoute: STokenRoute,
   ApiPublicShareOgTokenRoute: ApiPublicShareOgTokenRoute,
@@ -746,13 +767,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
