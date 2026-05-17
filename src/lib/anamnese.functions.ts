@@ -246,3 +246,58 @@ Use tom de coach (Franzen Team). Cite ajustes práticos se cabíveis. Sem markdo
     }
     return { text };
   });
+
+/* ============================================================
+ * AUTO-SAVE DA ANAMNESE (rascunho no servidor)
+ * Persiste estado parcial em profiles.anamnese_extra.draft
+ * ============================================================ */
+export const saveAnamneseDraft = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { values: Record<string, unknown>; step?: number }) => {
+    if (!d || typeof d.values !== "object" || d.values === null) {
+      throw new Error("Payload inválido");
+    }
+    return d;
+  })
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: current } = await supabase
+      .from("profiles").select("anamnese_extra").eq("user_id", userId).maybeSingle();
+    const extra = (current?.anamnese_extra ?? {}) as Record<string, unknown>;
+    const merged = {
+      ...extra,
+      draft: {
+        values: data.values,
+        step: data.step ?? 0,
+        savedAt: new Date().toISOString(),
+      },
+    };
+    const { error } = await supabase
+      .from("profiles")
+      .upsert({ user_id: userId, anamnese_extra: merged }, { onConflict: "user_id" });
+    if (error) throw new Error(error.message);
+    return { savedAt: (merged.draft as any).savedAt };
+  });
+
+export const loadAnamneseDraft = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data } = await supabase
+      .from("profiles").select("anamnese_extra, onboarding_complete")
+      .eq("user_id", userId).maybeSingle();
+    const draft = (data?.anamnese_extra as any)?.draft ?? null;
+    return { draft, completed: !!data?.onboarding_complete };
+  });
+
+export const clearAnamneseDraft = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data: current } = await supabase
+      .from("profiles").select("anamnese_extra").eq("user_id", userId).maybeSingle();
+    const extra = { ...((current?.anamnese_extra ?? {}) as Record<string, unknown>) };
+    delete (extra as any).draft;
+    await supabase.from("profiles").update({ anamnese_extra: extra }).eq("user_id", userId);
+    return { ok: true };
+  });
