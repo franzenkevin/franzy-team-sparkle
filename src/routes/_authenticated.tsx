@@ -3,6 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { BottomNav } from "@/components/BottomNav";
+import { InstallPwaPrompt } from "@/components/InstallPwaPrompt";
+import { OnboardingTour } from "@/components/OnboardingTour";
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async ({ location }) => {
@@ -30,6 +32,8 @@ function AuthenticatedLayout() {
         </div>
       </div>
       <BottomNav />
+      <InstallPwaPrompt />
+      <OnboardingTour />
     </SidebarProvider>
   );
 }

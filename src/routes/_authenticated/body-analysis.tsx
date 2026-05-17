@@ -8,9 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { ArrowLeft, Camera, Sparkles, Loader2, ImageIcon, CheckCircle2, Clock } from "lucide-react";
+import { ArrowLeft, Camera, Sparkles, Loader2, ImageIcon, CheckCircle2, Clock, Download } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { requestBodyAnalysis, listMyBodyAnalyses } from "@/lib/body-analysis.functions";
+import { generateBodyAnalysisPdf } from "@/lib/bodyAnalysisPdf";
 
 export const Route = createFileRoute("/_authenticated/body-analysis")({
   head: () => ({ meta: [{ title: "Análise corporal IA — Franzen Team" }] }),
@@ -193,6 +194,17 @@ function AnalysisCard({ item }: { item: any }) {
   const status = item.status as string;
   const date = new Date(item.created_at).toLocaleDateString("pt-BR");
 
+  const downloadPdf = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    const { data: p } = user ? await supabase.from("profiles").select("full_name").eq("user_id", user.id).maybeSingle() : { data: null } as any;
+    generateBodyAnalysisPdf({
+      fullName: p?.full_name ?? "Aluno",
+      createdAt: item.created_at,
+      analysis: parsed ?? {},
+      meta: item.meta ?? {},
+    });
+  };
+
   return (
     <Card className="p-4">
       <div className="flex items-center justify-between mb-2">
@@ -214,9 +226,14 @@ function AnalysisCard({ item }: { item: any }) {
           {parsed?.overall_summary && (
             <p className="text-sm whitespace-pre-wrap">{parsed.overall_summary}</p>
           )}
-          <Button variant="ghost" size="sm" className="mt-2 -ml-2" onClick={() => setOpen((o) => !o)}>
-            {open ? "Ocultar detalhes" : "Ver detalhes"}
-          </Button>
+          <div className="flex gap-2 mt-2 -ml-2">
+            <Button variant="ghost" size="sm" onClick={() => setOpen((o) => !o)}>
+              {open ? "Ocultar detalhes" : "Ver detalhes"}
+            </Button>
+            <Button variant="outline" size="sm" onClick={downloadPdf}>
+              <Download size={14} className="mr-1" /> PDF
+            </Button>
+          </div>
           {open && parsed && (
             <div className="mt-2 space-y-2 text-sm">
               {parsed.body_fat_estimate && <div><strong>% gordura:</strong> {parsed.body_fat_estimate}</div>}
