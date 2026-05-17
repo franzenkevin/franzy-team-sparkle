@@ -11,6 +11,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { ArrowLeft, ArrowRight, Check, Upload, Camera } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { saveAnamneseDraft, loadAnamneseDraft, clearAnamneseDraft } from "@/lib/anamnese.functions";
 
 type FD = Record<string, string>;
 
@@ -53,6 +55,12 @@ function OnboardingPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState<string | null>(null);
+  const [draftSavedAt, setDraftSavedAt] = useState<string | null>(null);
+  const [draftSaving, setDraftSaving] = useState(false);
+  const [draftLoaded, setDraftLoaded] = useState(false);
+  const saveDraftFn = useServerFn(saveAnamneseDraft);
+  const loadDraftFn = useServerFn(loadAnamneseDraft);
+  const clearDraftFn = useServerFn(clearAnamneseDraft);
   const [d, setD] = useState<FD>({
     // Identificação
     full_name: "", cpf: "", address: "", birth_date: "",
@@ -95,8 +103,33 @@ function OnboardingPage() {
         if (v !== undefined && v !== null) next[k] = String(v);
       }
       setD((prev) => ({ ...prev, ...next }));
+      // Restaurar rascunho remoto se existir
+      try {
+        const r = await loadDraftFn();
+        if (r?.draft?.values) {
+          setD((prev) => ({ ...prev, ...(r.draft.values as FD) }));
+          if (typeof r.draft.step === "number") setStep(r.draft.step);
+          if (r.draft.savedAt) setDraftSavedAt(new Date(r.draft.savedAt).toLocaleTimeString());
+        }
+      } catch { /* ignore */ }
+      setDraftLoaded(true);
     })();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-save no servidor (debounce 1.5s)
+  useEffect(() => {
+    if (!draftLoaded) return;
+    const handle = window.setTimeout(async () => {
+      try {
+        setDraftSaving(true);
+        const r = await saveDraftFn({ data: { values: d, step } });
+        if (r?.savedAt) setDraftSavedAt(new Date(r.savedAt).toLocaleTimeString());
+      } catch { /* ignore */ } finally {
+        setDraftSaving(false);
+      }
+    }, 1500);
+    return () => window.clearTimeout(handle);
+  }, [d, step, draftLoaded, saveDraftFn]);
 
   const set = (k: string, v: string) => setD((p) => ({ ...p, [k]: v }));
 
