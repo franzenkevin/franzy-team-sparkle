@@ -31,6 +31,7 @@ import { DietEditor } from "@/components/admin/DietEditor";
 import { HormonesEditor } from "@/components/admin/HormonesEditor";
 import { TemplateLibrary } from "@/components/admin/TemplateLibrary";
 import { ProtocolPreviewTabs } from "@/components/ProtocolPreview";
+import { ResumoTab } from "@/components/admin/ResumoTab";
 
 function safeParse(text: string, fallback: any) {
   try { return JSON.parse(text); } catch { return fallback; }
@@ -235,14 +236,9 @@ function AdminPage() {
   return (
     <div className="min-h-screen">
       <main className="container mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-heading font-bold flex items-center gap-2">
-            <ShieldCheck className="text-primary" /> Painel do Criador
-          </h1>
-        </div>
-
-        <Tabs defaultValue="overview">
+        <Tabs defaultValue="resumo">
           <TabsList className="w-full flex flex-wrap h-auto justify-start gap-1">
+            <TabsTrigger value="resumo" className="gap-1"><BarChart3 size={14} />Resumo</TabsTrigger>
             <TabsTrigger value="overview" className="gap-1"><BarChart3 size={14} />Visão geral</TabsTrigger>
             <TabsTrigger value="approvals" className="gap-1"><Clock size={14} />Aprovações</TabsTrigger>
             <TabsTrigger value="users" className="gap-1"><Users size={14} />Usuários</TabsTrigger>
@@ -259,6 +255,9 @@ function AdminPage() {
             <TabsTrigger value="diet-fb" className="gap-1"><Apple size={14} />Dieta</TabsTrigger>
           </TabsList>
 
+          <TabsContent value="resumo" className="mt-4">
+            <ResumoTab />
+          </TabsContent>
           <TabsContent value="overview" className="mt-4">
             <OverviewTab metrics={metrics} profiles={profiles} />
           </TabsContent>
