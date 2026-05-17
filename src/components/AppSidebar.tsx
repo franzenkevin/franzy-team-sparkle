@@ -4,6 +4,7 @@ import {
   LayoutDashboard, Dumbbell, Apple, LineChart, History, User,
   Shield, Users, ClipboardList, MessageSquare, LogOut, Library, Bot, Pill,
   Trophy, Flame, Award, BookHeart, Bell, CalendarDays, Activity, FileText,
+  Sparkles,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -19,6 +20,7 @@ const mainItems = [
   { title: "Nutrição", url: "/diet", icon: Apple },
   { title: "Hormônios", url: "/hormones", icon: Pill },
   { title: "Progresso", url: "/progress", icon: LineChart },
+  { title: "Análise IA", url: "/body-analysis", icon: Sparkles },
   { title: "Feedback semanal", url: "/feedback/weekly", icon: CalendarDays },
   { title: "Feedback dieta", url: "/feedback/diet", icon: Apple },
   { title: "Análise mensal", url: "/monthly-analysis", icon: Activity },
