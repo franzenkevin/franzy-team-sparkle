@@ -12,11 +12,33 @@ export const Route = createFileRoute("/_authenticated")({
     if (!session) {
       throw redirect({ to: "/login", search: { redirect: location.href } });
     }
+    // Admin contas só usam o painel administrativo — fora de /admin, redireciona.
+    const { data: roleRow } = await supabase
+      .from("user_roles").select("role")
+      .eq("user_id", session.user.id).eq("role", "admin").maybeSingle();
+    const isAdmin = !!roleRow;
+    const isAdminRoute = location.pathname === "/admin" || location.pathname.startsWith("/admin/");
+    if (isAdmin && !isAdminRoute) {
+      throw redirect({ to: "/admin" });
+    }
+    if (!isAdmin && isAdminRoute) {
+      throw redirect({ to: "/dashboard" });
+    }
   },
   component: AuthenticatedLayout,
 });
 
 function AuthenticatedLayout() {
+  // Don't render the student shell (sidebar/bottomnav/PWA/onboarding) on admin pages.
+  const pathname = typeof window !== "undefined" ? window.location.pathname : "";
+  const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
+  if (isAdminRoute) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Outlet />
+      </div>
+    );
+  }
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
