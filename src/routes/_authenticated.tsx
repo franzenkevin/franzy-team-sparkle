@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, useLocation } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -30,7 +30,7 @@ export const Route = createFileRoute("/_authenticated")({
 
 function AuthenticatedLayout() {
   // Don't render the student shell (sidebar/bottomnav/PWA/onboarding) on admin pages.
-  const pathname = typeof window !== "undefined" ? window.location.pathname : "";
+  const { pathname } = useLocation();
   const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
   if (isAdminRoute) {
     return (
