@@ -465,14 +465,6 @@ function TrainingPage() {
                           <Button size="sm" variant="ghost" onClick={() => setExpandedEx((p) => ({ ...p, [ex.id]: !isExpanded }))}>
                             {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                           </Button>
-                          <Link
-                            to="/exercise-history/$exerciseId"
-                            params={{ exerciseId: ex.id }}
-                            className="inline-flex h-9 items-center rounded-md border border-border px-3 text-xs hover:border-primary"
-                            aria-label="Histórico"
-                          >
-                            <LineChart size={14} />
-                          </Link>
                           <Button size="sm" variant="outline" onClick={() => setSwapFor(ex)}>
                             <Replace size={14} />
                           </Button>
