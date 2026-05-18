@@ -26,23 +26,15 @@ import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authentic
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedMonthlyAnalysisRouteImport } from './routes/_authenticated/monthly-analysis'
 import { Route as AuthenticatedMessagesRouteImport } from './routes/_authenticated/messages'
-import { Route as AuthenticatedJournalRouteImport } from './routes/_authenticated/journal'
 import { Route as AuthenticatedHormonesRouteImport } from './routes/_authenticated/hormones'
-import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticated/history'
 import { Route as AuthenticatedGenerateRouteImport } from './routes/_authenticated/generate'
-import { Route as AuthenticatedExercisesRouteImport } from './routes/_authenticated/exercises'
 import { Route as AuthenticatedDietRouteImport } from './routes/_authenticated/diet'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
-import { Route as AuthenticatedCoachRouteImport } from './routes/_authenticated/coach'
 import { Route as AuthenticatedChallengesRouteImport } from './routes/_authenticated/challenges'
-import { Route as AuthenticatedBodyAnalysisRouteImport } from './routes/_authenticated/body-analysis'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAchievementsRouteImport } from './routes/_authenticated/achievements'
-import { Route as AuthenticatedFeedbackIndexRouteImport } from './routes/_authenticated/feedback.index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedFeedbackWeeklyRouteImport } from './routes/_authenticated/feedback.weekly'
-import { Route as AuthenticatedFeedbackDietRouteImport } from './routes/_authenticated/feedback.diet'
-import { Route as AuthenticatedExerciseHistoryExerciseIdRouteImport } from './routes/_authenticated/exercise-history.$exerciseId'
 import { Route as AuthenticatedAdminToolsRouteImport } from './routes/_authenticated/admin.tools'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin.settings'
 import { Route as AuthenticatedAdminLibraryRouteImport } from './routes/_authenticated/admin.library'
@@ -137,29 +129,14 @@ const AuthenticatedMessagesRoute = AuthenticatedMessagesRouteImport.update({
   path: '/messages',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedJournalRoute = AuthenticatedJournalRouteImport.update({
-  id: '/journal',
-  path: '/journal',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
 const AuthenticatedHormonesRoute = AuthenticatedHormonesRouteImport.update({
   id: '/hormones',
   path: '/hormones',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedHistoryRoute = AuthenticatedHistoryRouteImport.update({
-  id: '/history',
-  path: '/history',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
 const AuthenticatedGenerateRoute = AuthenticatedGenerateRouteImport.update({
   id: '/generate',
   path: '/generate',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedExercisesRoute = AuthenticatedExercisesRouteImport.update({
-  id: '/exercises',
-  path: '/exercises',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedDietRoute = AuthenticatedDietRouteImport.update({
@@ -172,22 +149,11 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedCoachRoute = AuthenticatedCoachRouteImport.update({
-  id: '/coach',
-  path: '/coach',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
 const AuthenticatedChallengesRoute = AuthenticatedChallengesRouteImport.update({
   id: '/challenges',
   path: '/challenges',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedBodyAnalysisRoute =
-  AuthenticatedBodyAnalysisRouteImport.update({
-    id: '/body-analysis',
-    path: '/body-analysis',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -199,12 +165,6 @@ const AuthenticatedAchievementsRoute =
     path: '/achievements',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedFeedbackIndexRoute =
-  AuthenticatedFeedbackIndexRouteImport.update({
-    id: '/feedback/',
-    path: '/feedback/',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
 const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -214,18 +174,6 @@ const AuthenticatedFeedbackWeeklyRoute =
   AuthenticatedFeedbackWeeklyRouteImport.update({
     id: '/feedback/weekly',
     path: '/feedback/weekly',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedFeedbackDietRoute =
-  AuthenticatedFeedbackDietRouteImport.update({
-    id: '/feedback/diet',
-    path: '/feedback/diet',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedExerciseHistoryExerciseIdRoute =
-  AuthenticatedExerciseHistoryExerciseIdRouteImport.update({
-    id: '/exercise-history/$exerciseId',
-    path: '/exercise-history/$exerciseId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedAdminToolsRoute = AuthenticatedAdminToolsRouteImport.update({
@@ -276,16 +224,11 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/achievements': typeof AuthenticatedAchievementsRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
-  '/body-analysis': typeof AuthenticatedBodyAnalysisRoute
   '/challenges': typeof AuthenticatedChallengesRoute
-  '/coach': typeof AuthenticatedCoachRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/diet': typeof AuthenticatedDietRoute
-  '/exercises': typeof AuthenticatedExercisesRoute
   '/generate': typeof AuthenticatedGenerateRoute
-  '/history': typeof AuthenticatedHistoryRoute
   '/hormones': typeof AuthenticatedHormonesRoute
-  '/journal': typeof AuthenticatedJournalRoute
   '/messages': typeof AuthenticatedMessagesRoute
   '/monthly-analysis': typeof AuthenticatedMonthlyAnalysisRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
@@ -301,11 +244,8 @@ export interface FileRoutesByFullPath {
   '/admin/library': typeof AuthenticatedAdminLibraryRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/tools': typeof AuthenticatedAdminToolsRoute
-  '/exercise-history/$exerciseId': typeof AuthenticatedExerciseHistoryExerciseIdRoute
-  '/feedback/diet': typeof AuthenticatedFeedbackDietRoute
   '/feedback/weekly': typeof AuthenticatedFeedbackWeeklyRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
-  '/feedback/': typeof AuthenticatedFeedbackIndexRoute
   '/admin/clients/$id': typeof AuthenticatedAdminClientsIdRoute
   '/api/public/share-og/$token': typeof ApiPublicShareOgTokenRoute
   '/api/public/share/$token': typeof ApiPublicShareTokenRoute
@@ -317,16 +257,11 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/achievements': typeof AuthenticatedAchievementsRoute
-  '/body-analysis': typeof AuthenticatedBodyAnalysisRoute
   '/challenges': typeof AuthenticatedChallengesRoute
-  '/coach': typeof AuthenticatedCoachRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/diet': typeof AuthenticatedDietRoute
-  '/exercises': typeof AuthenticatedExercisesRoute
   '/generate': typeof AuthenticatedGenerateRoute
-  '/history': typeof AuthenticatedHistoryRoute
   '/hormones': typeof AuthenticatedHormonesRoute
-  '/journal': typeof AuthenticatedJournalRoute
   '/messages': typeof AuthenticatedMessagesRoute
   '/monthly-analysis': typeof AuthenticatedMonthlyAnalysisRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
@@ -342,11 +277,8 @@ export interface FileRoutesByTo {
   '/admin/library': typeof AuthenticatedAdminLibraryRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/tools': typeof AuthenticatedAdminToolsRoute
-  '/exercise-history/$exerciseId': typeof AuthenticatedExerciseHistoryExerciseIdRoute
-  '/feedback/diet': typeof AuthenticatedFeedbackDietRoute
   '/feedback/weekly': typeof AuthenticatedFeedbackWeeklyRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
-  '/feedback': typeof AuthenticatedFeedbackIndexRoute
   '/admin/clients/$id': typeof AuthenticatedAdminClientsIdRoute
   '/api/public/share-og/$token': typeof ApiPublicShareOgTokenRoute
   '/api/public/share/$token': typeof ApiPublicShareTokenRoute
@@ -361,16 +293,11 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/_authenticated/achievements': typeof AuthenticatedAchievementsRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
-  '/_authenticated/body-analysis': typeof AuthenticatedBodyAnalysisRoute
   '/_authenticated/challenges': typeof AuthenticatedChallengesRoute
-  '/_authenticated/coach': typeof AuthenticatedCoachRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/diet': typeof AuthenticatedDietRoute
-  '/_authenticated/exercises': typeof AuthenticatedExercisesRoute
   '/_authenticated/generate': typeof AuthenticatedGenerateRoute
-  '/_authenticated/history': typeof AuthenticatedHistoryRoute
   '/_authenticated/hormones': typeof AuthenticatedHormonesRoute
-  '/_authenticated/journal': typeof AuthenticatedJournalRoute
   '/_authenticated/messages': typeof AuthenticatedMessagesRoute
   '/_authenticated/monthly-analysis': typeof AuthenticatedMonthlyAnalysisRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
@@ -386,11 +313,8 @@ export interface FileRoutesById {
   '/_authenticated/admin/library': typeof AuthenticatedAdminLibraryRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/admin/tools': typeof AuthenticatedAdminToolsRoute
-  '/_authenticated/exercise-history/$exerciseId': typeof AuthenticatedExerciseHistoryExerciseIdRoute
-  '/_authenticated/feedback/diet': typeof AuthenticatedFeedbackDietRoute
   '/_authenticated/feedback/weekly': typeof AuthenticatedFeedbackWeeklyRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
-  '/_authenticated/feedback/': typeof AuthenticatedFeedbackIndexRoute
   '/_authenticated/admin/clients/$id': typeof AuthenticatedAdminClientsIdRoute
   '/api/public/share-og/$token': typeof ApiPublicShareOgTokenRoute
   '/api/public/share/$token': typeof ApiPublicShareTokenRoute
@@ -405,16 +329,11 @@ export interface FileRouteTypes {
     | '/signup'
     | '/achievements'
     | '/admin'
-    | '/body-analysis'
     | '/challenges'
-    | '/coach'
     | '/dashboard'
     | '/diet'
-    | '/exercises'
     | '/generate'
-    | '/history'
     | '/hormones'
-    | '/journal'
     | '/messages'
     | '/monthly-analysis'
     | '/notifications'
@@ -430,11 +349,8 @@ export interface FileRouteTypes {
     | '/admin/library'
     | '/admin/settings'
     | '/admin/tools'
-    | '/exercise-history/$exerciseId'
-    | '/feedback/diet'
     | '/feedback/weekly'
     | '/admin/'
-    | '/feedback/'
     | '/admin/clients/$id'
     | '/api/public/share-og/$token'
     | '/api/public/share/$token'
@@ -446,16 +362,11 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/achievements'
-    | '/body-analysis'
     | '/challenges'
-    | '/coach'
     | '/dashboard'
     | '/diet'
-    | '/exercises'
     | '/generate'
-    | '/history'
     | '/hormones'
-    | '/journal'
     | '/messages'
     | '/monthly-analysis'
     | '/notifications'
@@ -471,11 +382,8 @@ export interface FileRouteTypes {
     | '/admin/library'
     | '/admin/settings'
     | '/admin/tools'
-    | '/exercise-history/$exerciseId'
-    | '/feedback/diet'
     | '/feedback/weekly'
     | '/admin'
-    | '/feedback'
     | '/admin/clients/$id'
     | '/api/public/share-og/$token'
     | '/api/public/share/$token'
@@ -489,16 +397,11 @@ export interface FileRouteTypes {
     | '/signup'
     | '/_authenticated/achievements'
     | '/_authenticated/admin'
-    | '/_authenticated/body-analysis'
     | '/_authenticated/challenges'
-    | '/_authenticated/coach'
     | '/_authenticated/dashboard'
     | '/_authenticated/diet'
-    | '/_authenticated/exercises'
     | '/_authenticated/generate'
-    | '/_authenticated/history'
     | '/_authenticated/hormones'
-    | '/_authenticated/journal'
     | '/_authenticated/messages'
     | '/_authenticated/monthly-analysis'
     | '/_authenticated/notifications'
@@ -514,11 +417,8 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/library'
     | '/_authenticated/admin/settings'
     | '/_authenticated/admin/tools'
-    | '/_authenticated/exercise-history/$exerciseId'
-    | '/_authenticated/feedback/diet'
     | '/_authenticated/feedback/weekly'
     | '/_authenticated/admin/'
-    | '/_authenticated/feedback/'
     | '/_authenticated/admin/clients/$id'
     | '/api/public/share-og/$token'
     | '/api/public/share/$token'
@@ -659,13 +559,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMessagesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/journal': {
-      id: '/_authenticated/journal'
-      path: '/journal'
-      fullPath: '/journal'
-      preLoaderRoute: typeof AuthenticatedJournalRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/_authenticated/hormones': {
       id: '/_authenticated/hormones'
       path: '/hormones'
@@ -673,25 +566,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedHormonesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/history': {
-      id: '/_authenticated/history'
-      path: '/history'
-      fullPath: '/history'
-      preLoaderRoute: typeof AuthenticatedHistoryRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/_authenticated/generate': {
       id: '/_authenticated/generate'
       path: '/generate'
       fullPath: '/generate'
       preLoaderRoute: typeof AuthenticatedGenerateRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/exercises': {
-      id: '/_authenticated/exercises'
-      path: '/exercises'
-      fullPath: '/exercises'
-      preLoaderRoute: typeof AuthenticatedExercisesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/diet': {
@@ -708,25 +587,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/coach': {
-      id: '/_authenticated/coach'
-      path: '/coach'
-      fullPath: '/coach'
-      preLoaderRoute: typeof AuthenticatedCoachRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/_authenticated/challenges': {
       id: '/_authenticated/challenges'
       path: '/challenges'
       fullPath: '/challenges'
       preLoaderRoute: typeof AuthenticatedChallengesRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/body-analysis': {
-      id: '/_authenticated/body-analysis'
-      path: '/body-analysis'
-      fullPath: '/body-analysis'
-      preLoaderRoute: typeof AuthenticatedBodyAnalysisRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/admin': {
@@ -743,13 +608,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAchievementsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/feedback/': {
-      id: '/_authenticated/feedback/'
-      path: '/feedback'
-      fullPath: '/feedback/'
-      preLoaderRoute: typeof AuthenticatedFeedbackIndexRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/_authenticated/admin/': {
       id: '/_authenticated/admin/'
       path: '/'
@@ -762,20 +620,6 @@ declare module '@tanstack/react-router' {
       path: '/feedback/weekly'
       fullPath: '/feedback/weekly'
       preLoaderRoute: typeof AuthenticatedFeedbackWeeklyRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/feedback/diet': {
-      id: '/_authenticated/feedback/diet'
-      path: '/feedback/diet'
-      fullPath: '/feedback/diet'
-      preLoaderRoute: typeof AuthenticatedFeedbackDietRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/exercise-history/$exerciseId': {
-      id: '/_authenticated/exercise-history/$exerciseId'
-      path: '/exercise-history/$exerciseId'
-      fullPath: '/exercise-history/$exerciseId'
-      preLoaderRoute: typeof AuthenticatedExerciseHistoryExerciseIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/admin/tools': {
@@ -866,16 +710,11 @@ const AuthenticatedAdminRouteWithChildren =
 interface AuthenticatedRouteChildren {
   AuthenticatedAchievementsRoute: typeof AuthenticatedAchievementsRoute
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
-  AuthenticatedBodyAnalysisRoute: typeof AuthenticatedBodyAnalysisRoute
   AuthenticatedChallengesRoute: typeof AuthenticatedChallengesRoute
-  AuthenticatedCoachRoute: typeof AuthenticatedCoachRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDietRoute: typeof AuthenticatedDietRoute
-  AuthenticatedExercisesRoute: typeof AuthenticatedExercisesRoute
   AuthenticatedGenerateRoute: typeof AuthenticatedGenerateRoute
-  AuthenticatedHistoryRoute: typeof AuthenticatedHistoryRoute
   AuthenticatedHormonesRoute: typeof AuthenticatedHormonesRoute
-  AuthenticatedJournalRoute: typeof AuthenticatedJournalRoute
   AuthenticatedMessagesRoute: typeof AuthenticatedMessagesRoute
   AuthenticatedMonthlyAnalysisRoute: typeof AuthenticatedMonthlyAnalysisRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
@@ -884,25 +723,17 @@ interface AuthenticatedRouteChildren {
   AuthenticatedProgressRoute: typeof AuthenticatedProgressRoute
   AuthenticatedRankingRoute: typeof AuthenticatedRankingRoute
   AuthenticatedTrainingRoute: typeof AuthenticatedTrainingRoute
-  AuthenticatedExerciseHistoryExerciseIdRoute: typeof AuthenticatedExerciseHistoryExerciseIdRoute
-  AuthenticatedFeedbackDietRoute: typeof AuthenticatedFeedbackDietRoute
   AuthenticatedFeedbackWeeklyRoute: typeof AuthenticatedFeedbackWeeklyRoute
-  AuthenticatedFeedbackIndexRoute: typeof AuthenticatedFeedbackIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAchievementsRoute: AuthenticatedAchievementsRoute,
   AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
-  AuthenticatedBodyAnalysisRoute: AuthenticatedBodyAnalysisRoute,
   AuthenticatedChallengesRoute: AuthenticatedChallengesRoute,
-  AuthenticatedCoachRoute: AuthenticatedCoachRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDietRoute: AuthenticatedDietRoute,
-  AuthenticatedExercisesRoute: AuthenticatedExercisesRoute,
   AuthenticatedGenerateRoute: AuthenticatedGenerateRoute,
-  AuthenticatedHistoryRoute: AuthenticatedHistoryRoute,
   AuthenticatedHormonesRoute: AuthenticatedHormonesRoute,
-  AuthenticatedJournalRoute: AuthenticatedJournalRoute,
   AuthenticatedMessagesRoute: AuthenticatedMessagesRoute,
   AuthenticatedMonthlyAnalysisRoute: AuthenticatedMonthlyAnalysisRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
@@ -911,11 +742,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedProgressRoute: AuthenticatedProgressRoute,
   AuthenticatedRankingRoute: AuthenticatedRankingRoute,
   AuthenticatedTrainingRoute: AuthenticatedTrainingRoute,
-  AuthenticatedExerciseHistoryExerciseIdRoute:
-    AuthenticatedExerciseHistoryExerciseIdRoute,
-  AuthenticatedFeedbackDietRoute: AuthenticatedFeedbackDietRoute,
   AuthenticatedFeedbackWeeklyRoute: AuthenticatedFeedbackWeeklyRoute,
-  AuthenticatedFeedbackIndexRoute: AuthenticatedFeedbackIndexRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
@@ -938,13 +765,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

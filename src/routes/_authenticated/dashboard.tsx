@@ -4,8 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
-  Dumbbell, Apple, LineChart, History, Bell, Download, ShoppingCart,
-  Coffee, Flame, Calendar, Pill, ChevronRight, MessageSquare,
+  Dumbbell, Apple, LineChart, Bell, Download, ShoppingCart,
+  Coffee, Flame, Calendar, CalendarDays, Pill, ChevronRight, MessageSquare,
 } from "lucide-react";
 import { useReminders } from "@/hooks/useReminders";
 import { generateProtocolPdf } from "@/lib/protocolPdf";
@@ -257,7 +257,7 @@ function DashboardPage() {
         </div>
 
         <div className="mt-4 grid gap-3 grid-cols-2 md:grid-cols-2">
-          <DashCard to="/history" icon={History} title="Histórico" desc="Versões anteriores" />
+          <DashCard to="/feedback/weekly" icon={CalendarDays} title="Feedback" desc="Semanal" />
           <DashCard to="/messages" icon={MessageSquare} title="Mensagens" desc="Falar com o coach" />
         </div>
 

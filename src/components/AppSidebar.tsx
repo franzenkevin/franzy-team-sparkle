@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
-  LayoutDashboard, Dumbbell, Apple, LineChart, History, User,
-  Shield, Users, ClipboardList, MessageSquare, LogOut, Library, Bot, Pill,
-  Trophy, Flame, Award, BookHeart, Bell, CalendarDays, Activity, FileText,
-  Sparkles,
+  LayoutDashboard, Dumbbell, Apple, LineChart, User,
+  MessageSquare, LogOut, Pill,
+  Trophy, Flame, Award, Bell, CalendarDays, Activity,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -15,38 +14,21 @@ import {
 import logo from "@/assets/logo.png";
 
 const mainItems = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Treinos", url: "/training", icon: Dumbbell },
-  { title: "Nutrição", url: "/diet", icon: Apple },
+  { title: "Home", url: "/dashboard", icon: LayoutDashboard },
+  { title: "Treino", url: "/training", icon: Dumbbell },
+  { title: "Dieta", url: "/diet", icon: Apple },
   { title: "Hormônios", url: "/hormones", icon: Pill },
   { title: "Progresso", url: "/progress", icon: LineChart },
-  { title: "Análise IA", url: "/body-analysis", icon: Sparkles },
   { title: "Feedback semanal", url: "/feedback/weekly", icon: CalendarDays },
-  { title: "Feedback dieta", url: "/feedback/diet", icon: Apple },
-  { title: "Análise mensal", url: "/monthly-analysis", icon: Activity },
-  { title: "Diário", url: "/journal", icon: BookHeart },
-  { title: "Histórico", url: "/history", icon: History },
+  { title: "Feedback mensal", url: "/monthly-analysis", icon: Activity },
   { title: "Conquistas", url: "/achievements", icon: Award },
   { title: "Ranking", url: "/ranking", icon: Trophy },
   { title: "Desafios", url: "/challenges", icon: Flame },
-  { title: "Exercícios", url: "/exercises", icon: Library },
   { title: "Mensagens", url: "/messages", icon: MessageSquare },
   { title: "Notificações", url: "/notifications", icon: Bell },
-  { title: "Coach IA", url: "/coach", icon: Bot },
   { title: "Perfil", url: "/profile", icon: User },
 ] as const;
 
-const adminItems = [
-  { title: "Painel admin", url: "/admin", icon: Shield, hash: "" },
-  { title: "Anamnese", url: "/admin", icon: FileText, hash: "anamnese" },
-  { title: "Usuários", url: "/admin", icon: Users, hash: "users" },
-  { title: "Protocolos", url: "/admin", icon: ClipboardList, hash: "protocol" },
-  { title: "Check-ins", url: "/admin", icon: ClipboardList, hash: "checkins" },
-  { title: "Feedback", url: "/admin", icon: MessageSquare, hash: "feedback" },
-  { title: "Semanal", url: "/admin", icon: CalendarDays, hash: "weekly" },
-  { title: "Mensal", url: "/admin", icon: Activity, hash: "monthly" },
-  { title: "Dieta", url: "/admin", icon: Apple, hash: "diet-fb" },
-] as const;
 
 export function AppSidebar() {
   const { state } = useSidebar();
@@ -119,29 +101,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {isAdmin && (
-          <SidebarGroup>
-            <SidebarGroupLabel>Admin</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {adminItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild isActive={isActive(item.url) && (typeof window === "undefined" || window.location.hash.replace("#", "") === item.hash)} tooltip={item.title}>
-                      <Link
-                        to={item.url}
-                        hash={item.hash || undefined}
-                        className="flex items-center gap-2"
-                      >
-                        <item.icon className="h-4 w-4" />
-                        {!collapsed && <span>{item.title}</span>}
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
+        {/* Admins são redirecionados para /admin — não há grupo admin aqui */}
       </SidebarContent>
 
       <SidebarFooter>

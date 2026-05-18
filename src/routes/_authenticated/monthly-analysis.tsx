@@ -23,6 +23,7 @@ const ANGLES = [
 
 function MonthlyPage() {
   const [list, setList] = useState<any[]>([]);
+  const [daysUntilUnlock, setDaysUntilUnlock] = useState<number | null>(null);
   const [weight, setWeight] = useState("");
   const [chest, setChest] = useState("");
   const [waist, setWaist] = useState("");
@@ -51,6 +52,18 @@ function MonthlyPage() {
   const load = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+    // Gate: feedback mensal só libera 30 dias após o início do protocolo ativo.
+    const { data: proto } = await supabase
+      .from("protocols").select("start_date")
+      .eq("user_id", user.id).eq("status", "active")
+      .order("start_date", { ascending: false }).limit(1).maybeSingle();
+    if (proto?.start_date) {
+      const start = new Date(proto.start_date as string).getTime();
+      const days = Math.floor((Date.now() - start) / 86400000);
+      setDaysUntilUnlock(days >= 30 ? 0 : 30 - days);
+    } else {
+      setDaysUntilUnlock(null);
+    }
     const { data } = await supabase.from("monthly_analyses").select("*")
       .eq("user_id", user.id).order("analysis_date", { ascending: false }).limit(12);
     setList(data ?? []);
@@ -105,6 +118,12 @@ function MonthlyPage() {
       <h1 className="text-2xl font-heading font-bold mb-1">Análise Mensal</h1>
       <p className="text-sm text-muted-foreground mb-6">A cada 4 semanas envie peso, medidas e fotos. O coach gerará um feedback escrito.</p>
 
+      {daysUntilUnlock && daysUntilUnlock > 0 ? (
+        <Card className="p-5 text-center space-y-2 border-dashed">
+          <h2 className="font-heading font-semibold">Disponível em {daysUntilUnlock} {daysUntilUnlock === 1 ? "dia" : "dias"}</h2>
+          <p className="text-sm text-muted-foreground">O feedback mensal libera 30 dias após o início do seu protocolo atual.</p>
+        </Card>
+      ) : (
       <Card className="p-5 space-y-4">
         <div className="grid grid-cols-3 gap-3">
           <div><Label>Peso (kg)</Label><Input type="number" value={weight} onChange={(e) => setWeight(e.target.value)} /></div>
@@ -137,6 +156,7 @@ function MonthlyPage() {
         </Button>
         {savedAt && <p className="text-[11px] text-muted-foreground text-center">Rascunho salvo {savedAt} (textos; fotos não)</p>}
       </Card>
+      )}
 
       <h2 className="font-heading font-semibold mt-8 mb-3">Histórico</h2>
       <div className="space-y-3">
