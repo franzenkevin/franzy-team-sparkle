@@ -275,6 +275,77 @@ function TrainingPage() {
     if (checked) setRestSeconds(parseRest(ex.rest));
   };
 
+  const totalKgLifted = useMemo(() => {
+    let total = 0;
+    for (const sets of Object.values(exerciseSets)) {
+      for (const s of sets) {
+        if (s.type === "valid" && s.completed) total += (Number(s.weight) || 0) * (Number(s.reps) || 0);
+      }
+    }
+    return Math.round(total);
+  }, [exerciseSets]);
+
+  const generateStory = async () => {
+    setGeneratingStory(true);
+    try {
+      const W = 1080, H = 1920;
+      const canvas = document.createElement("canvas");
+      canvas.width = W; canvas.height = H;
+      const ctx = canvas.getContext("2d")!;
+      // Fundo escuro com gradiente
+      const grad = ctx.createLinearGradient(0, 0, 0, H);
+      grad.addColorStop(0, "#0b0b0b"); grad.addColorStop(1, "#1a1a1a");
+      ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
+      // Foto do usuário (se houver) como fundo
+      if (storyPhoto) {
+        const img = await new Promise<HTMLImageElement>((res, rej) => {
+          const i = new Image();
+          i.onload = () => res(i); i.onerror = rej;
+          i.src = URL.createObjectURL(storyPhoto);
+        });
+        // cover
+        const ratio = Math.max(W / img.width, H / img.height);
+        const w = img.width * ratio, h = img.height * ratio;
+        ctx.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
+        ctx.fillStyle = "rgba(0,0,0,0.45)"; ctx.fillRect(0, 0, W, H);
+      }
+      // Logo
+      try {
+        const logoImg = await new Promise<HTMLImageElement>((res, rej) => {
+          const i = new Image(); i.crossOrigin = "anonymous";
+          i.onload = () => res(i); i.onerror = rej;
+          i.src = logo;
+        });
+        ctx.drawImage(logoImg, W / 2 - 80, 120, 160, 160);
+      } catch {}
+      ctx.textAlign = "center"; ctx.fillStyle = "#fff";
+      ctx.font = "bold 56px system-ui, sans-serif";
+      ctx.fillText("FRANZEN TEAM", W / 2, 340);
+      ctx.font = "500 36px system-ui, sans-serif"; ctx.fillStyle = "#aaa";
+      ctx.fillText(days[selectedDay]?.name ?? "Treino", W / 2, 400);
+      // KG total
+      ctx.fillStyle = "#fff";
+      ctx.font = "900 220px system-ui, sans-serif";
+      ctx.fillText(`${totalKgLifted.toLocaleString("pt-BR")}`, W / 2, H / 2 + 60);
+      ctx.font = "bold 60px system-ui, sans-serif"; ctx.fillStyle = "#f5a623";
+      ctx.fillText("KG LEVANTADOS HOJE", W / 2, H / 2 + 140);
+      ctx.font = "500 40px system-ui, sans-serif"; ctx.fillStyle = "#ddd";
+      ctx.fillText("#FranzenTeam", W / 2, H - 200);
+      // Download
+      const blob: Blob = await new Promise((res) => canvas.toBlob((b) => res(b!), "image/jpeg", 0.92));
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `franzen-team-${todayISO}.jpg`; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      toast.success("Story gerado! Compartilhe no Instagram 📲");
+    } catch (e) {
+      console.error(e);
+      toast.error("Erro ao gerar story");
+    } finally {
+      setGeneratingStory(false);
+    }
+  };
+
   const saveExercise = async (ex: Exercise) => {
     if (!protocol) return;
     const sets = exerciseSets[ex.id];
