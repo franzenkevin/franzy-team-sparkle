@@ -128,14 +128,18 @@ export function DietEditor({ value, onChange }: { value: unknown; onChange: (v: 
                   </Button>
                 </div>
                 {(opt.foods ?? []).map((f, fi) => (
-                  <div key={fi} className="grid grid-cols-12 gap-1.5 items-center">
-                    <Input className="h-8 text-xs col-span-4" placeholder="Alimento" value={f.name ?? ""} onChange={(e) => setFood(mi, oi, fi, { name: e.target.value })} />
-                    <Input className="h-8 text-xs col-span-2" placeholder="Qtd" value={f.amount ?? ""} onChange={(e) => setFood(mi, oi, fi, { amount: e.target.value })} />
-                    <Input className="h-8 text-xs col-span-1" placeholder="P" value={f.protein ?? ""} onChange={(e) => setFood(mi, oi, fi, { protein: toNum(e.target.value) })} />
-                    <Input className="h-8 text-xs col-span-1" placeholder="C" value={f.carbs ?? ""} onChange={(e) => setFood(mi, oi, fi, { carbs: toNum(e.target.value) })} />
-                    <Input className="h-8 text-xs col-span-1" placeholder="G" value={f.fat ?? ""} onChange={(e) => setFood(mi, oi, fi, { fat: toNum(e.target.value) })} />
-                    <Input className="h-8 text-xs col-span-2" placeholder="kcal" value={f.calories ?? ""} onChange={(e) => setFood(mi, oi, fi, { calories: toNum(e.target.value) })} />
-                    <Button size="icon" variant="ghost" className="h-7 w-7 col-span-1" onClick={() => removeFood(mi, oi, fi)}><Trash2 size={12} className="text-destructive" /></Button>
+                  <div key={fi} className="space-y-1.5 rounded-md border border-border/60 p-2 sm:p-0 sm:border-0">
+                    <div className="flex gap-1.5 items-center">
+                      <Input className="h-8 text-xs flex-1 min-w-0" placeholder="Alimento" value={f.name ?? ""} onChange={(e) => setFood(mi, oi, fi, { name: e.target.value })} />
+                      <Input className="h-8 text-xs w-20 shrink-0" placeholder="Qtd" value={f.amount ?? ""} onChange={(e) => setFood(mi, oi, fi, { amount: e.target.value })} />
+                      <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={() => removeFood(mi, oi, fi)}><Trash2 size={12} className="text-destructive" /></Button>
+                    </div>
+                    <div className="grid grid-cols-4 gap-1.5">
+                      <Input className="h-8 text-xs" placeholder="P" value={f.protein ?? ""} onChange={(e) => setFood(mi, oi, fi, { protein: toNum(e.target.value) })} />
+                      <Input className="h-8 text-xs" placeholder="C" value={f.carbs ?? ""} onChange={(e) => setFood(mi, oi, fi, { carbs: toNum(e.target.value) })} />
+                      <Input className="h-8 text-xs" placeholder="G" value={f.fat ?? ""} onChange={(e) => setFood(mi, oi, fi, { fat: toNum(e.target.value) })} />
+                      <Input className="h-8 text-xs" placeholder="kcal" value={f.calories ?? ""} onChange={(e) => setFood(mi, oi, fi, { calories: toNum(e.target.value) })} />
+                    </div>
                   </div>
                 ))}
                 <Button size="sm" variant="outline" className="w-full h-8" onClick={() => addFood(mi, oi)}>
