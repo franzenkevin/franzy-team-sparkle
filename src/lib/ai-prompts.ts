@@ -382,6 +382,12 @@ Responda EXCLUSIVAMENTE com JSON válido (sem markdown). Estrutura:
   "summary": "Resumo do raciocínio do comitê em 2-3 frases."
 }
 
+## CAMPO RATIONALE (OBRIGATÓRIO)
+Adicione, dentro de "training" e "diet", um campo "rationale":
+- training.rationale = { "summary": "2-3 frases explicando split, volume e foco", "byDay": [{"name": "<nome do treino>", "why": "1-2 frases"}] }
+- diet.rationale = { "summary": "2-3 frases explicando kcal, macros e estratégia", "byMeal": [{"name": "<nome da refeição>", "why": "1-2 frases"}] }
+Adicionalmente, em CADA exercício e refeição, inclua um campo curto "rationale" (1 frase) explicando a escolha conectada à avaliação/objetivo. Não invente — se faltar dado, use justificativa genérica baseada no objetivo.
+
 ## CHECKLIST FINAL OBRIGATÓRIO ANTES DE FECHAR O JSON
 1. **Divisão de treino** bate com sexo + dias + variante escolhida (se houver).
 2. **Horários das refeições** = meal_schedule REAL do aluno (não horário padrão).
