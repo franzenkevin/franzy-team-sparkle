@@ -102,29 +102,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {isAdmin && (
-          <SidebarGroup>
-            <SidebarGroupLabel>Admin</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {adminItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild isActive={isActive(item.url) && (typeof window === "undefined" || window.location.hash.replace("#", "") === item.hash)} tooltip={item.title}>
-                      <Link
-                        to={item.url}
-                        hash={item.hash || undefined}
-                        className="flex items-center gap-2"
-                      >
-                        <item.icon className="h-4 w-4" />
-                        {!collapsed && <span>{item.title}</span>}
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
+        {/* Admins são redirecionados para /admin — não há grupo admin aqui */}
       </SidebarContent>
 
       <SidebarFooter>
