@@ -579,6 +579,31 @@ function TrainingPage() {
                       )}
 
                       <div className="mt-4 space-y-2">
+                        {(() => {
+                          const warmups = sets.filter((x) => x.type === "warmup").length;
+                          const valids = sets.length - warmups;
+                          return (
+                            <div className="rounded-lg border border-border/60 bg-muted/30 p-3 text-[11px] leading-relaxed space-y-1.5">
+                              {warmups > 0 && (
+                                <p>
+                                  <span className="inline-block text-warning font-semibold mr-1">AQUECIMENTO</span>
+                                  {warmups} série{warmups > 1 ? "s" : ""} com cargas progressivas (~40% e ~60% da válida), reps livres só pra ativar o padrão e preparar a articulação.
+                                </p>
+                              )}
+                              <p>
+                                <span className="inline-block text-primary font-semibold mr-1">PREPARO</span>
+                                Concentre-se no encaixe, respiração e amplitude. Pausa breve no descanso prescrito ({ex.rest || "—"}).
+                              </p>
+                              <p>
+                                <span className="inline-block text-success font-semibold mr-1">SÉRIES VÁLIDAS</span>
+                                {valids} série{valids > 1 ? "s" : ""} de {ex.reps ?? "—"} reps na carga real. Próximo da falha técnica (RPE 8–9), sem perder execução.
+                              </p>
+                              {ex.notes && (
+                                <p className="text-muted-foreground border-t border-border/60 pt-1.5 mt-1.5">{ex.notes}</p>
+                              )}
+                            </div>
+                          );
+                        })()}
                         <div className="grid grid-cols-12 gap-2 text-xs text-muted-foreground px-1">
                           <span className="col-span-1">Série</span>
                           <span className="col-span-3">Carga (kg)</span>
