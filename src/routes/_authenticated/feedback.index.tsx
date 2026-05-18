@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { CalendarDays, Apple, Activity, ArrowRight, Heart, MessageSquare, Sparkles } from "lucide-react";
 
-export const Route = createFileRoute("/_authenticated/feedback")({
+export const Route = createFileRoute("/_authenticated/feedback/")({
   head: () => ({ meta: [{ title: "Feedback — Franzen Team" }] }),
   component: FeedbackHub,
 });
