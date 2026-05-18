@@ -44,6 +44,8 @@ import { Route as AuthenticatedFeedbackWeeklyRouteImport } from './routes/_authe
 import { Route as AuthenticatedFeedbackDietRouteImport } from './routes/_authenticated/feedback.diet'
 import { Route as AuthenticatedExerciseHistoryExerciseIdRouteImport } from './routes/_authenticated/exercise-history.$exerciseId'
 import { Route as AuthenticatedAdminToolsRouteImport } from './routes/_authenticated/admin.tools'
+import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin.settings'
+import { Route as AuthenticatedAdminLibraryRouteImport } from './routes/_authenticated/admin.library'
 import { Route as AuthenticatedAdminLegacyRouteImport } from './routes/_authenticated/admin.legacy'
 import { Route as AuthenticatedAdminClientsRouteImport } from './routes/_authenticated/admin.clients'
 import { Route as ApiPublicShareTokenRouteImport } from './routes/api/public/share.$token'
@@ -232,6 +234,18 @@ const AuthenticatedAdminToolsRoute = AuthenticatedAdminToolsRouteImport.update({
   path: '/tools',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminSettingsRoute =
+  AuthenticatedAdminSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminLibraryRoute =
+  AuthenticatedAdminLibraryRouteImport.update({
+    id: '/library',
+    path: '/library',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminLegacyRoute =
   AuthenticatedAdminLegacyRouteImport.update({
     id: '/legacy',
@@ -292,6 +306,8 @@ export interface FileRoutesByFullPath {
   '/s/$token': typeof STokenRoute
   '/admin/clients': typeof AuthenticatedAdminClientsRouteWithChildren
   '/admin/legacy': typeof AuthenticatedAdminLegacyRoute
+  '/admin/library': typeof AuthenticatedAdminLibraryRoute
+  '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/tools': typeof AuthenticatedAdminToolsRoute
   '/exercise-history/$exerciseId': typeof AuthenticatedExerciseHistoryExerciseIdRoute
   '/feedback/diet': typeof AuthenticatedFeedbackDietRoute
@@ -331,6 +347,8 @@ export interface FileRoutesByTo {
   '/api/coach': typeof ApiCoachRoute
   '/s/$token': typeof STokenRoute
   '/admin/legacy': typeof AuthenticatedAdminLegacyRoute
+  '/admin/library': typeof AuthenticatedAdminLibraryRoute
+  '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/tools': typeof AuthenticatedAdminToolsRoute
   '/exercise-history/$exerciseId': typeof AuthenticatedExerciseHistoryExerciseIdRoute
   '/feedback/diet': typeof AuthenticatedFeedbackDietRoute
@@ -374,6 +392,8 @@ export interface FileRoutesById {
   '/s/$token': typeof STokenRoute
   '/_authenticated/admin/clients': typeof AuthenticatedAdminClientsRouteWithChildren
   '/_authenticated/admin/legacy': typeof AuthenticatedAdminLegacyRoute
+  '/_authenticated/admin/library': typeof AuthenticatedAdminLibraryRoute
+  '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/admin/tools': typeof AuthenticatedAdminToolsRoute
   '/_authenticated/exercise-history/$exerciseId': typeof AuthenticatedExerciseHistoryExerciseIdRoute
   '/_authenticated/feedback/diet': typeof AuthenticatedFeedbackDietRoute
@@ -417,6 +437,8 @@ export interface FileRouteTypes {
     | '/s/$token'
     | '/admin/clients'
     | '/admin/legacy'
+    | '/admin/library'
+    | '/admin/settings'
     | '/admin/tools'
     | '/exercise-history/$exerciseId'
     | '/feedback/diet'
@@ -456,6 +478,8 @@ export interface FileRouteTypes {
     | '/api/coach'
     | '/s/$token'
     | '/admin/legacy'
+    | '/admin/library'
+    | '/admin/settings'
     | '/admin/tools'
     | '/exercise-history/$exerciseId'
     | '/feedback/diet'
@@ -498,6 +522,8 @@ export interface FileRouteTypes {
     | '/s/$token'
     | '/_authenticated/admin/clients'
     | '/_authenticated/admin/legacy'
+    | '/_authenticated/admin/library'
+    | '/_authenticated/admin/settings'
     | '/_authenticated/admin/tools'
     | '/_authenticated/exercise-history/$exerciseId'
     | '/_authenticated/feedback/diet'
@@ -770,6 +796,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminToolsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/settings': {
+      id: '/_authenticated/admin/settings'
+      path: '/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AuthenticatedAdminSettingsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/library': {
+      id: '/_authenticated/admin/library'
+      path: '/library'
+      fullPath: '/admin/library'
+      preLoaderRoute: typeof AuthenticatedAdminLibraryRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/legacy': {
       id: '/_authenticated/admin/legacy'
       path: '/legacy'
@@ -825,6 +865,8 @@ const AuthenticatedAdminClientsRouteWithChildren =
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminClientsRoute: typeof AuthenticatedAdminClientsRouteWithChildren
   AuthenticatedAdminLegacyRoute: typeof AuthenticatedAdminLegacyRoute
+  AuthenticatedAdminLibraryRoute: typeof AuthenticatedAdminLibraryRoute
+  AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
   AuthenticatedAdminToolsRoute: typeof AuthenticatedAdminToolsRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
@@ -832,6 +874,8 @@ interface AuthenticatedAdminRouteChildren {
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminClientsRoute: AuthenticatedAdminClientsRouteWithChildren,
   AuthenticatedAdminLegacyRoute: AuthenticatedAdminLegacyRoute,
+  AuthenticatedAdminLibraryRoute: AuthenticatedAdminLibraryRoute,
+  AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
   AuthenticatedAdminToolsRoute: AuthenticatedAdminToolsRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
