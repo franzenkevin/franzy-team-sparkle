@@ -1,84 +1,80 @@
+# Reestruturação do Painel Admin (estilo Prime Coaching)
 
-## Escopo
+Vou reorganizar todo o `/admin` para o layout das screenshots: **sidebar fixa à esquerda + área central com lista de alunos** e, ao clicar em um aluno, **uma página de detalhe com abas horizontais** (Progresso, Anamnese, Dietas, Treinos, Feedbacks, Fotos, Notas, IA).
 
-Reformar o app do aluno para ficar igual ao Evoria nos pontos pedidos, adicionar análise corporal IA (mascarada como manual no admin) e arrumar o admin responsivo.
+## 1. Nova estrutura de rotas
 
----
+```text
+src/routes/_authenticated/admin.tsx               -> layout com AdminSidebar + Outlet
+src/routes/_authenticated/admin.index.tsx         -> Resumo (dashboard)
+src/routes/_authenticated/admin.clients.tsx       -> Lista de alunos (filtros + cards)
+src/routes/_authenticated/admin.clients.$id.tsx   -> Detalhe do aluno (header + tabs)
+src/routes/_authenticated/admin.library.tsx       -> Bibliotecas (templates de treino/dieta)
+src/routes/_authenticated/admin.tools.tsx         -> Ferramentas (calculadoras, coach IA global)
+src/routes/_authenticated/admin.settings.tsx      -> Minha conta
+```
 
-## 1. App do aluno
+A página atual `admin.tsx` (tabs Resumo/Pendências/Clientes/Coach) será quebrada nessas rotas.
 
-### 1.1 Treino — registro de cargas estilo Evoria
-- Em `src/routes/_authenticated/training.tsx`:
-  - Adicionar bloco "Descrição do treino" no topo de cada dia: mostrar `day.rationale` (já existe) + `day.name`, `day.weekday`, observações gerais.
-  - Para cada exercício, expor um **card de séries** com colunas: Set | Carga (kg) | Reps | RPE | ✓. Linhas pré-preenchidas com a última sessão (já temos `previousSets`). Botão "+ série" e "− série".
-  - Manter aquecimento, mas separar visualmente das séries válidas.
-  - Botão "Salvar série" por linha + "Concluir exercício" que dispara timer de descanso (já existe).
-  - Exibir histórico curto inline ("última: 4×10 @ 60kg").
+## 2. AdminSidebar (`src/components/admin/AdminSidebar.tsx`)
 
-### 1.2 Bottom nav — 5 ícones
-- Atualizar `src/components/BottomNav.tsx` para: **Home / Treino / Dieta / Hormônios / Feedback** (remover Coach IA e Progresso/Perfil da barra; manter no sidebar).
-- Grid passa de `grid-cols-6` para `grid-cols-5`.
+Sidebar persistente baseada no shadcn `Sidebar`, igual às screenshots:
+- Resumo
+- Clientes (ativo por padrão, com sub-itens: Todos, Pendentes de aprovação, Fotos novas)
+- Bibliotecas
+- Ferramentas (Calculadoras, Coach IA)
+- Minha conta
 
-### 1.3 Hormônios + Feedback
-- Já existe `/_authenticated/hormones`. Manter.
-- Criar `/_authenticated/feedback` como hub: cards para "Feedback semanal", "Feedback de dieta", "Análise mensal" (rotas já existem).
+Colapsável (`collapsible="icon"`), com `SidebarTrigger` no header.
 
-### 1.4 Dieta estilo Evoria + suplementos
-- Em `src/routes/_authenticated/diet.tsx`:
-  - Render por refeição com alimentos, gramas, macros, **opções de substituição** (já no schema).
-  - Bloco "Suplementos" lendo `diet.supplements: [{ name, dose, timing, notes }]` com cards.
-  - Bloco "Termogênicos / pré-treino" se presente.
-  - Bloco "Observações da dieta" (`diet.notes`).
-- Estender o `DietEditor` admin para editar `supplements`.
+## 3. Lista de alunos (`admin.clients.tsx`)
 
-### 1.5 Anamnese — fotos em 4 ângulos
-- Em `src/routes/_authenticated/onboarding.tsx` (passo "Fotos do físico"):
-  - Substituir 3 uploads por **4**: Frente, Lateral direita, Lateral esquerda, Costas.
-- Adicionar coluna `photo_side_left_url` em `profiles` (migration). As atuais `photo_side_url` viram "lateral direita".
+Cards por aluno com:
+- Avatar + nome + email + telefone
+- Badges de status: Anamnese / Fotos / Treino / Dieta / Cardio
+- Dias restantes do plano
+- Filtros no topo: Status, Prontidão, Anamnese, Fotos, Ordenação
 
-### 1.6 Remover análise corporal IA do aluno
-- Esconder o gerador IA em `/_authenticated/body-analysis` para alunos; aluno só visualiza conteúdo aprovado pelo coach (status `approved` em `ai_analyses`). Nenhuma menção a "IA" na UI do aluno — chamar de "Análise do coach".
+Click no card → navega para `admin.clients.$id`.
 
----
+## 4. Detalhe do aluno (`admin.clients.$id.tsx`)
 
-## 2. App do admin
+**Header azul** (igual screenshot Prime): avatar grande, nome, email copiável, badges (idade, altura, peso, plano, dias restantes), botões de ação rápida (mensagem, histórico, link, e-mail, agendar).
 
-### 2.1 Análise corporal IA (mascarada)
-- Quando aluno completa anamnese ou envia feedback com fotos, o admin vê botão "Gerar análise" que chama `adminGenerateBodyAnalysis` (já existe). Resultado vai em editor de texto rico/textarea + "Aprovar & liberar" → status `approved` em `ai_analyses`.
-- No app do aluno aparece como análise do coach.
-- Adicionar painel de "Análises pendentes" no admin Resumo.
+**Tabs horizontais** abaixo do header:
 
-### 2.2 Editor de treino responsivo
-- `src/components/admin/TrainingEditor.tsx`: ajustar grids para empilhar em mobile (`grid-cols-1 sm:grid-cols-2 md:grid-cols-4`), aumentar áreas de toque, mover botões de mover/excluir para uma linha própria em telas estreitas.
-- Mesma revisão em `DietEditor` e `HormonesEditor`.
-- Reduzir padding lateral em mobile no admin shell.
+| Aba | Componente | Função |
+|---|---|---|
+| Progresso | `<StudentProgress />` | Cards de métricas + gráfico de peso (existente em progress.tsx adaptado) |
+| Anamnese | `<StudentAnamnese />` | Visualiza respostas + 4 fotos (frente/lat dir/lat esq/costas) |
+| Avaliações | `<StudentAssessments />` | Histórico de medidas/avaliações |
+| Dietas | `<DietEditor />` + lista de prescrições | Já existe — usar em modo embarcado |
+| Treinos | `<TrainingEditor />` + lista | Já existe |
+| Hormônios | `<HormonesEditor />` | Já existe |
+| Feedbacks | `<StudentFeedbacks />` | Semanais + dieta + treino + mensal, com aprovação de análise IA |
+| Fotos | `<StudentPhotos />` | Galeria de evolução |
+| Notas | `<StudentNotes />` | Notas internas do coach |
+| IA Coach | `<CoachChat />` | Chat IA específico desse aluno (já existe `adminCoachChat`) |
 
----
+Cada aba carrega só seus dados (lazy). Edições salvam direto via server fn existente.
 
-## 3. Banco
+## 5. Reaproveitamento
 
-Migration:
-- `ALTER TABLE profiles ADD COLUMN photo_side_left_url text;`
-- Renomear conceito: `photo_side_url` = lateral direita (sem rename SQL, só convenção).
-- Adicionar índice ou nada extra.
+Tudo que já existe é reusado:
+- `CoachChat`, `TrainingEditor`, `DietEditor`, `HormonesEditor`, `Calculators`, `TemplateLibrary`, `ResumoTab`
+- Server fns: `adminCoachChat`, `adminGenerateBodyAnalysis`, etc.
 
-Schema do protocolo (`diet` jsonb) ganha campo opcional `supplements: []` — sem migration, só convenção.
+Sem reescrever lógica — só nova **casca de navegação** + componentes finos de aba.
 
----
+## 6. Detalhes técnicos
 
-## 4. Arquivos a editar/criar
+- Layout: `SidebarProvider` envolve `admin.tsx`; `<AppSidebar>` do aluno é **não** renderizado em rotas admin (já tratado em `_authenticated.tsx`).
+- Mobile: sidebar vira off-canvas via `SidebarTrigger`; tabs do detalhe rolam horizontalmente.
+- Roteamento: usar `<Link to="/admin/clients/$id" params={{ id }}>` tipado.
+- Tabs: shadcn `<Tabs>` com `value` sincronizado a `?tab=` na URL (deep link).
 
-**Editar:** `src/components/BottomNav.tsx`, `src/routes/_authenticated/training.tsx`, `src/routes/_authenticated/diet.tsx`, `src/routes/_authenticated/onboarding.tsx`, `src/routes/_authenticated/body-analysis.tsx`, `src/components/admin/TrainingEditor.tsx`, `src/components/admin/DietEditor.tsx`, `src/components/admin/HormonesEditor.tsx`, `src/routes/_authenticated/admin.tsx`.
+## 7. Escopo desta entrega
 
-**Criar:** `src/routes/_authenticated/feedback.tsx` (hub).
+Vou entregar a **estrutura completa de navegação + lista + detalhe com todas as abas**, conectando os editores existentes. As abas "Avaliações", "Notas" e "Fotos" entrarão com a UI básica (lista + uploader/textarea) ligada às tabelas existentes; refinamentos visuais ficam para iterações.
 
-**Migration:** adicionar `photo_side_left_url` em profiles.
-
----
-
-## Fora de escopo (a não ser que peça)
-- Trocar bottom nav para incluir Perfil (fica no sidebar/header).
-- Refazer scoring de IA, RAG, etc.
-- Mudar autenticação.
-
-Confirma para eu seguir?
+Aprova que eu siga?
