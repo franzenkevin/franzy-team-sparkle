@@ -29,7 +29,6 @@ const mainItems = [
   { title: "Perfil", url: "/profile", icon: User },
 ] as const;
 
-const adminItems = [] as const;
 
 export function AppSidebar() {
   const { state } = useSidebar();
