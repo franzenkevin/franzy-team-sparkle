@@ -4,14 +4,17 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Plus, Trash2, ChevronUp, ChevronDown, Utensils, Leaf } from "lucide-react";
+import { Plus, Trash2, ChevronUp, ChevronDown, Utensils, Leaf, Pill, Zap } from "lucide-react";
 
 type Food = { name?: string; amount?: string; calories?: number; protein?: number; carbs?: number; fat?: number };
 type MealOption = { label?: string; foods?: Food[] };
 type Meal = { label?: string; time?: string; options?: MealOption[] };
+type Supplement = { name?: string; dose?: string; timing?: string; notes?: string };
 type Diet = {
   totalCalories?: number; protein?: number; carbs?: number; fat?: number;
   intro?: string; notes?: string[]; meals?: Meal[];
+  supplements?: Supplement[];
+  preworkout?: string;
 };
 
 function normalize(value: unknown): Diet {
@@ -29,6 +32,8 @@ function normalize(value: unknown): Diet {
   return {
     totalCalories: v.totalCalories, protein: v.protein, carbs: v.carbs, fat: v.fat,
     intro: v.intro ?? "", notes: Array.isArray(v.notes) ? v.notes : [], meals,
+    supplements: Array.isArray(v.supplements) ? v.supplements : [],
+    preworkout: v.preworkout ?? "",
   };
 }
 
@@ -68,6 +73,14 @@ export function DietEditor({ value, onChange }: { value: unknown; onChange: (v: 
     const foods = ((meals[mi].options ?? [])[oi]?.foods ?? []).filter((_, k) => k !== fi);
     setOpt(mi, oi, { foods });
   };
+
+  const supplements = d.supplements ?? [];
+  const setSupp = (i: number, patch: Partial<Supplement>) => {
+    const next = [...supplements]; next[i] = { ...next[i], ...patch };
+    update({ ...d, supplements: next });
+  };
+  const addSupp = () => update({ ...d, supplements: [...supplements, { name: "", dose: "", timing: "" }] });
+  const removeSupp = (i: number) => update({ ...d, supplements: supplements.filter((_, k) => k !== i) });
 
   return (
     <div className="space-y-3">
@@ -140,6 +153,35 @@ export function DietEditor({ value, onChange }: { value: unknown; onChange: (v: 
         <Textarea rows={3} className="text-xs mt-1"
           value={(d.notes ?? []).join("\n")}
           onChange={(e) => update({ ...d, notes: e.target.value.split("\n").map((s) => s.trim()).filter(Boolean) })} />
+      </div>
+
+      <Card className="p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="text-sm font-medium flex items-center gap-2"><Pill size={14} className="text-primary" /> Suplementos</div>
+          <Button size="sm" variant="outline" onClick={addSupp}><Plus size={14} className="mr-1" />Adicionar</Button>
+        </div>
+        {supplements.length === 0 && (
+          <p className="text-xs text-muted-foreground">Nenhum suplemento cadastrado.</p>
+        )}
+        {supplements.map((s, i) => (
+          <div key={i} className="rounded-lg border border-border p-3 bg-muted/20 space-y-2">
+            <div className="flex items-center gap-2">
+              <Input className="h-8 text-xs" placeholder="Nome (ex.: Whey)" value={s.name ?? ""} onChange={(e) => setSupp(i, { name: e.target.value })} />
+              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => removeSupp(i)}><Trash2 size={12} className="text-destructive" /></Button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <Input className="h-8 text-xs" placeholder="Dose (ex.: 30g)" value={s.dose ?? ""} onChange={(e) => setSupp(i, { dose: e.target.value })} />
+              <Input className="h-8 text-xs" placeholder="Quando (ex.: pós-treino)" value={s.timing ?? ""} onChange={(e) => setSupp(i, { timing: e.target.value })} />
+            </div>
+            <Textarea rows={2} className="text-xs" placeholder="Observações" value={s.notes ?? ""} onChange={(e) => setSupp(i, { notes: e.target.value })} />
+          </div>
+        ))}
+      </Card>
+
+      <div>
+        <Label className="text-xs flex items-center gap-1"><Zap size={12} className="text-primary" /> Pré-treino / termogênico</Label>
+        <Textarea rows={2} className="text-xs mt-1" placeholder="Ex.: Cafeína 200mg + beta-alanina 20min antes…"
+          value={d.preworkout ?? ""} onChange={(e) => update({ ...d, preworkout: e.target.value })} />
       </div>
     </div>
   );
