@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -121,11 +121,6 @@ function ProtocolPlanEditor({
   );
 }
 
-export const Route = createFileRoute("/_authenticated/admin")({
-  head: () => ({ meta: [{ title: "Painel do Criador — Franzen Team" }] }),
-  component: AdminPage,
-});
-
 type ProfileRow = {
   user_id: string; full_name: string | null; goal: string | null;
   age: number | null; sex: string | null; weight: number | null; height: number | null;
@@ -145,27 +140,16 @@ type Metrics = {
   atRisk: { user_id: string; full_name: string | null; lastCheckin: string | null }[];
 };
 
-function AdminPage() {
-  const [checking, setChecking] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
+export function LegacyDashboard() {
   const [profiles, setProfiles] = useState<ProfileRow[]>([]);
   const [metrics, setMetrics] = useState<Metrics | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      // Parent _authenticated layout already guarantees a session.
       const { data: { session } } = await supabase.auth.getSession();
       const user = session?.user;
-      if (!user) { if (!cancelled) setChecking(false); return; }
-      const { data: roles } = await supabase
-        .from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle();
-      if (cancelled) return;
-      if (!roles) { setChecking(false); return; }
-      setIsAdmin(true);
-      setChecking(false);
-
-      // Load profiles and metrics in background — do NOT block access gate.
+      if (!user || cancelled) return;
       const { data: rows } = await supabase
         .from("profiles").select("user_id, full_name, goal, age, sex, weight, height")
         .order("created_at", { ascending: false });
@@ -218,26 +202,8 @@ function AdminPage() {
     return () => { cancelled = true; };
   }, []);
 
-  if (checking) {
-    return <div className="min-h-screen grid place-items-center text-muted-foreground">Verificando acesso…</div>;
-  }
-
-  if (!isAdmin) {
-    return (
-      <div className="min-h-screen grid place-items-center px-4">
-        <div className="text-center max-w-md">
-          <Shield className="mx-auto text-muted-foreground" size={48} />
-          <h1 className="mt-4 text-2xl font-heading font-bold">Acesso restrito</h1>
-          <p className="mt-2 text-sm text-muted-foreground">Esta área é apenas para administradores.</p>
-          <Link to="/dashboard"><Button className="mt-6">Voltar ao dashboard</Button></Link>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen">
-      <main className="container mx-auto px-4 py-6">
+    <div className="space-y-4">
         <Tabs defaultValue="resumo">
           <TabsList className="w-full flex flex-wrap h-auto justify-start gap-1">
             <TabsTrigger value="resumo" className="gap-1"><BarChart3 size={14} />Resumo</TabsTrigger>
@@ -311,7 +277,6 @@ function AdminPage() {
             <DietFbAdminTab profiles={profiles} />
           </TabsContent>
         </Tabs>
-      </main>
     </div>
   );
 }
