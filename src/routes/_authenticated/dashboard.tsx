@@ -4,8 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
-  Dumbbell, Apple, LineChart, History, Bell, Download, ShoppingCart,
-  Coffee, Flame, Calendar, Pill, ChevronRight, MessageSquare,
+  Dumbbell, Apple, LineChart, Bell, Download, ShoppingCart,
+  Coffee, Flame, Calendar, CalendarDays, Pill, ChevronRight, MessageSquare,
 } from "lucide-react";
 import { useReminders } from "@/hooks/useReminders";
 import { generateProtocolPdf } from "@/lib/protocolPdf";
