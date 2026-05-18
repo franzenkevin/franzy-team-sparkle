@@ -23,6 +23,7 @@ const ANGLES = [
 
 function MonthlyPage() {
   const [list, setList] = useState<any[]>([]);
+  const [daysUntilUnlock, setDaysUntilUnlock] = useState<number | null>(null);
   const [weight, setWeight] = useState("");
   const [chest, setChest] = useState("");
   const [waist, setWaist] = useState("");
@@ -51,6 +52,18 @@ function MonthlyPage() {
   const load = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+    // Gate: feedback mensal só libera 30 dias após o início do protocolo ativo.
+    const { data: proto } = await supabase
+      .from("protocols").select("start_date")
+      .eq("user_id", user.id).eq("status", "active")
+      .order("start_date", { ascending: false }).limit(1).maybeSingle();
+    if (proto?.start_date) {
+      const start = new Date(proto.start_date as string).getTime();
+      const days = Math.floor((Date.now() - start) / 86400000);
+      setDaysUntilUnlock(days >= 30 ? 0 : 30 - days);
+    } else {
+      setDaysUntilUnlock(null);
+    }
     const { data } = await supabase.from("monthly_analyses").select("*")
       .eq("user_id", user.id).order("analysis_date", { ascending: false }).limit(12);
     setList(data ?? []);
