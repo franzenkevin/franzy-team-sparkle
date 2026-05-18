@@ -1,4 +1,3 @@
-import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -16,7 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import {
-  Save, Shield, Users, ClipboardList, MessageSquare, History as HistoryIcon,
+  Save, Users, ClipboardList, MessageSquare, History as HistoryIcon,
   ShieldCheck, ShieldOff, BarChart3, AlertTriangle, Dumbbell, Plus, Pencil, Trash2,
   Search, Trophy, Bell, Send, Heart, Activity,
   FileText, Sparkles, CalendarDays, Apple, Loader2, CheckCircle2, XCircle, Clock,
