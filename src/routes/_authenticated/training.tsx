@@ -20,6 +20,7 @@ type WorkoutSet = {
   type: "warmup" | "valid";
   weight: number;
   reps: number;
+  rpe?: number;
   completed: boolean;
 };
 
@@ -161,6 +162,7 @@ function TrainingPage() {
             type: (idx < warmupCount ? "warmup" : "valid") as "warmup" | "valid",
             weight: 0,
             reps: 0,
+              rpe: 0,
             completed: false,
           }));
         }
@@ -510,9 +512,10 @@ function TrainingPage() {
                       <div className="mt-4 space-y-2">
                         <div className="grid grid-cols-12 gap-2 text-xs text-muted-foreground px-1">
                           <span className="col-span-1">Série</span>
-                          <span className="col-span-4">Carga (kg)</span>
-                          <span className="col-span-4">Reps</span>
-                          <span className="col-span-3 text-right">Feito</span>
+                          <span className="col-span-3">Carga (kg)</span>
+                          <span className="col-span-3">Reps</span>
+                          <span className="col-span-3">RPE</span>
+                          <span className="col-span-2 text-right">Feito</span>
                         </div>
                         {sets.map((s, i) => {
                           const prev = previousSets[ex.id]?.[i];
@@ -532,7 +535,7 @@ function TrainingPage() {
                               value={s.weight || ""}
                               placeholder={prev ? `${prev.weight || "—"}` : ""}
                               onChange={(e) => updateSet(ex.id, i, "weight", Number(e.target.value))}
-                              className="col-span-4 h-9"
+                              className="col-span-3 h-9"
                             />
                             <Input
                               type="number"
@@ -540,9 +543,20 @@ function TrainingPage() {
                               value={s.reps || ""}
                               placeholder={prev ? `${prev.reps || "—"}` : ""}
                               onChange={(e) => updateSet(ex.id, i, "reps", Number(e.target.value))}
-                              className="col-span-4 h-9"
+                              className="col-span-3 h-9"
                             />
-                            <div className="col-span-3 flex justify-end">
+                            <Input
+                              type="number"
+                              inputMode="decimal"
+                              min={0}
+                              max={10}
+                              step={0.5}
+                              value={s.rpe || ""}
+                              placeholder={prev?.rpe ? `${prev.rpe}` : "0-10"}
+                              onChange={(e) => updateSet(ex.id, i, "rpe", Number(e.target.value))}
+                              className="col-span-3 h-9"
+                            />
+                            <div className="col-span-2 flex justify-end">
                               <Checkbox
                                 checked={s.completed}
                                 onCheckedChange={(v) => handleCompletedToggle(ex, i, Boolean(v))}
