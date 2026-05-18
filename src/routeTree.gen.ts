@@ -39,9 +39,11 @@ import { Route as AuthenticatedBodyAnalysisRouteImport } from './routes/_authent
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAchievementsRouteImport } from './routes/_authenticated/achievements'
 import { Route as AuthenticatedFeedbackIndexRouteImport } from './routes/_authenticated/feedback.index'
+import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedFeedbackWeeklyRouteImport } from './routes/_authenticated/feedback.weekly'
 import { Route as AuthenticatedFeedbackDietRouteImport } from './routes/_authenticated/feedback.diet'
 import { Route as AuthenticatedExerciseHistoryExerciseIdRouteImport } from './routes/_authenticated/exercise-history.$exerciseId'
+import { Route as AuthenticatedAdminClientsRouteImport } from './routes/_authenticated/admin.clients'
 import { Route as ApiPublicShareTokenRouteImport } from './routes/api/public/share.$token'
 import { Route as ApiPublicShareOgTokenRouteImport } from './routes/api/public/share-og.$token'
 
@@ -199,6 +201,11 @@ const AuthenticatedFeedbackIndexRoute =
     path: '/feedback/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 const AuthenticatedFeedbackWeeklyRoute =
   AuthenticatedFeedbackWeeklyRouteImport.update({
     id: '/feedback/weekly',
@@ -216,6 +223,12 @@ const AuthenticatedExerciseHistoryExerciseIdRoute =
     id: '/exercise-history/$exerciseId',
     path: '/exercise-history/$exerciseId',
     getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedAdminClientsRoute =
+  AuthenticatedAdminClientsRouteImport.update({
+    id: '/clients',
+    path: '/clients',
+    getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const ApiPublicShareTokenRoute = ApiPublicShareTokenRouteImport.update({
   id: '/api/public/share/$token',
@@ -235,7 +248,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/achievements': typeof AuthenticatedAchievementsRoute
-  '/admin': typeof AuthenticatedAdminRoute
+  '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/body-analysis': typeof AuthenticatedBodyAnalysisRoute
   '/challenges': typeof AuthenticatedChallengesRoute
   '/coach': typeof AuthenticatedCoachRoute
@@ -257,9 +270,11 @@ export interface FileRoutesByFullPath {
   '/admin/login': typeof AdminLoginRoute
   '/api/coach': typeof ApiCoachRoute
   '/s/$token': typeof STokenRoute
+  '/admin/clients': typeof AuthenticatedAdminClientsRoute
   '/exercise-history/$exerciseId': typeof AuthenticatedExerciseHistoryExerciseIdRoute
   '/feedback/diet': typeof AuthenticatedFeedbackDietRoute
   '/feedback/weekly': typeof AuthenticatedFeedbackWeeklyRoute
+  '/admin/': typeof AuthenticatedAdminIndexRoute
   '/feedback/': typeof AuthenticatedFeedbackIndexRoute
   '/api/public/share-og/$token': typeof ApiPublicShareOgTokenRoute
   '/api/public/share/$token': typeof ApiPublicShareTokenRoute
@@ -271,7 +286,6 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/achievements': typeof AuthenticatedAchievementsRoute
-  '/admin': typeof AuthenticatedAdminRoute
   '/body-analysis': typeof AuthenticatedBodyAnalysisRoute
   '/challenges': typeof AuthenticatedChallengesRoute
   '/coach': typeof AuthenticatedCoachRoute
@@ -293,9 +307,11 @@ export interface FileRoutesByTo {
   '/admin/login': typeof AdminLoginRoute
   '/api/coach': typeof ApiCoachRoute
   '/s/$token': typeof STokenRoute
+  '/admin/clients': typeof AuthenticatedAdminClientsRoute
   '/exercise-history/$exerciseId': typeof AuthenticatedExerciseHistoryExerciseIdRoute
   '/feedback/diet': typeof AuthenticatedFeedbackDietRoute
   '/feedback/weekly': typeof AuthenticatedFeedbackWeeklyRoute
+  '/admin': typeof AuthenticatedAdminIndexRoute
   '/feedback': typeof AuthenticatedFeedbackIndexRoute
   '/api/public/share-og/$token': typeof ApiPublicShareOgTokenRoute
   '/api/public/share/$token': typeof ApiPublicShareTokenRoute
@@ -309,7 +325,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/_authenticated/achievements': typeof AuthenticatedAchievementsRoute
-  '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/body-analysis': typeof AuthenticatedBodyAnalysisRoute
   '/_authenticated/challenges': typeof AuthenticatedChallengesRoute
   '/_authenticated/coach': typeof AuthenticatedCoachRoute
@@ -331,9 +347,11 @@ export interface FileRoutesById {
   '/admin/login': typeof AdminLoginRoute
   '/api/coach': typeof ApiCoachRoute
   '/s/$token': typeof STokenRoute
+  '/_authenticated/admin/clients': typeof AuthenticatedAdminClientsRoute
   '/_authenticated/exercise-history/$exerciseId': typeof AuthenticatedExerciseHistoryExerciseIdRoute
   '/_authenticated/feedback/diet': typeof AuthenticatedFeedbackDietRoute
   '/_authenticated/feedback/weekly': typeof AuthenticatedFeedbackWeeklyRoute
+  '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/feedback/': typeof AuthenticatedFeedbackIndexRoute
   '/api/public/share-og/$token': typeof ApiPublicShareOgTokenRoute
   '/api/public/share/$token': typeof ApiPublicShareTokenRoute
@@ -369,9 +387,11 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/api/coach'
     | '/s/$token'
+    | '/admin/clients'
     | '/exercise-history/$exerciseId'
     | '/feedback/diet'
     | '/feedback/weekly'
+    | '/admin/'
     | '/feedback/'
     | '/api/public/share-og/$token'
     | '/api/public/share/$token'
@@ -383,7 +403,6 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/achievements'
-    | '/admin'
     | '/body-analysis'
     | '/challenges'
     | '/coach'
@@ -405,9 +424,11 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/api/coach'
     | '/s/$token'
+    | '/admin/clients'
     | '/exercise-history/$exerciseId'
     | '/feedback/diet'
     | '/feedback/weekly'
+    | '/admin'
     | '/feedback'
     | '/api/public/share-og/$token'
     | '/api/public/share/$token'
@@ -442,9 +463,11 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/api/coach'
     | '/s/$token'
+    | '/_authenticated/admin/clients'
     | '/_authenticated/exercise-history/$exerciseId'
     | '/_authenticated/feedback/diet'
     | '/_authenticated/feedback/weekly'
+    | '/_authenticated/admin/'
     | '/_authenticated/feedback/'
     | '/api/public/share-og/$token'
     | '/api/public/share/$token'
@@ -676,6 +699,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFeedbackIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/': {
+      id: '/_authenticated/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/feedback/weekly': {
       id: '/_authenticated/feedback/weekly'
       path: '/feedback/weekly'
@@ -697,6 +727,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedExerciseHistoryExerciseIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/clients': {
+      id: '/_authenticated/admin/clients'
+      path: '/clients'
+      fullPath: '/admin/clients'
+      preLoaderRoute: typeof AuthenticatedAdminClientsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/api/public/share/$token': {
       id: '/api/public/share/$token'
       path: '/api/public/share/$token'
@@ -714,9 +751,22 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminClientsRoute: typeof AuthenticatedAdminClientsRoute
+  AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
+}
+
+const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminClientsRoute: AuthenticatedAdminClientsRoute,
+  AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
+}
+
+const AuthenticatedAdminRouteWithChildren =
+  AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
+
 interface AuthenticatedRouteChildren {
   AuthenticatedAchievementsRoute: typeof AuthenticatedAchievementsRoute
-  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
   AuthenticatedBodyAnalysisRoute: typeof AuthenticatedBodyAnalysisRoute
   AuthenticatedChallengesRoute: typeof AuthenticatedChallengesRoute
   AuthenticatedCoachRoute: typeof AuthenticatedCoachRoute
@@ -743,7 +793,7 @@ interface AuthenticatedRouteChildren {
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAchievementsRoute: AuthenticatedAchievementsRoute,
-  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
   AuthenticatedBodyAnalysisRoute: AuthenticatedBodyAnalysisRoute,
   AuthenticatedChallengesRoute: AuthenticatedChallengesRoute,
   AuthenticatedCoachRoute: AuthenticatedCoachRoute,
@@ -789,3 +839,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
