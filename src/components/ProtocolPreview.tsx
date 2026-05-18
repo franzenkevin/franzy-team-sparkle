@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp, Dumbbell, Apple, FlaskConical, Activity, Leaf } from "lucide-react";
+import { RationalePopover } from "@/components/RationalePopover";
 
 type Exercise = {
   id?: string; name?: string; sets?: number | string; reps?: string | number;
@@ -15,8 +16,8 @@ type Day = {
 };
 type Food = { name?: string; amount?: string; calories?: number; protein?: number; carbs?: number; fat?: number };
 type MealOption = { label?: string; foods?: Food[] };
-type Meal = { label?: string; time?: string; options?: MealOption[]; foods?: Food[] };
-type Diet = { totalCalories?: number; protein?: number; carbs?: number; fat?: number; meals?: Meal[]; notes?: string[]; intro?: string };
+type Meal = { label?: string; time?: string; options?: MealOption[]; foods?: Food[]; rationale?: string };
+type Diet = { totalCalories?: number; protein?: number; carbs?: number; fat?: number; meals?: Meal[]; notes?: string[]; intro?: string; rationale?: { summary?: string; byMeal?: Array<{ name?: string; why?: string }> } };
 type Hormone = { substance?: string; dose?: string; route?: string; frequency?: string; duration?: string; notes?: string; category?: string };
 
 function normTraining(v: any): Day[] {
@@ -32,12 +33,20 @@ function normTraining(v: any): Day[] {
 
 export function TrainingPreview({ value }: { value: unknown }) {
   const days = normTraining(value);
+  const rationale = (value as any)?.rationale ?? null;
   const [open, setOpen] = useState<number | null>(0);
   if (!days.length) return <p className="text-sm text-muted-foreground">Sem treino prescrito.</p>;
   return (
     <div className="space-y-3">
+      {rationale?.summary && (
+        <Card className="p-3 border-primary/30 bg-primary/5">
+          <div className="text-xs font-semibold text-primary mb-1">Resumo do treino</div>
+          <p className="text-sm whitespace-pre-wrap">{rationale.summary}</p>
+        </Card>
+      )}
       {days.map((d, i) => {
         const isOpen = open === i;
+        const dayWhy = d.rationale ?? rationale?.byDay?.[i]?.why;
         return (
           <Card key={i} className="overflow-hidden">
             <button
@@ -59,8 +68,8 @@ export function TrainingPreview({ value }: { value: unknown }) {
             </button>
             {isOpen && (
               <div className="border-t border-border p-4 space-y-3">
-                {d.rationale && (
-                  <p className="text-xs text-muted-foreground whitespace-pre-wrap italic">{d.rationale}</p>
+                {dayWhy && (
+                  <p className="text-xs text-muted-foreground whitespace-pre-wrap italic">{dayWhy}</p>
                 )}
                 {Array.isArray(d.mobility) && d.mobility.length > 0 && (
                   <div className="rounded-lg border border-warning/30 bg-warning/5 p-3">
@@ -80,6 +89,7 @@ export function TrainingPreview({ value }: { value: unknown }) {
                           <div className="text-sm font-medium flex items-center gap-2">
                             <span className="text-xs font-mono text-muted-foreground">{k + 1}.</span>
                             <span className="truncate">{ex.name ?? "—"}</span>
+                            <RationalePopover text={ex.rationale} />
                           </div>
                           <div className="text-xs text-muted-foreground mt-1 font-mono">
                             {ex.sets ?? "—"}x{ex.reps ?? "—"} • desc. {ex.rest ?? "—"}
@@ -119,6 +129,12 @@ export function DietPreview({ value }: { value: unknown }) {
   if (!meals.length) return <p className="text-sm text-muted-foreground">Sem dieta prescrita.</p>;
   return (
     <div className="space-y-4">
+      {diet.rationale?.summary && (
+        <Card className="p-3 border-primary/30 bg-primary/5">
+          <div className="text-xs font-semibold text-primary mb-1">Resumo da dieta</div>
+          <p className="text-sm whitespace-pre-wrap">{diet.rationale.summary}</p>
+        </Card>
+      )}
       <Card className="p-4">
         <div className="grid grid-cols-4 gap-2 text-center">
           <Stat label="Kcal" value={diet.totalCalories} accent="text-primary" />
@@ -137,11 +153,15 @@ export function DietPreview({ value }: { value: unknown }) {
           const oi = activeOpt[i] ?? 0;
           const current = opts[oi];
           const kcal = current?.foods?.reduce((a, f) => a + (f.calories ?? 0), 0) ?? 0;
+          const mealWhy = m.rationale ?? diet.rationale?.byMeal?.[i]?.why;
           return (
             <Card key={i} className="overflow-hidden">
               <button onClick={() => setOpen(isOpen ? null : i)} className="w-full p-4 flex items-center justify-between text-left hover:bg-muted/40">
                 <div className="min-w-0">
-                  <div className="font-heading font-semibold truncate">{m.label ?? `Refeição ${i + 1}`}</div>
+                  <div className="font-heading font-semibold truncate flex items-center gap-2">
+                    <span className="truncate">{m.label ?? `Refeição ${i + 1}`}</span>
+                    <RationalePopover text={mealWhy} />
+                  </div>
                   <div className="text-xs text-muted-foreground">{m.time ? `${m.time} • ` : ""}{current?.foods?.length ?? 0} alimentos</div>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
