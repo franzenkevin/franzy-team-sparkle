@@ -87,7 +87,7 @@ function OnboardingPage() {
     activity_level: "", sleep_hours: "8", sleep_quality: "",
     stress_level: "", hormonal_side_effects: "", weekend_routine: "",
     // Fotos
-    photo_front_url: "", photo_side_url: "", photo_back_url: "",
+    photo_front_url: "", photo_side_url: "", photo_side_left_url: "", photo_back_url: "",
   });
 
   useEffect(() => {
@@ -133,7 +133,7 @@ function OnboardingPage() {
 
   const set = (k: string, v: string) => setD((p) => ({ ...p, [k]: v }));
 
-  const uploadPhoto = async (slot: "front" | "side" | "back", file: File) => {
+  const uploadPhoto = async (slot: "front" | "side" | "side_left" | "back", file: File) => {
     setUploading(slot);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -189,8 +189,8 @@ function OnboardingPage() {
         return req("activity_level", "Nível de atividade diária.") ||
           req("sleep_quality", "Como é seu sono?");
       case 8:
-        if (!d.photo_front_url || !d.photo_side_url || !d.photo_back_url)
-          return "Envie as 3 fotos (frente, lado e costas).";
+        if (!d.photo_front_url || !d.photo_side_url || !d.photo_side_left_url || !d.photo_back_url)
+          return "Envie as 4 fotos (frente, lateral direita, lateral esquerda e costas).";
         return null;
     }
     return null;
@@ -558,10 +558,10 @@ function OnboardingPage() {
           {step === 8 && (
             <>
               <h2 className="text-2xl font-heading font-bold">Fotos do físico</h2>
-              <p className="text-sm text-muted-foreground">Envie 3 fotos em local bem iluminado, com pouca roupa, postura natural. Serão a referência inicial da sua evolução.</p>
-              {(["front", "side", "back"] as const).map((slot) => {
+              <p className="text-sm text-muted-foreground">Envie 4 fotos em local bem iluminado, com pouca roupa, postura natural. Serão a referência inicial da sua evolução.</p>
+              {(["front", "side", "side_left", "back"] as const).map((slot) => {
                 const url = d[`photo_${slot}_url`];
-                const label = slot === "front" ? "Frente" : slot === "side" ? "Lado" : "Costas";
+                const label = slot === "front" ? "Frente" : slot === "side" ? "Lateral direita" : slot === "side_left" ? "Lateral esquerda" : "Costas";
                 return (
                   <div key={slot} className="rounded-md border border-border p-3 space-y-2">
                     <p className="font-medium text-sm">{label}</p>

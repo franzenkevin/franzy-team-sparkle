@@ -30,6 +30,7 @@ import { Route as AuthenticatedJournalRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedHormonesRouteImport } from './routes/_authenticated/hormones'
 import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticated/history'
 import { Route as AuthenticatedGenerateRouteImport } from './routes/_authenticated/generate'
+import { Route as AuthenticatedFeedbackRouteImport } from './routes/_authenticated/feedback'
 import { Route as AuthenticatedExercisesRouteImport } from './routes/_authenticated/exercises'
 import { Route as AuthenticatedDietRouteImport } from './routes/_authenticated/diet'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -150,6 +151,11 @@ const AuthenticatedGenerateRoute = AuthenticatedGenerateRouteImport.update({
   path: '/generate',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedFeedbackRoute = AuthenticatedFeedbackRouteImport.update({
+  id: '/feedback',
+  path: '/feedback',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedExercisesRoute = AuthenticatedExercisesRouteImport.update({
   id: '/exercises',
   path: '/exercises',
@@ -194,15 +200,15 @@ const AuthenticatedAchievementsRoute =
   } as any)
 const AuthenticatedFeedbackWeeklyRoute =
   AuthenticatedFeedbackWeeklyRouteImport.update({
-    id: '/feedback/weekly',
-    path: '/feedback/weekly',
-    getParentRoute: () => AuthenticatedRoute,
+    id: '/weekly',
+    path: '/weekly',
+    getParentRoute: () => AuthenticatedFeedbackRoute,
   } as any)
 const AuthenticatedFeedbackDietRoute =
   AuthenticatedFeedbackDietRouteImport.update({
-    id: '/feedback/diet',
-    path: '/feedback/diet',
-    getParentRoute: () => AuthenticatedRoute,
+    id: '/diet',
+    path: '/diet',
+    getParentRoute: () => AuthenticatedFeedbackRoute,
   } as any)
 const AuthenticatedExerciseHistoryExerciseIdRoute =
   AuthenticatedExerciseHistoryExerciseIdRouteImport.update({
@@ -235,6 +241,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/diet': typeof AuthenticatedDietRoute
   '/exercises': typeof AuthenticatedExercisesRoute
+  '/feedback': typeof AuthenticatedFeedbackRouteWithChildren
   '/generate': typeof AuthenticatedGenerateRoute
   '/history': typeof AuthenticatedHistoryRoute
   '/hormones': typeof AuthenticatedHormonesRoute
@@ -270,6 +277,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/diet': typeof AuthenticatedDietRoute
   '/exercises': typeof AuthenticatedExercisesRoute
+  '/feedback': typeof AuthenticatedFeedbackRouteWithChildren
   '/generate': typeof AuthenticatedGenerateRoute
   '/history': typeof AuthenticatedHistoryRoute
   '/hormones': typeof AuthenticatedHormonesRoute
@@ -307,6 +315,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/diet': typeof AuthenticatedDietRoute
   '/_authenticated/exercises': typeof AuthenticatedExercisesRoute
+  '/_authenticated/feedback': typeof AuthenticatedFeedbackRouteWithChildren
   '/_authenticated/generate': typeof AuthenticatedGenerateRoute
   '/_authenticated/history': typeof AuthenticatedHistoryRoute
   '/_authenticated/hormones': typeof AuthenticatedHormonesRoute
@@ -344,6 +353,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/diet'
     | '/exercises'
+    | '/feedback'
     | '/generate'
     | '/history'
     | '/hormones'
@@ -379,6 +389,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/diet'
     | '/exercises'
+    | '/feedback'
     | '/generate'
     | '/history'
     | '/hormones'
@@ -415,6 +426,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/diet'
     | '/_authenticated/exercises'
+    | '/_authenticated/feedback'
     | '/_authenticated/generate'
     | '/_authenticated/history'
     | '/_authenticated/hormones'
@@ -600,6 +612,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedGenerateRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/feedback': {
+      id: '/_authenticated/feedback'
+      path: '/feedback'
+      fullPath: '/feedback'
+      preLoaderRoute: typeof AuthenticatedFeedbackRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/exercises': {
       id: '/_authenticated/exercises'
       path: '/exercises'
@@ -658,17 +677,17 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/feedback/weekly': {
       id: '/_authenticated/feedback/weekly'
-      path: '/feedback/weekly'
+      path: '/weekly'
       fullPath: '/feedback/weekly'
       preLoaderRoute: typeof AuthenticatedFeedbackWeeklyRouteImport
-      parentRoute: typeof AuthenticatedRoute
+      parentRoute: typeof AuthenticatedFeedbackRoute
     }
     '/_authenticated/feedback/diet': {
       id: '/_authenticated/feedback/diet'
-      path: '/feedback/diet'
+      path: '/diet'
       fullPath: '/feedback/diet'
       preLoaderRoute: typeof AuthenticatedFeedbackDietRouteImport
-      parentRoute: typeof AuthenticatedRoute
+      parentRoute: typeof AuthenticatedFeedbackRoute
     }
     '/_authenticated/exercise-history/$exerciseId': {
       id: '/_authenticated/exercise-history/$exerciseId'
@@ -694,6 +713,21 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedFeedbackRouteChildren {
+  AuthenticatedFeedbackDietRoute: typeof AuthenticatedFeedbackDietRoute
+  AuthenticatedFeedbackWeeklyRoute: typeof AuthenticatedFeedbackWeeklyRoute
+}
+
+const AuthenticatedFeedbackRouteChildren: AuthenticatedFeedbackRouteChildren = {
+  AuthenticatedFeedbackDietRoute: AuthenticatedFeedbackDietRoute,
+  AuthenticatedFeedbackWeeklyRoute: AuthenticatedFeedbackWeeklyRoute,
+}
+
+const AuthenticatedFeedbackRouteWithChildren =
+  AuthenticatedFeedbackRoute._addFileChildren(
+    AuthenticatedFeedbackRouteChildren,
+  )
+
 interface AuthenticatedRouteChildren {
   AuthenticatedAchievementsRoute: typeof AuthenticatedAchievementsRoute
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
@@ -703,6 +737,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDietRoute: typeof AuthenticatedDietRoute
   AuthenticatedExercisesRoute: typeof AuthenticatedExercisesRoute
+  AuthenticatedFeedbackRoute: typeof AuthenticatedFeedbackRouteWithChildren
   AuthenticatedGenerateRoute: typeof AuthenticatedGenerateRoute
   AuthenticatedHistoryRoute: typeof AuthenticatedHistoryRoute
   AuthenticatedHormonesRoute: typeof AuthenticatedHormonesRoute
@@ -716,8 +751,6 @@ interface AuthenticatedRouteChildren {
   AuthenticatedRankingRoute: typeof AuthenticatedRankingRoute
   AuthenticatedTrainingRoute: typeof AuthenticatedTrainingRoute
   AuthenticatedExerciseHistoryExerciseIdRoute: typeof AuthenticatedExerciseHistoryExerciseIdRoute
-  AuthenticatedFeedbackDietRoute: typeof AuthenticatedFeedbackDietRoute
-  AuthenticatedFeedbackWeeklyRoute: typeof AuthenticatedFeedbackWeeklyRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -729,6 +762,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDietRoute: AuthenticatedDietRoute,
   AuthenticatedExercisesRoute: AuthenticatedExercisesRoute,
+  AuthenticatedFeedbackRoute: AuthenticatedFeedbackRouteWithChildren,
   AuthenticatedGenerateRoute: AuthenticatedGenerateRoute,
   AuthenticatedHistoryRoute: AuthenticatedHistoryRoute,
   AuthenticatedHormonesRoute: AuthenticatedHormonesRoute,
@@ -743,8 +777,6 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedTrainingRoute: AuthenticatedTrainingRoute,
   AuthenticatedExerciseHistoryExerciseIdRoute:
     AuthenticatedExerciseHistoryExerciseIdRoute,
-  AuthenticatedFeedbackDietRoute: AuthenticatedFeedbackDietRoute,
-  AuthenticatedFeedbackWeeklyRoute: AuthenticatedFeedbackWeeklyRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
