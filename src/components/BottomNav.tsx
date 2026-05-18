@@ -1,14 +1,13 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Dumbbell, Apple, Bot, LineChart, User } from "lucide-react";
+import { LayoutDashboard, Dumbbell, Apple, Pill, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const items = [
-  { to: "/dashboard", label: "Início", icon: LayoutDashboard },
+  { to: "/dashboard", label: "Home", icon: LayoutDashboard },
   { to: "/training", label: "Treino", icon: Dumbbell },
   { to: "/diet", label: "Dieta", icon: Apple },
-  { to: "/coach", label: "Coach IA", icon: Bot },
-  { to: "/progress", label: "Progresso", icon: LineChart },
-  { to: "/profile", label: "Perfil", icon: User },
+  { to: "/hormones", label: "Hormônios", icon: Pill },
+  { to: "/feedback", label: "Feedback", icon: Heart },
 ] as const;
 
 export function BottomNav() {
@@ -19,7 +18,7 @@ export function BottomNav() {
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       aria-label="Navegação inferior"
     >
-      <ul className="grid grid-cols-6">
+      <ul className="grid grid-cols-5">
         {items.map((it) => {
           const active = path === it.to || (it.to !== "/dashboard" && path.startsWith(it.to));
           const Icon = it.icon;
