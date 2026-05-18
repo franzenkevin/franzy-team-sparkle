@@ -455,6 +455,7 @@ export type Database = {
           onboarding_complete: boolean
           photo_back_url: string | null
           photo_front_url: string | null
+          photo_side_left_url: string | null
           photo_side_url: string | null
           preferred_foods: string[] | null
           previous_consultation: string | null
@@ -532,6 +533,7 @@ export type Database = {
           onboarding_complete?: boolean
           photo_back_url?: string | null
           photo_front_url?: string | null
+          photo_side_left_url?: string | null
           photo_side_url?: string | null
           preferred_foods?: string[] | null
           previous_consultation?: string | null
@@ -609,6 +611,7 @@ export type Database = {
           onboarding_complete?: boolean
           photo_back_url?: string | null
           photo_front_url?: string | null
+          photo_side_left_url?: string | null
           photo_side_url?: string | null
           preferred_foods?: string[] | null
           previous_consultation?: string | null
