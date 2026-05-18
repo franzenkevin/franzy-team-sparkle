@@ -157,7 +157,11 @@ function TrainingPage() {
           initial[ex.id] = saved.sets as WorkoutSet[];
         } else {
           const validCount = Math.min(Math.max(Number(ex.sets) || 3, 1), 6);
-          const warmupCount = Math.min(Math.max(Number(ex.warmupSets) || 0, 0), 3);
+          // 2 séries de aquecimento fixas por padrão (sobrescritível pelo coach via warmupSets)
+          const warmupCount = Math.min(
+            Math.max(ex.warmupSets === undefined ? 2 : Number(ex.warmupSets) || 0, 0),
+            3,
+          );
           initial[ex.id] = Array.from({ length: warmupCount + validCount }, (_, idx) => ({
             type: (idx < warmupCount ? "warmup" : "valid") as "warmup" | "valid",
             weight: 0,
