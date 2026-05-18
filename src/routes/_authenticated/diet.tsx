@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ChevronDown, ChevronUp, Utensils, Loader2, Info, Leaf, Zap } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronUp, Utensils, Loader2, Info, Leaf, Zap, Pill } from "lucide-react";
 import logo from "@/assets/logo.png";
 
 export const Route = createFileRoute("/_authenticated/diet")({
@@ -13,6 +13,7 @@ export const Route = createFileRoute("/_authenticated/diet")({
 type Food = { name: string; amount?: string; calories?: number; protein?: number; carbs?: number; fat?: number };
 type MealOption = { label?: string; foods?: Food[] };
 type Meal = { label: string; time?: string; options?: MealOption[] };
+type Supplement = { name: string; dose?: string; timing?: string; notes?: string };
 type Diet = {
   totalCalories?: number;
   protein?: number;
@@ -21,6 +22,8 @@ type Diet = {
   meals?: Meal[];
   notes?: string[];
   intro?: string;
+  supplements?: Supplement[];
+  preworkout?: string;
 };
 
 function DietPage() {
@@ -165,13 +168,44 @@ function DietPage() {
               <div className="mt-6 rounded-xl border border-border bg-card p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <Info size={14} className="text-primary" />
-                  <h3 className="font-heading font-semibold text-sm">Suplementação</h3>
+                  <h3 className="font-heading font-semibold text-sm">Observações</h3>
                 </div>
                 <div className="space-y-1">
                   {diet.notes.map((n, i) => (
                     <p key={i} className="text-xs text-muted-foreground">• {n}</p>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {Array.isArray(diet.supplements) && diet.supplements.length > 0 && (
+              <div className="mt-4 rounded-xl border border-border bg-card p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Pill size={14} className="text-primary" />
+                  <h3 className="font-heading font-semibold text-sm">Suplementação</h3>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {diet.supplements.map((s, i) => (
+                    <div key={i} className="rounded-md border border-border bg-background/40 p-3">
+                      <p className="text-sm font-medium">{s.name}</p>
+                      <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
+                        {s.dose && <p><span className="text-foreground/70">Dose:</span> {s.dose}</p>}
+                        {s.timing && <p><span className="text-foreground/70">Quando:</span> {s.timing}</p>}
+                        {s.notes && <p className="whitespace-pre-wrap">{s.notes}</p>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {diet.preworkout && (
+              <div className="mt-4 rounded-xl border border-primary/30 bg-primary/5 p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <Zap size={14} className="text-primary" />
+                  <h3 className="font-heading font-semibold text-sm">Pré-treino / termogênico</h3>
+                </div>
+                <p className="text-xs text-muted-foreground whitespace-pre-wrap">{diet.preworkout}</p>
               </div>
             )}
           </>

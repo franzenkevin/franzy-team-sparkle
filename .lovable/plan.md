@@ -1,105 +1,84 @@
-## 1. Bug crítico — protocolo nunca chega ao aluno
 
-**Causa:** o `useEffect` de auto-save em `admin.tsx` (linhas 474–496) sempre grava `status: "pending_review"`. Ao abrir um protocolo ativo, o `setTrainingText` muda o estado e 2,5s depois o auto-save rebaixa o protocolo para `pending_review`. Mesmo após clicar "Salvar e liberar", o efeito dispara de novo no reload e reverte.
+## Escopo
 
-**Fix:**
-- Auto-save só roda se o protocolo carregado for `pending_review` (rascunho). Para `active`/`archived`, nunca regrava.
-- Adicionar ref de "carga inicial" para não disparar auto-save logo após `selectUser`.
+Reformar o app do aluno para ficar igual ao Evoria nos pontos pedidos, adicionar análise corporal IA (mascarada como manual no admin) e arrumar o admin responsivo.
 
-## 2. Separação total admin × aluno
+---
 
-- Nova rota pública `/admin/login` (e-mail/senha). Rejeita login se o usuário não tem role `admin`.
-- Rota `/login` atual rejeita login se o usuário **tem** role `admin` (manda para `/admin/login`).
-- Novo layout `/_admin` (substitui acesso atual via `/admin` dentro de `_authenticated`). Não monta `AppSidebar`, `BottomNav`, `OnboardingTour`, `InstallPwaPrompt`. Tem seu próprio shell escuro com sidebar admin.
-- `_authenticated` (área aluno) faz `redirect` para `/admin` se o usuário logado é admin.
-- Index `/` decide destino conforme role.
+## 1. App do aluno
 
-## 3. Reformulação do painel admin
+### 1.1 Treino — registro de cargas estilo Evoria
+- Em `src/routes/_authenticated/training.tsx`:
+  - Adicionar bloco "Descrição do treino" no topo de cada dia: mostrar `day.rationale` (já existe) + `day.name`, `day.weekday`, observações gerais.
+  - Para cada exercício, expor um **card de séries** com colunas: Set | Carga (kg) | Reps | RPE | ✓. Linhas pré-preenchidas com a última sessão (já temos `previousSets`). Botão "+ série" e "− série".
+  - Manter aquecimento, mas separar visualmente das séries válidas.
+  - Botão "Salvar série" por linha + "Concluir exercício" que dispara timer de descanso (já existe).
+  - Exibir histórico curto inline ("última: 4×10 @ 60kg").
 
-Layout minimalista preto/cinza/laranja, sidebar fixa, área principal com cards. Substitui as 15 abas atuais por 5 seções:
+### 1.2 Bottom nav — 5 ícones
+- Atualizar `src/components/BottomNav.tsx` para: **Home / Treino / Dieta / Hormônios / Feedback** (remover Coach IA e Progresso/Perfil da barra; manter no sidebar).
+- Grid passa de `grid-cols-6` para `grid-cols-5`.
 
-1. **Resumo** — KPIs, gráficos, alunos em risco (mantém o `ResumoTab`, refinado).
-2. **Alunos** — lista + abre workspace do aluno em página dedicada (`/admin/alunos/$userId`).
-3. **Aprovações** — protocolos `pending_review` + análises IA pendentes.
-4. **Biblioteca** — exercícios + templates de protocolo.
-5. **Configurações** — ranking, notificações broadcast.
+### 1.3 Hormônios + Feedback
+- Já existe `/_authenticated/hormones`. Manter.
+- Criar `/_authenticated/feedback` como hub: cards para "Feedback semanal", "Feedback de dieta", "Análise mensal" (rotas já existem).
 
-### Workspace do aluno (`/admin/alunos/$userId`)
-Página única com tabs internas:
-- **Visão** — dados, anamnese, calculadoras (TMB Mifflin, GET ajustado, macros configuráveis, %gordura Navy, projeção de evolução).
-- **Protocolo** — editor atual + bloco de **justificativas** (campo `rationale` JSON com `summary` + `byItem`).
-- **Histórico** — feedbacks, logs, check-ins, mensagens.
-- **IA Coach** — chat prescritor (item 4).
-- **Progressão** — sugestão de próxima carga por exercício baseada em `workout_logs`.
+### 1.4 Dieta estilo Evoria + suplementos
+- Em `src/routes/_authenticated/diet.tsx`:
+  - Render por refeição com alimentos, gramas, macros, **opções de substituição** (já no schema).
+  - Bloco "Suplementos" lendo `diet.supplements: [{ name, dose, timing, notes }]` com cards.
+  - Bloco "Termogênicos / pré-treino" se presente.
+  - Bloco "Observações da dieta" (`diet.notes`).
+- Estender o `DietEditor` admin para editar `supplements`.
 
-### Calculadoras (componente `Calculators.tsx`)
-- TMB Mifflin-St Jeor + fator atividade + déficit/superávit em % → kcal e macros (g e %).
-- %Gordura Navy a partir das circunferências da anamnese.
-- Projeção de peso: regressão linear sobre `weekly_feedbacks.weight` últimas 8 semanas, projeta 8 semanas à frente.
-- Progressão de carga: para cada exercício logado, média móvel das últimas séries top → sugere +2,5kg / +1 rep conforme RPE médio.
+### 1.5 Anamnese — fotos em 4 ângulos
+- Em `src/routes/_authenticated/onboarding.tsx` (passo "Fotos do físico"):
+  - Substituir 3 uploads por **4**: Frente, Lateral direita, Lateral esquerda, Costas.
+- Adicionar coluna `photo_side_left_url` em `profiles` (migration). As atuais `photo_side_url` viram "lateral direita".
 
-## 4. IA Coach do admin — chat com ferramentas + aplicar como rascunho
+### 1.6 Remover análise corporal IA do aluno
+- Esconder o gerador IA em `/_authenticated/body-analysis` para alunos; aluno só visualiza conteúdo aprovado pelo coach (status `approved` em `ai_analyses`). Nenhuma menção a "IA" na UI do aluno — chamar de "Análise do coach".
 
-Nova server function `adminCoachChat` (streaming AI SDK) com tools:
-- `getStudentProfile(userId)` — anamnese completa
-- `getRecentFeedback(userId)` — semanais + workout/diet
-- `calcMacros(weight, height, age, sex, activity, deficitPct)` 
-- `proposeProtocol(userId, rationale)` — gera treino+diet+hormones+rationale e devolve JSON para a UI aplicar
-- `applyDraft(userId, training, diet, hormones, rationale)` — `needsApproval`. Cria `pending_review` no banco.
+---
 
-UI: painel lateral de chat no workspace, com botão "Aplicar como rascunho" que confirma o tool call.
+## 2. App do admin
 
-### Justificativas (IA explica tudo)
-Schema novo `rationale` em `protocols.training` e `protocols.diet`:
-```
-training.rationale = { summary: string, byDay: [{ name, why }], byExercise: { [exName]: why } }
-diet.rationale     = { summary: string, byMeal: [{ name, why }], byFood: { [foodKey]: why } }
-```
-- Aluno vê resumo + cada item tem botão "por quê?" que abre um popover com a justificativa.
-- Admin pode editar livremente os textos.
+### 2.1 Análise corporal IA (mascarada)
+- Quando aluno completa anamnese ou envia feedback com fotos, o admin vê botão "Gerar análise" que chama `adminGenerateBodyAnalysis` (já existe). Resultado vai em editor de texto rico/textarea + "Aprovar & liberar" → status `approved` em `ai_analyses`.
+- No app do aluno aparece como análise do coach.
+- Adicionar painel de "Análises pendentes" no admin Resumo.
 
-Atualizar `protocol.functions.ts` `PROTOCOL_SYSTEM_PROMPT` para exigir esse `rationale` na saída.
+### 2.2 Editor de treino responsivo
+- `src/components/admin/TrainingEditor.tsx`: ajustar grids para empilhar em mobile (`grid-cols-1 sm:grid-cols-2 md:grid-cols-4`), aumentar áreas de toque, mover botões de mover/excluir para uma linha própria em telas estreitas.
+- Mesma revisão em `DietEditor` e `HormonesEditor`.
+- Reduzir padding lateral em mobile no admin shell.
 
-## 5. Migração de banco
+---
 
-```sql
--- nada de schema (rationale vive dentro dos JSONB existentes)
--- só garantir índice de papel admin já existe (has_role)
-```
+## 3. Banco
 
-Nenhuma migração estrutural. Tudo cabe nos JSONB.
+Migration:
+- `ALTER TABLE profiles ADD COLUMN photo_side_left_url text;`
+- Renomear conceito: `photo_side_url` = lateral direita (sem rename SQL, só convenção).
+- Adicionar índice ou nada extra.
 
-## Arquivos principais
+Schema do protocolo (`diet` jsonb) ganha campo opcional `supplements: []` — sem migration, só convenção.
 
-```text
-src/lib/admin.functions.ts          # corrigir; manter
-src/lib/adminCoach.functions.ts     # NOVO — chat com tools
-src/lib/calculators.ts              # NOVO — TMB/macros/Navy/projeção
-src/lib/protocolRationale.ts        # NOVO — schema + helpers UI
-src/routes/admin.login.tsx          # NOVO — login admin separado
-src/routes/_admin.tsx               # NOVO — layout admin
-src/routes/_admin/index.tsx         # NOVO — Resumo
-src/routes/_admin/alunos.tsx        # NOVO — lista
-src/routes/_admin/alunos.$userId.tsx# NOVO — workspace
-src/routes/_admin/aprovacoes.tsx    # NOVO
-src/routes/_admin/biblioteca.tsx    # NOVO
-src/routes/_authenticated.tsx       # adicionar redirect se admin
-src/routes/login.tsx                # bloquear admin
-src/routes/index.tsx                # rotear por role
-src/components/admin/AdminSidebar.tsx        # NOVO
-src/components/admin/Calculators.tsx         # NOVO
-src/components/admin/CoachChat.tsx           # NOVO
-src/components/admin/RationalePopover.tsx    # NOVO
-src/components/ProtocolPreview.tsx           # mostrar "por quê?" nos itens
-src/routes/_authenticated/training.tsx       # botão "por quê?" por exercício
-src/routes/_authenticated/diet.tsx           # botão "por quê?" por refeição
-src/routes/_authenticated/admin.tsx          # remover (substituído por /_admin)
-```
+---
 
-## Plano de execução (3 passos enxutos)
+## 4. Arquivos a editar/criar
 
-1. **Fix bug + separar login admin/aluno** — pequeno, valor imediato.
-2. **Novo layout admin + workspace do aluno + calculadoras** — substitui as 15 abas pelo painel novo.
-3. **IA Coach (chat+tools) + justificativas (rationale) em treino/dieta** — atualiza prompt da IA, UI de "por quê?" no aluno e admin.
+**Editar:** `src/components/BottomNav.tsx`, `src/routes/_authenticated/training.tsx`, `src/routes/_authenticated/diet.tsx`, `src/routes/_authenticated/onboarding.tsx`, `src/routes/_authenticated/body-analysis.tsx`, `src/components/admin/TrainingEditor.tsx`, `src/components/admin/DietEditor.tsx`, `src/components/admin/HormonesEditor.tsx`, `src/routes/_authenticated/admin.tsx`.
 
-Pronto para começar pelo passo 1 (bug + separação de login). Confirma?
+**Criar:** `src/routes/_authenticated/feedback.tsx` (hub).
+
+**Migration:** adicionar `photo_side_left_url` em profiles.
+
+---
+
+## Fora de escopo (a não ser que peça)
+- Trocar bottom nav para incluir Perfil (fica no sidebar/header).
+- Refazer scoring de IA, RAG, etc.
+- Mudar autenticação.
+
+Confirma para eu seguir?
