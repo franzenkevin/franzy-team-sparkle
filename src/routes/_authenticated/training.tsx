@@ -678,6 +678,25 @@ function TrainingPage() {
                       {feedbackId ? "Atualizar feedback" : "Enviar feedback"}
                     </Button>
                   </div>
+                  {/* Story do Franzen Team */}
+                  <div className="mt-5 border-t border-border pt-4">
+                    <h4 className="font-heading font-semibold text-sm">Compartilhar treino 📲</h4>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Gere uma imagem com a kilagem total levantada hoje ({totalKgLifted.toLocaleString("pt-BR")} kg) e o logo Franzen Team para postar no seu story.
+                    </p>
+                    <div className="mt-3 flex flex-col sm:flex-row gap-2">
+                      <label className="flex-1 inline-flex items-center justify-center gap-2 rounded-md border border-dashed border-border px-3 py-2 text-xs cursor-pointer hover:border-primary">
+                        <Activity size={14} />
+                        {storyPhoto ? storyPhoto.name.slice(0, 24) : "Foto opcional (fundo)"}
+                        <input type="file" accept="image/*" className="hidden"
+                          onChange={(e) => setStoryPhoto(e.target.files?.[0] ?? null)} />
+                      </label>
+                      <Button onClick={generateStory} disabled={generatingStory || totalKgLifted === 0} variant="outline">
+                        {generatingStory ? <Loader2 className="animate-spin mr-2" size={14} /> : null}
+                        Gerar story
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
