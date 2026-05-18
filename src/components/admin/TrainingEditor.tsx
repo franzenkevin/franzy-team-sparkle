@@ -92,7 +92,7 @@ export function TrainingEditor({ value, onChange }: { value: unknown; onChange: 
             <div className="h-9 w-9 rounded-md bg-primary/10 text-primary font-bold flex items-center justify-center">
               {LETTERS[di] ?? di + 1}
             </div>
-            <div className="grid grid-cols-2 gap-2 flex-1 min-w-[220px]">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1 min-w-[180px]">
               <Input placeholder="Nome (ex.: Inferiores - Quads)" value={d.name ?? ""} onChange={(e) => setDay(di, { name: e.target.value })} />
               <select className="rounded-md border border-input bg-background px-2 text-sm h-9"
                 value={d.weekday ?? ""} onChange={(e) => setDay(di, { weekday: e.target.value })}>
@@ -100,7 +100,7 @@ export function TrainingEditor({ value, onChange }: { value: unknown; onChange: 
                 {WEEKDAYS.map((w) => <option key={w} value={w}>{w}</option>)}
               </select>
             </div>
-            <div className="flex gap-1">
+            <div className="flex gap-1 ml-auto">
               <Button size="icon" variant="ghost" onClick={() => moveDay(di, -1)} disabled={di === 0}><ChevronUp size={14} /></Button>
               <Button size="icon" variant="ghost" onClick={() => moveDay(di, 1)} disabled={di === days.length - 1}><ChevronDown size={14} /></Button>
               <Button size="icon" variant="ghost" onClick={() => removeDay(di)}><Trash2 size={14} className="text-destructive" /></Button>
@@ -113,22 +113,23 @@ export function TrainingEditor({ value, onChange }: { value: unknown; onChange: 
           <div className="space-y-2">
             {(d.exercises ?? []).map((ex, ei) => (
               <div key={ei} className="rounded-lg border border-border p-2.5 space-y-2 bg-muted/20">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs font-mono text-muted-foreground w-5">{ei + 1}.</span>
-                  <Input placeholder="Exercício" value={ex.name ?? ""} onChange={(e) => setEx(di, ei, { name: e.target.value })} className="h-8" />
-                  <div className="flex gap-0.5 shrink-0">
+                  <Input placeholder="Exercício" value={ex.name ?? ""} onChange={(e) => setEx(di, ei, { name: e.target.value })} className="h-8 flex-1 min-w-[140px]" />
+                  <div className="flex gap-0.5 shrink-0 ml-auto">
                     <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => moveEx(di, ei, -1)} disabled={ei === 0}><ChevronUp size={12} /></Button>
                     <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => moveEx(di, ei, 1)} disabled={ei === (d.exercises?.length ?? 0) - 1}><ChevronDown size={12} /></Button>
                     <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => removeEx(di, ei)}><Trash2 size={12} className="text-destructive" /></Button>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   <Input placeholder="Séries" value={ex.sets ?? ""} onChange={(e) => setEx(di, ei, { sets: e.target.value })} className="h-8 text-xs" />
                   <Input placeholder="Reps (ex.: 8-12)" value={String(ex.reps ?? "")} onChange={(e) => setEx(di, ei, { reps: e.target.value })} className="h-8 text-xs" />
                   <Input placeholder="Descanso" value={ex.rest ?? ""} onChange={(e) => setEx(di, ei, { rest: e.target.value })} className="h-8 text-xs" />
                   <Input placeholder="Vídeo (URL)" value={ex.videoUrl ?? ""} onChange={(e) => setEx(di, ei, { videoUrl: e.target.value })} className="h-8 text-xs" />
                 </div>
                 <Textarea placeholder="Observações / técnica" rows={2} value={ex.notes ?? ""} onChange={(e) => setEx(di, ei, { notes: e.target.value })} className="text-xs" />
+                <Textarea placeholder="Justificativa (por quê desse exercício?)" rows={2} value={ex.rationale ?? ""} onChange={(e) => setEx(di, ei, { rationale: e.target.value })} className="text-xs" />
               </div>
             ))}
             <Button size="sm" variant="outline" className="w-full" onClick={() => addEx(di)}>
@@ -136,7 +137,7 @@ export function TrainingEditor({ value, onChange }: { value: unknown; onChange: 
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 pt-2 border-t border-border">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-border">
             <Label className="text-xs flex items-center gap-1 md:col-span-3"><Activity size={12} /> Cardio do dia (opcional)</Label>
             <Input placeholder="Duração" value={d.cardio?.duration ?? ""} onChange={(e) => setDay(di, { cardio: { ...(d.cardio ?? {}), duration: e.target.value } })} className="h-8 text-xs" />
             <Input placeholder="Frequência" value={d.cardio?.frequency ?? ""} onChange={(e) => setDay(di, { cardio: { ...(d.cardio ?? {}), frequency: e.target.value } })} className="h-8 text-xs" />
