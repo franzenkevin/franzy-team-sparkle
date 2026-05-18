@@ -43,9 +43,12 @@ import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedFeedbackWeeklyRouteImport } from './routes/_authenticated/feedback.weekly'
 import { Route as AuthenticatedFeedbackDietRouteImport } from './routes/_authenticated/feedback.diet'
 import { Route as AuthenticatedExerciseHistoryExerciseIdRouteImport } from './routes/_authenticated/exercise-history.$exerciseId'
+import { Route as AuthenticatedAdminToolsRouteImport } from './routes/_authenticated/admin.tools'
+import { Route as AuthenticatedAdminLegacyRouteImport } from './routes/_authenticated/admin.legacy'
 import { Route as AuthenticatedAdminClientsRouteImport } from './routes/_authenticated/admin.clients'
 import { Route as ApiPublicShareTokenRouteImport } from './routes/api/public/share.$token'
 import { Route as ApiPublicShareOgTokenRouteImport } from './routes/api/public/share-og.$token'
+import { Route as AuthenticatedAdminClientsRouteImport } from './routes/_authenticated/admin.clients.'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -224,6 +227,17 @@ const AuthenticatedExerciseHistoryExerciseIdRoute =
     path: '/exercise-history/$exerciseId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminToolsRoute = AuthenticatedAdminToolsRouteImport.update({
+  id: '/tools',
+  path: '/tools',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const AuthenticatedAdminLegacyRoute =
+  AuthenticatedAdminLegacyRouteImport.update({
+    id: '/legacy',
+    path: '/legacy',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminClientsRoute =
   AuthenticatedAdminClientsRouteImport.update({
     id: '/clients',
@@ -240,6 +254,12 @@ const ApiPublicShareOgTokenRoute = ApiPublicShareOgTokenRouteImport.update({
   path: '/api/public/share-og/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAdminClientsRoute =
+  AuthenticatedAdminClientsRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedAdminClientsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -270,12 +290,15 @@ export interface FileRoutesByFullPath {
   '/admin/login': typeof AdminLoginRoute
   '/api/coach': typeof ApiCoachRoute
   '/s/$token': typeof STokenRoute
-  '/admin/clients': typeof AuthenticatedAdminClientsRoute
+  '/admin/clients': typeof AuthenticatedAdminClientsRouteWithChildren
+  '/admin/legacy': typeof AuthenticatedAdminLegacyRoute
+  '/admin/tools': typeof AuthenticatedAdminToolsRoute
   '/exercise-history/$exerciseId': typeof AuthenticatedExerciseHistoryExerciseIdRoute
   '/feedback/diet': typeof AuthenticatedFeedbackDietRoute
   '/feedback/weekly': typeof AuthenticatedFeedbackWeeklyRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/feedback/': typeof AuthenticatedFeedbackIndexRoute
+  '/admin/clients/': typeof AuthenticatedAdminClientsRoute
   '/api/public/share-og/$token': typeof ApiPublicShareOgTokenRoute
   '/api/public/share/$token': typeof ApiPublicShareTokenRoute
 }
@@ -307,12 +330,14 @@ export interface FileRoutesByTo {
   '/admin/login': typeof AdminLoginRoute
   '/api/coach': typeof ApiCoachRoute
   '/s/$token': typeof STokenRoute
-  '/admin/clients': typeof AuthenticatedAdminClientsRoute
+  '/admin/legacy': typeof AuthenticatedAdminLegacyRoute
+  '/admin/tools': typeof AuthenticatedAdminToolsRoute
   '/exercise-history/$exerciseId': typeof AuthenticatedExerciseHistoryExerciseIdRoute
   '/feedback/diet': typeof AuthenticatedFeedbackDietRoute
   '/feedback/weekly': typeof AuthenticatedFeedbackWeeklyRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/feedback': typeof AuthenticatedFeedbackIndexRoute
+  '/admin/clients': typeof AuthenticatedAdminClientsRoute
   '/api/public/share-og/$token': typeof ApiPublicShareOgTokenRoute
   '/api/public/share/$token': typeof ApiPublicShareTokenRoute
 }
@@ -347,12 +372,15 @@ export interface FileRoutesById {
   '/admin/login': typeof AdminLoginRoute
   '/api/coach': typeof ApiCoachRoute
   '/s/$token': typeof STokenRoute
-  '/_authenticated/admin/clients': typeof AuthenticatedAdminClientsRoute
+  '/_authenticated/admin/clients': typeof AuthenticatedAdminClientsRouteWithChildren
+  '/_authenticated/admin/legacy': typeof AuthenticatedAdminLegacyRoute
+  '/_authenticated/admin/tools': typeof AuthenticatedAdminToolsRoute
   '/_authenticated/exercise-history/$exerciseId': typeof AuthenticatedExerciseHistoryExerciseIdRoute
   '/_authenticated/feedback/diet': typeof AuthenticatedFeedbackDietRoute
   '/_authenticated/feedback/weekly': typeof AuthenticatedFeedbackWeeklyRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/feedback/': typeof AuthenticatedFeedbackIndexRoute
+  '/_authenticated/admin/clients/': typeof AuthenticatedAdminClientsRoute
   '/api/public/share-og/$token': typeof ApiPublicShareOgTokenRoute
   '/api/public/share/$token': typeof ApiPublicShareTokenRoute
 }
@@ -388,11 +416,14 @@ export interface FileRouteTypes {
     | '/api/coach'
     | '/s/$token'
     | '/admin/clients'
+    | '/admin/legacy'
+    | '/admin/tools'
     | '/exercise-history/$exerciseId'
     | '/feedback/diet'
     | '/feedback/weekly'
     | '/admin/'
     | '/feedback/'
+    | '/admin/clients/'
     | '/api/public/share-og/$token'
     | '/api/public/share/$token'
   fileRoutesByTo: FileRoutesByTo
@@ -424,12 +455,14 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/api/coach'
     | '/s/$token'
-    | '/admin/clients'
+    | '/admin/legacy'
+    | '/admin/tools'
     | '/exercise-history/$exerciseId'
     | '/feedback/diet'
     | '/feedback/weekly'
     | '/admin'
     | '/feedback'
+    | '/admin/clients'
     | '/api/public/share-og/$token'
     | '/api/public/share/$token'
   id:
@@ -464,11 +497,14 @@ export interface FileRouteTypes {
     | '/api/coach'
     | '/s/$token'
     | '/_authenticated/admin/clients'
+    | '/_authenticated/admin/legacy'
+    | '/_authenticated/admin/tools'
     | '/_authenticated/exercise-history/$exerciseId'
     | '/_authenticated/feedback/diet'
     | '/_authenticated/feedback/weekly'
     | '/_authenticated/admin/'
     | '/_authenticated/feedback/'
+    | '/_authenticated/admin/clients/'
     | '/api/public/share-og/$token'
     | '/api/public/share/$token'
   fileRoutesById: FileRoutesById
@@ -727,6 +763,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedExerciseHistoryExerciseIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/tools': {
+      id: '/_authenticated/admin/tools'
+      path: '/tools'
+      fullPath: '/admin/tools'
+      preLoaderRoute: typeof AuthenticatedAdminToolsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/legacy': {
+      id: '/_authenticated/admin/legacy'
+      path: '/legacy'
+      fullPath: '/admin/legacy'
+      preLoaderRoute: typeof AuthenticatedAdminLegacyRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/clients': {
       id: '/_authenticated/admin/clients'
       path: '/clients'
@@ -748,16 +798,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicShareOgTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/admin/clients/': {
+      id: '/_authenticated/admin/clients/'
+      path: '/'
+      fullPath: '/admin/clients/'
+      preLoaderRoute: typeof AuthenticatedAdminClientsRouteImport
+      parentRoute: typeof AuthenticatedAdminClientsRoute
+    }
   }
 }
 
-interface AuthenticatedAdminRouteChildren {
+interface AuthenticatedAdminClientsRouteChildren {
   AuthenticatedAdminClientsRoute: typeof AuthenticatedAdminClientsRoute
+}
+
+const AuthenticatedAdminClientsRouteChildren: AuthenticatedAdminClientsRouteChildren =
+  {
+    AuthenticatedAdminClientsRoute: AuthenticatedAdminClientsRoute,
+  }
+
+const AuthenticatedAdminClientsRouteWithChildren =
+  AuthenticatedAdminClientsRoute._addFileChildren(
+    AuthenticatedAdminClientsRouteChildren,
+  )
+
+interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminClientsRoute: typeof AuthenticatedAdminClientsRouteWithChildren
+  AuthenticatedAdminLegacyRoute: typeof AuthenticatedAdminLegacyRoute
+  AuthenticatedAdminToolsRoute: typeof AuthenticatedAdminToolsRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
-  AuthenticatedAdminClientsRoute: AuthenticatedAdminClientsRoute,
+  AuthenticatedAdminClientsRoute: AuthenticatedAdminClientsRouteWithChildren,
+  AuthenticatedAdminLegacyRoute: AuthenticatedAdminLegacyRoute,
+  AuthenticatedAdminToolsRoute: AuthenticatedAdminToolsRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
 
