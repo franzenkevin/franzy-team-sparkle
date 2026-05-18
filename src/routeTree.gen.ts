@@ -50,7 +50,7 @@ import { Route as AuthenticatedAdminLegacyRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAdminClientsRouteImport } from './routes/_authenticated/admin.clients'
 import { Route as ApiPublicShareTokenRouteImport } from './routes/api/public/share.$token'
 import { Route as ApiPublicShareOgTokenRouteImport } from './routes/api/public/share-og.$token'
-import { Route as AuthenticatedAdminClientsRouteImport } from './routes/_authenticated/admin.clients.'
+import { Route as AuthenticatedAdminClientsIdRouteImport } from './routes/_authenticated/admin.clients.$id'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -268,10 +268,10 @@ const ApiPublicShareOgTokenRoute = ApiPublicShareOgTokenRouteImport.update({
   path: '/api/public/share-og/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedAdminClientsRoute =
-  AuthenticatedAdminClientsRouteImport.update({
-    id: '/',
-    path: '/',
+const AuthenticatedAdminClientsIdRoute =
+  AuthenticatedAdminClientsIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
     getParentRoute: () => AuthenticatedAdminClientsRoute,
   } as any)
 
@@ -314,7 +314,7 @@ export interface FileRoutesByFullPath {
   '/feedback/weekly': typeof AuthenticatedFeedbackWeeklyRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/feedback/': typeof AuthenticatedFeedbackIndexRoute
-  '/admin/clients/': typeof AuthenticatedAdminClientsRoute
+  '/admin/clients/$id': typeof AuthenticatedAdminClientsIdRoute
   '/api/public/share-og/$token': typeof ApiPublicShareOgTokenRoute
   '/api/public/share/$token': typeof ApiPublicShareTokenRoute
 }
@@ -346,6 +346,7 @@ export interface FileRoutesByTo {
   '/admin/login': typeof AdminLoginRoute
   '/api/coach': typeof ApiCoachRoute
   '/s/$token': typeof STokenRoute
+  '/admin/clients': typeof AuthenticatedAdminClientsRouteWithChildren
   '/admin/legacy': typeof AuthenticatedAdminLegacyRoute
   '/admin/library': typeof AuthenticatedAdminLibraryRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
@@ -355,7 +356,7 @@ export interface FileRoutesByTo {
   '/feedback/weekly': typeof AuthenticatedFeedbackWeeklyRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/feedback': typeof AuthenticatedFeedbackIndexRoute
-  '/admin/clients': typeof AuthenticatedAdminClientsRoute
+  '/admin/clients/$id': typeof AuthenticatedAdminClientsIdRoute
   '/api/public/share-og/$token': typeof ApiPublicShareOgTokenRoute
   '/api/public/share/$token': typeof ApiPublicShareTokenRoute
 }
@@ -400,7 +401,7 @@ export interface FileRoutesById {
   '/_authenticated/feedback/weekly': typeof AuthenticatedFeedbackWeeklyRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/feedback/': typeof AuthenticatedFeedbackIndexRoute
-  '/_authenticated/admin/clients/': typeof AuthenticatedAdminClientsRoute
+  '/_authenticated/admin/clients/$id': typeof AuthenticatedAdminClientsIdRoute
   '/api/public/share-og/$token': typeof ApiPublicShareOgTokenRoute
   '/api/public/share/$token': typeof ApiPublicShareTokenRoute
 }
@@ -445,7 +446,7 @@ export interface FileRouteTypes {
     | '/feedback/weekly'
     | '/admin/'
     | '/feedback/'
-    | '/admin/clients/'
+    | '/admin/clients/$id'
     | '/api/public/share-og/$token'
     | '/api/public/share/$token'
   fileRoutesByTo: FileRoutesByTo
@@ -477,6 +478,7 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/api/coach'
     | '/s/$token'
+    | '/admin/clients'
     | '/admin/legacy'
     | '/admin/library'
     | '/admin/settings'
@@ -486,7 +488,7 @@ export interface FileRouteTypes {
     | '/feedback/weekly'
     | '/admin'
     | '/feedback'
-    | '/admin/clients'
+    | '/admin/clients/$id'
     | '/api/public/share-og/$token'
     | '/api/public/share/$token'
   id:
@@ -530,7 +532,7 @@ export interface FileRouteTypes {
     | '/_authenticated/feedback/weekly'
     | '/_authenticated/admin/'
     | '/_authenticated/feedback/'
-    | '/_authenticated/admin/clients/'
+    | '/_authenticated/admin/clients/$id'
     | '/api/public/share-og/$token'
     | '/api/public/share/$token'
   fileRoutesById: FileRoutesById
@@ -838,23 +840,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicShareOgTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/admin/clients/': {
-      id: '/_authenticated/admin/clients/'
-      path: '/'
-      fullPath: '/admin/clients/'
-      preLoaderRoute: typeof AuthenticatedAdminClientsRouteImport
+    '/_authenticated/admin/clients/$id': {
+      id: '/_authenticated/admin/clients/$id'
+      path: '/$id'
+      fullPath: '/admin/clients/$id'
+      preLoaderRoute: typeof AuthenticatedAdminClientsIdRouteImport
       parentRoute: typeof AuthenticatedAdminClientsRoute
     }
   }
 }
 
 interface AuthenticatedAdminClientsRouteChildren {
-  AuthenticatedAdminClientsRoute: typeof AuthenticatedAdminClientsRoute
+  AuthenticatedAdminClientsIdRoute: typeof AuthenticatedAdminClientsIdRoute
 }
 
 const AuthenticatedAdminClientsRouteChildren: AuthenticatedAdminClientsRouteChildren =
   {
-    AuthenticatedAdminClientsRoute: AuthenticatedAdminClientsRoute,
+    AuthenticatedAdminClientsIdRoute: AuthenticatedAdminClientsIdRoute,
   }
 
 const AuthenticatedAdminClientsRouteWithChildren =

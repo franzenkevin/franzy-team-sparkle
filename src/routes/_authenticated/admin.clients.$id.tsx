@@ -21,7 +21,7 @@ import { adminSaveProtocol, adminSetAnalysisStatus } from "@/lib/admin.functions
 import { adminGenerateBodyAnalysis, adminUpdateAnalysisContent } from "@/lib/body-analysis.functions";
 import { prescribeFromAnamnese, analyzeAnamnese } from "@/lib/anamnese.functions";
 
-export const Route = createFileRoute("/_authenticated/admin/clients/")({
+export const Route = createFileRoute("/_authenticated/admin/clients/$id")({
   component: ClientDetail,
 });
 
