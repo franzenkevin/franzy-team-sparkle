@@ -78,6 +78,8 @@ function TrainingPage() {
   const restRef = useRef<number | null>(null);
   const [feedbackRating, setFeedbackRating] = useState<number>(0);
   const [feedbackNotes, setFeedbackNotes] = useState<string>("");
+  const [storyPhoto, setStoryPhoto] = useState<File | null>(null);
+  const [generatingStory, setGeneratingStory] = useState(false);
   const [feedbackId, setFeedbackId] = useState<string | null>(null);
   const [savingFeedback, setSavingFeedback] = useState(false);
   const [swapFor, setSwapFor] = useState<Exercise | null>(null);
@@ -157,7 +159,11 @@ function TrainingPage() {
           initial[ex.id] = saved.sets as WorkoutSet[];
         } else {
           const validCount = Math.min(Math.max(Number(ex.sets) || 3, 1), 6);
-          const warmupCount = Math.min(Math.max(Number(ex.warmupSets) || 0, 0), 3);
+          // 2 séries de aquecimento fixas por padrão (sobrescritível pelo coach via warmupSets)
+          const warmupCount = Math.min(
+            Math.max(ex.warmupSets === undefined ? 2 : Number(ex.warmupSets) || 0, 0),
+            3,
+          );
           initial[ex.id] = Array.from({ length: warmupCount + validCount }, (_, idx) => ({
             type: (idx < warmupCount ? "warmup" : "valid") as "warmup" | "valid",
             weight: 0,
@@ -267,6 +273,77 @@ function TrainingPage() {
   const handleCompletedToggle = (ex: Exercise, i: number, checked: boolean) => {
     updateSet(ex.id, i, "completed", checked);
     if (checked) setRestSeconds(parseRest(ex.rest));
+  };
+
+  const totalKgLifted = useMemo(() => {
+    let total = 0;
+    for (const sets of Object.values(exerciseSets)) {
+      for (const s of sets) {
+        if (s.type === "valid" && s.completed) total += (Number(s.weight) || 0) * (Number(s.reps) || 0);
+      }
+    }
+    return Math.round(total);
+  }, [exerciseSets]);
+
+  const generateStory = async () => {
+    setGeneratingStory(true);
+    try {
+      const W = 1080, H = 1920;
+      const canvas = document.createElement("canvas");
+      canvas.width = W; canvas.height = H;
+      const ctx = canvas.getContext("2d")!;
+      // Fundo escuro com gradiente
+      const grad = ctx.createLinearGradient(0, 0, 0, H);
+      grad.addColorStop(0, "#0b0b0b"); grad.addColorStop(1, "#1a1a1a");
+      ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
+      // Foto do usuário (se houver) como fundo
+      if (storyPhoto) {
+        const img = await new Promise<HTMLImageElement>((res, rej) => {
+          const i = new Image();
+          i.onload = () => res(i); i.onerror = rej;
+          i.src = URL.createObjectURL(storyPhoto);
+        });
+        // cover
+        const ratio = Math.max(W / img.width, H / img.height);
+        const w = img.width * ratio, h = img.height * ratio;
+        ctx.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
+        ctx.fillStyle = "rgba(0,0,0,0.45)"; ctx.fillRect(0, 0, W, H);
+      }
+      // Logo
+      try {
+        const logoImg = await new Promise<HTMLImageElement>((res, rej) => {
+          const i = new Image(); i.crossOrigin = "anonymous";
+          i.onload = () => res(i); i.onerror = rej;
+          i.src = logo;
+        });
+        ctx.drawImage(logoImg, W / 2 - 80, 120, 160, 160);
+      } catch {}
+      ctx.textAlign = "center"; ctx.fillStyle = "#fff";
+      ctx.font = "bold 56px system-ui, sans-serif";
+      ctx.fillText("FRANZEN TEAM", W / 2, 340);
+      ctx.font = "500 36px system-ui, sans-serif"; ctx.fillStyle = "#aaa";
+      ctx.fillText(days[selectedDay]?.name ?? "Treino", W / 2, 400);
+      // KG total
+      ctx.fillStyle = "#fff";
+      ctx.font = "900 220px system-ui, sans-serif";
+      ctx.fillText(`${totalKgLifted.toLocaleString("pt-BR")}`, W / 2, H / 2 + 60);
+      ctx.font = "bold 60px system-ui, sans-serif"; ctx.fillStyle = "#f5a623";
+      ctx.fillText("KG LEVANTADOS HOJE", W / 2, H / 2 + 140);
+      ctx.font = "500 40px system-ui, sans-serif"; ctx.fillStyle = "#ddd";
+      ctx.fillText("#FranzenTeam", W / 2, H - 200);
+      // Download
+      const blob: Blob = await new Promise((res) => canvas.toBlob((b) => res(b!), "image/jpeg", 0.92));
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `franzen-team-${todayISO}.jpg`; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      toast.success("Story gerado! Compartilhe no Instagram 📲");
+    } catch (e) {
+      console.error(e);
+      toast.error("Erro ao gerar story");
+    } finally {
+      setGeneratingStory(false);
+    }
   };
 
   const saveExercise = async (ex: Exercise) => {
@@ -502,6 +579,31 @@ function TrainingPage() {
                       )}
 
                       <div className="mt-4 space-y-2">
+                        {(() => {
+                          const warmups = sets.filter((x) => x.type === "warmup").length;
+                          const valids = sets.length - warmups;
+                          return (
+                            <div className="rounded-lg border border-border/60 bg-muted/30 p-3 text-[11px] leading-relaxed space-y-1.5">
+                              {warmups > 0 && (
+                                <p>
+                                  <span className="inline-block text-warning font-semibold mr-1">AQUECIMENTO</span>
+                                  {warmups} série{warmups > 1 ? "s" : ""} com cargas progressivas (~40% e ~60% da válida), reps livres só pra ativar o padrão e preparar a articulação.
+                                </p>
+                              )}
+                              <p>
+                                <span className="inline-block text-primary font-semibold mr-1">PREPARO</span>
+                                Concentre-se no encaixe, respiração e amplitude. Pausa breve no descanso prescrito ({ex.rest || "—"}).
+                              </p>
+                              <p>
+                                <span className="inline-block text-success font-semibold mr-1">SÉRIES VÁLIDAS</span>
+                                {valids} série{valids > 1 ? "s" : ""} de {ex.reps ?? "—"} reps na carga real. Próximo da falha técnica (RPE 8–9), sem perder execução.
+                              </p>
+                              {ex.notes && (
+                                <p className="text-muted-foreground border-t border-border/60 pt-1.5 mt-1.5">{ex.notes}</p>
+                              )}
+                            </div>
+                          );
+                        })()}
                         <div className="grid grid-cols-12 gap-2 text-xs text-muted-foreground px-1">
                           <span className="col-span-1">Série</span>
                           <span className="col-span-3">Carga (kg)</span>
@@ -600,6 +702,25 @@ function TrainingPage() {
                       {savingFeedback ? <Loader2 className="animate-spin mr-2" size={14} /> : null}
                       {feedbackId ? "Atualizar feedback" : "Enviar feedback"}
                     </Button>
+                  </div>
+                  {/* Story do Franzen Team */}
+                  <div className="mt-5 border-t border-border pt-4">
+                    <h4 className="font-heading font-semibold text-sm">Compartilhar treino 📲</h4>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Gere uma imagem com a kilagem total levantada hoje ({totalKgLifted.toLocaleString("pt-BR")} kg) e o logo Franzen Team para postar no seu story.
+                    </p>
+                    <div className="mt-3 flex flex-col sm:flex-row gap-2">
+                      <label className="flex-1 inline-flex items-center justify-center gap-2 rounded-md border border-dashed border-border px-3 py-2 text-xs cursor-pointer hover:border-primary">
+                        <Activity size={14} />
+                        {storyPhoto ? storyPhoto.name.slice(0, 24) : "Foto opcional (fundo)"}
+                        <input type="file" accept="image/*" className="hidden"
+                          onChange={(e) => setStoryPhoto(e.target.files?.[0] ?? null)} />
+                      </label>
+                      <Button onClick={generateStory} disabled={generatingStory || totalKgLifted === 0} variant="outline">
+                        {generatingStory ? <Loader2 className="animate-spin mr-2" size={14} /> : null}
+                        Gerar story
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
