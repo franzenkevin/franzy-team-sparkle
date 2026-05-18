@@ -32,6 +32,7 @@ import { HormonesEditor } from "@/components/admin/HormonesEditor";
 import { TemplateLibrary } from "@/components/admin/TemplateLibrary";
 import { ProtocolPreviewTabs } from "@/components/ProtocolPreview";
 import { ResumoTab } from "@/components/admin/ResumoTab";
+import { Calculators } from "@/components/admin/Calculators";
 
 function safeParse(text: string, fallback: any) {
   try { return JSON.parse(text); } catch { return fallback; }
@@ -239,6 +240,7 @@ function AdminPage() {
         <Tabs defaultValue="resumo">
           <TabsList className="w-full flex flex-wrap h-auto justify-start gap-1">
             <TabsTrigger value="resumo" className="gap-1"><BarChart3 size={14} />Resumo</TabsTrigger>
+            <TabsTrigger value="calculators" className="gap-1"><BarChart3 size={14} />Calculadoras</TabsTrigger>
             <TabsTrigger value="overview" className="gap-1"><BarChart3 size={14} />Visão geral</TabsTrigger>
             <TabsTrigger value="approvals" className="gap-1"><Clock size={14} />Aprovações</TabsTrigger>
             <TabsTrigger value="users" className="gap-1"><Users size={14} />Usuários</TabsTrigger>
@@ -257,6 +259,9 @@ function AdminPage() {
 
           <TabsContent value="resumo" className="mt-4">
             <ResumoTab />
+          </TabsContent>
+          <TabsContent value="calculators" className="mt-4">
+            <Calculators profiles={profiles as any} />
           </TabsContent>
           <TabsContent value="overview" className="mt-4">
             <OverviewTab metrics={metrics} profiles={profiles} />
