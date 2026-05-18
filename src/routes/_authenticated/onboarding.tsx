@@ -263,6 +263,7 @@ function OnboardingPage() {
       weekend_routine: d.weekend_routine || null,
       photo_front_url: d.photo_front_url || null,
       photo_side_url: d.photo_side_url || null,
+      photo_side_left_url: d.photo_side_left_url || null,
       photo_back_url: d.photo_back_url || null,
       training_time_of_day: d.training_time_of_day || null,
       anamnese_completed_at: new Date().toISOString(),
