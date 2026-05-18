@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Users, MessageSquare, Clock, CheckCircle2, FileText,
-  TrendingDown, BarChart3, ChevronRight, CalendarDays, Bell,
+  TrendingDown, BarChart3, ChevronRight, CalendarDays, Bell, ImageIcon,
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
@@ -49,6 +49,9 @@ export function ResumoTab() {
   const [recentFeedbacks, setRecentFeedbacks] = useState<
     { user_id: string; full_name: string | null; status: "Pendente" | "Respondido"; created_at: string }[]
   >([]);
+  const [pendingAnalyses, setPendingAnalyses] = useState<
+    { id: string; user_id: string; full_name: string | null; kind: string; created_at: string }[]
+  >([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -75,6 +78,7 @@ export function ResumoTab() {
         { data: pendingFb },
         { count: unreadMessages },
         { data: protocols },
+        { data: pendingAn },
       ] = await Promise.all([
         supabase.from("profiles").select("user_id, full_name, sex, created_at").order("created_at", { ascending: false }),
         supabase.from("protocols").select("id", { count: "exact", head: true }).eq("status", "active"),
@@ -82,6 +86,7 @@ export function ResumoTab() {
         supabase.from("weekly_feedbacks").select("id, user_id, created_at, notes").order("created_at", { ascending: false }).limit(20),
         supabase.from("messages").select("id", { count: "exact", head: true }).is("read_at", null),
         supabase.from("protocols").select("user_id, status, created_at, end_date"),
+        supabase.from("ai_analyses").select("id, user_id, kind, created_at").eq("status", "pending").order("created_at", { ascending: false }).limit(10),
       ]);
       if (cancelled) return;
 
@@ -130,6 +135,16 @@ export function ResumoTab() {
           full_name: nameById.get(f.user_id) ?? "(sem nome)",
           status: f.notes ? "Respondido" : "Pendente",
           created_at: f.created_at,
+        })),
+      );
+
+      setPendingAnalyses(
+        (pendingAn ?? []).map((a: any) => ({
+          id: a.id,
+          user_id: a.user_id,
+          full_name: nameById.get(a.user_id) ?? "(sem nome)",
+          kind: a.kind,
+          created_at: a.created_at,
         })),
       );
     })();
@@ -199,6 +214,31 @@ export function ResumoTab() {
                 >
                   {f.status}
                 </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+
+      {/* Análises pendentes */}
+      <Card className="p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="size-8 rounded-md bg-primary/15 grid place-items-center text-primary">
+            <ImageIcon size={16} />
+          </div>
+          <h3 className="font-heading font-semibold">Análises pendentes</h3>
+        </div>
+        {pendingAnalyses.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nenhuma análise aguardando revisão.</p>
+        ) : (
+          <ul className="divide-y divide-border">
+            {pendingAnalyses.map((a) => (
+              <li key={a.id} className="py-3 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-medium truncate">{a.full_name}</p>
+                  <p className="text-xs text-muted-foreground capitalize">{a.kind.replace(/_/g, " ")}</p>
+                </div>
+                <span className="text-xs px-2.5 py-1 rounded-full bg-primary/15 text-primary">Revisar</span>
               </li>
             ))}
           </ul>
