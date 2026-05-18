@@ -15,7 +15,7 @@ export function BottomNav() {
   const path = useRouterState({ select: (r) => r.location.pathname });
   return (
     <nav
-      className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80"
+      className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       aria-label="Navegação inferior"
     >
