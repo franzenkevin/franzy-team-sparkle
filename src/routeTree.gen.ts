@@ -46,7 +46,6 @@ import { Route as AuthenticatedExerciseHistoryExerciseIdRouteImport } from './ro
 import { Route as AuthenticatedAdminToolsRouteImport } from './routes/_authenticated/admin.tools'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin.settings'
 import { Route as AuthenticatedAdminLibraryRouteImport } from './routes/_authenticated/admin.library'
-import { Route as AuthenticatedAdminLegacyRouteImport } from './routes/_authenticated/admin.legacy'
 import { Route as AuthenticatedAdminClientsRouteImport } from './routes/_authenticated/admin.clients'
 import { Route as ApiPublicShareTokenRouteImport } from './routes/api/public/share.$token'
 import { Route as ApiPublicShareOgTokenRouteImport } from './routes/api/public/share-og.$token'
@@ -246,12 +245,6 @@ const AuthenticatedAdminLibraryRoute =
     path: '/library',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
-const AuthenticatedAdminLegacyRoute =
-  AuthenticatedAdminLegacyRouteImport.update({
-    id: '/legacy',
-    path: '/legacy',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
 const AuthenticatedAdminClientsRoute =
   AuthenticatedAdminClientsRouteImport.update({
     id: '/clients',
@@ -305,7 +298,6 @@ export interface FileRoutesByFullPath {
   '/api/coach': typeof ApiCoachRoute
   '/s/$token': typeof STokenRoute
   '/admin/clients': typeof AuthenticatedAdminClientsRouteWithChildren
-  '/admin/legacy': typeof AuthenticatedAdminLegacyRoute
   '/admin/library': typeof AuthenticatedAdminLibraryRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/tools': typeof AuthenticatedAdminToolsRoute
@@ -347,7 +339,6 @@ export interface FileRoutesByTo {
   '/api/coach': typeof ApiCoachRoute
   '/s/$token': typeof STokenRoute
   '/admin/clients': typeof AuthenticatedAdminClientsRouteWithChildren
-  '/admin/legacy': typeof AuthenticatedAdminLegacyRoute
   '/admin/library': typeof AuthenticatedAdminLibraryRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/tools': typeof AuthenticatedAdminToolsRoute
@@ -392,7 +383,6 @@ export interface FileRoutesById {
   '/api/coach': typeof ApiCoachRoute
   '/s/$token': typeof STokenRoute
   '/_authenticated/admin/clients': typeof AuthenticatedAdminClientsRouteWithChildren
-  '/_authenticated/admin/legacy': typeof AuthenticatedAdminLegacyRoute
   '/_authenticated/admin/library': typeof AuthenticatedAdminLibraryRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/admin/tools': typeof AuthenticatedAdminToolsRoute
@@ -437,7 +427,6 @@ export interface FileRouteTypes {
     | '/api/coach'
     | '/s/$token'
     | '/admin/clients'
-    | '/admin/legacy'
     | '/admin/library'
     | '/admin/settings'
     | '/admin/tools'
@@ -479,7 +468,6 @@ export interface FileRouteTypes {
     | '/api/coach'
     | '/s/$token'
     | '/admin/clients'
-    | '/admin/legacy'
     | '/admin/library'
     | '/admin/settings'
     | '/admin/tools'
@@ -523,7 +511,6 @@ export interface FileRouteTypes {
     | '/api/coach'
     | '/s/$token'
     | '/_authenticated/admin/clients'
-    | '/_authenticated/admin/legacy'
     | '/_authenticated/admin/library'
     | '/_authenticated/admin/settings'
     | '/_authenticated/admin/tools'
@@ -812,13 +799,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminLibraryRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
-    '/_authenticated/admin/legacy': {
-      id: '/_authenticated/admin/legacy'
-      path: '/legacy'
-      fullPath: '/admin/legacy'
-      preLoaderRoute: typeof AuthenticatedAdminLegacyRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
     '/_authenticated/admin/clients': {
       id: '/_authenticated/admin/clients'
       path: '/clients'
@@ -866,7 +846,6 @@ const AuthenticatedAdminClientsRouteWithChildren =
 
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminClientsRoute: typeof AuthenticatedAdminClientsRouteWithChildren
-  AuthenticatedAdminLegacyRoute: typeof AuthenticatedAdminLegacyRoute
   AuthenticatedAdminLibraryRoute: typeof AuthenticatedAdminLibraryRoute
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
   AuthenticatedAdminToolsRoute: typeof AuthenticatedAdminToolsRoute
@@ -875,7 +854,6 @@ interface AuthenticatedAdminRouteChildren {
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminClientsRoute: AuthenticatedAdminClientsRouteWithChildren,
-  AuthenticatedAdminLegacyRoute: AuthenticatedAdminLegacyRoute,
   AuthenticatedAdminLibraryRoute: AuthenticatedAdminLibraryRoute,
   AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
   AuthenticatedAdminToolsRoute: AuthenticatedAdminToolsRoute,
@@ -960,3 +938,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
