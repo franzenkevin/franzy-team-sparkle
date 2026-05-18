@@ -78,6 +78,8 @@ function TrainingPage() {
   const restRef = useRef<number | null>(null);
   const [feedbackRating, setFeedbackRating] = useState<number>(0);
   const [feedbackNotes, setFeedbackNotes] = useState<string>("");
+  const [storyPhoto, setStoryPhoto] = useState<File | null>(null);
+  const [generatingStory, setGeneratingStory] = useState(false);
   const [feedbackId, setFeedbackId] = useState<string | null>(null);
   const [savingFeedback, setSavingFeedback] = useState(false);
   const [swapFor, setSwapFor] = useState<Exercise | null>(null);
