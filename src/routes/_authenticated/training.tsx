@@ -780,8 +780,8 @@ function TrainingPage() {
                                 if (!storyBlob) return;
                                 const file = new File([storyBlob], `franzen-team-${todayISO}.jpg`, { type: "image/jpeg" });
                                 try {
-                                  // @ts-expect-error canShare with files
-                                  if (navigator.canShare && !navigator.canShare({ files: [file] })) {
+                                  const nav = navigator as Navigator & { canShare?: (d: { files: File[] }) => boolean };
+                                  if (nav.canShare && !nav.canShare({ files: [file] })) {
                                     await navigator.share({ title: "Franzen Team", text: `${totalKgLifted} kg levantados hoje! #FranzenTeam` });
                                   } else {
                                     await navigator.share({ files: [file], title: "Franzen Team", text: "#FranzenTeam" });
