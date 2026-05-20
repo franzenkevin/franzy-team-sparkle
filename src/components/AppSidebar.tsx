@@ -12,6 +12,8 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import logo from "@/assets/logo.png";
+import { useServerFn } from "@tanstack/react-start";
+import { getLeaderboard, type RankingRow } from "@/lib/ranking.functions";
 
 const mainItems = [
   { title: "Home", url: "/dashboard", icon: LayoutDashboard },
@@ -38,8 +40,12 @@ export function AppSidebar() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [name, setName] = useState("");
   const [unread, setUnread] = useState(0);
+  const [unreadMsgs, setUnreadMsgs] = useState(0);
+  const [top3, setTop3] = useState<RankingRow[]>([]);
+  const fetchBoard = useServerFn(getLeaderboard);
 
   useEffect(() => {
+    let mounted = true;
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -47,21 +53,32 @@ export function AppSidebar() {
       const { data } = await supabase
         .from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle();
       setIsAdmin(!!data);
-      const { count } = await supabase
-        .from("notifications").select("id", { count: "exact", head: true })
-        .eq("user_id", user.id).is("read_at", null);
-      setUnread(count ?? 0);
-      const channel = supabase.channel(`notif-${user.id}`)
-        .on("postgres_changes", { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` }, async () => {
-          const { count: c } = await supabase
-            .from("notifications").select("id", { count: "exact", head: true })
-            .eq("user_id", user.id).is("read_at", null);
-          setUnread(c ?? 0);
-        })
+      const refreshCounts = async () => {
+        const [{ count: n }, { count: m }] = await Promise.all([
+          supabase.from("notifications").select("id", { count: "exact", head: true })
+            .eq("user_id", user.id).is("read_at", null),
+          supabase.from("messages").select("id", { count: "exact", head: true })
+            .eq("recipient_id", user.id).is("read_at", null),
+        ]);
+        if (!mounted) return;
+        setUnread(n ?? 0);
+        setUnreadMsgs(m ?? 0);
+      };
+      await refreshCounts();
+      try {
+        const board = await fetchBoard();
+        if (mounted) setTop3(board.slice(0, 3));
+      } catch {}
+      const chNotif = supabase.channel(`notif-${user.id}`)
+        .on("postgres_changes", { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` }, refreshCounts)
         .subscribe();
-      return () => { supabase.removeChannel(channel); };
+      const chMsg = supabase.channel(`msg-recv-${user.id}`)
+        .on("postgres_changes", { event: "*", schema: "public", table: "messages", filter: `recipient_id=eq.${user.id}` }, refreshCounts)
+        .subscribe();
+      return () => { supabase.removeChannel(chNotif); supabase.removeChannel(chMsg); };
     })();
-  }, []);
+    return () => { mounted = false; };
+  }, [fetchBoard]);
 
   const isActive = (url: string) => currentPath === url;
 
@@ -93,6 +110,9 @@ export function AppSidebar() {
                       {!collapsed && item.url === "/notifications" && unread > 0 && (
                         <span className="ml-auto rounded-full bg-primary text-primary-foreground text-[10px] px-1.5 min-w-5 text-center">{unread}</span>
                       )}
+                      {!collapsed && item.url === "/messages" && unreadMsgs > 0 && (
+                        <span className="ml-auto rounded-full bg-primary text-primary-foreground text-[10px] px-1.5 min-w-5 text-center">{unreadMsgs}</span>
+                      )}
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -100,6 +120,26 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {!collapsed && top3.length > 0 && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Top 3 ranking</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <Link to="/ranking" className="block px-2 pt-1 pb-2 space-y-1">
+                {top3.map((r, i) => {
+                  const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : "🥉";
+                  return (
+                    <div key={r.user_id} className="flex items-center gap-2 text-xs">
+                      <span className="w-5 text-center">{medal}</span>
+                      <span className="flex-1 truncate">{r.name}</span>
+                      <span className="text-primary font-semibold">{r.points}</span>
+                    </div>
+                  );
+                })}
+              </Link>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         {/* Admins são redirecionados para /admin — não há grupo admin aqui */}
       </SidebarContent>

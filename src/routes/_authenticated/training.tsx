@@ -293,28 +293,36 @@ function TrainingPage() {
       const W = 1080, H = 1920;
       const canvas = document.createElement("canvas");
       canvas.width = W; canvas.height = H;
-      const ctx = canvas.getContext("2d")!;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { toast.error("Navegador sem suporte a canvas"); return; }
       // Fundo escuro com gradiente
       const grad = ctx.createLinearGradient(0, 0, 0, H);
       grad.addColorStop(0, "#0b0b0b"); grad.addColorStop(1, "#1a1a1a");
       ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
       // Foto do usuário (se houver) como fundo
+      let photoUrl: string | null = null;
       if (storyPhoto) {
-        const img = await new Promise<HTMLImageElement>((res, rej) => {
-          const i = new Image();
-          i.onload = () => res(i); i.onerror = rej;
-          i.src = URL.createObjectURL(storyPhoto);
-        });
-        // cover
-        const ratio = Math.max(W / img.width, H / img.height);
-        const w = img.width * ratio, h = img.height * ratio;
-        ctx.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
-        ctx.fillStyle = "rgba(0,0,0,0.45)"; ctx.fillRect(0, 0, W, H);
+        try {
+          photoUrl = URL.createObjectURL(storyPhoto);
+          const img = await new Promise<HTMLImageElement>((res, rej) => {
+            const i = new Image();
+            i.onload = () => res(i);
+            i.onerror = () => rej(new Error("Não foi possível ler a imagem"));
+            i.src = photoUrl!;
+          });
+          // cover
+          const ratio = Math.max(W / img.width, H / img.height);
+          const w = img.width * ratio, h = img.height * ratio;
+          ctx.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
+          ctx.fillStyle = "rgba(0,0,0,0.45)"; ctx.fillRect(0, 0, W, H);
+        } catch (err) {
+          console.warn("Falha ao carregar foto, usando fundo padrão", err);
+        }
       }
       // Logo
       try {
         const logoImg = await new Promise<HTMLImageElement>((res, rej) => {
-          const i = new Image(); i.crossOrigin = "anonymous";
+          const i = new Image();
           i.onload = () => res(i); i.onerror = rej;
           i.src = logo;
         });
@@ -334,7 +342,11 @@ function TrainingPage() {
       ctx.font = "500 40px system-ui, sans-serif"; ctx.fillStyle = "#ddd";
       ctx.fillText("#FranzenTeam", W / 2, H - 200);
       // Download
-      const blob: Blob = await new Promise((res) => canvas.toBlob((b) => res(b!), "image/jpeg", 0.92));
+      const blob: Blob | null = await new Promise((res) =>
+        canvas.toBlob((b) => res(b), "image/jpeg", 0.92),
+      );
+      if (photoUrl) URL.revokeObjectURL(photoUrl);
+      if (!blob) { toast.error("Não foi possível gerar a imagem"); return; }
       const url = URL.createObjectURL(blob);
       if (storyUrl) URL.revokeObjectURL(storyUrl);
       setStoryUrl(url);
@@ -342,7 +354,7 @@ function TrainingPage() {
       toast.success("Story pronto! Baixe ou compartilhe abaixo 📲");
     } catch (e) {
       console.error(e);
-      toast.error("Erro ao gerar story");
+      toast.error("Erro ao gerar story. Tente sem foto de fundo.");
     } finally {
       setGeneratingStory(false);
     }
@@ -747,7 +759,7 @@ function TrainingPage() {
                         <input type="file" accept="image/*" className="hidden"
                           onChange={(e) => setStoryPhoto(e.target.files?.[0] ?? null)} />
                       </label>
-                      <Button onClick={generateStory} disabled={generatingStory || totalKgLifted === 0} variant="outline">
+                      <Button onClick={generateStory} disabled={generatingStory} variant="outline">
                         {generatingStory ? <Loader2 className="animate-spin mr-2" size={14} /> : null}
                         Gerar story
                       </Button>
