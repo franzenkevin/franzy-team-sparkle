@@ -759,7 +759,7 @@ function TrainingPage() {
                         <input type="file" accept="image/*" className="hidden"
                           onChange={(e) => setStoryPhoto(e.target.files?.[0] ?? null)} />
                       </label>
-                      <Button onClick={generateStory} disabled={generatingStory || totalKgLifted === 0} variant="outline">
+                      <Button onClick={generateStory} disabled={generatingStory} variant="outline">
                         {generatingStory ? <Loader2 className="animate-spin mr-2" size={14} /> : null}
                         Gerar story
                       </Button>
