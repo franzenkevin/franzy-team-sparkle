@@ -49,7 +49,7 @@ function AuthenticatedLayout() {
           </header>
           <main className="flex-1 min-w-0">
             <Outlet />
-            <div className="lg:hidden h-16" aria-hidden />
+            <div className="h-16" aria-hidden />
           </main>
         </div>
       </div>
