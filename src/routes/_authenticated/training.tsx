@@ -80,6 +80,8 @@ function TrainingPage() {
   const [feedbackNotes, setFeedbackNotes] = useState<string>("");
   const [storyPhoto, setStoryPhoto] = useState<File | null>(null);
   const [generatingStory, setGeneratingStory] = useState(false);
+  const [storyUrl, setStoryUrl] = useState<string | null>(null);
+  const [storyBlob, setStoryBlob] = useState<Blob | null>(null);
   const [feedbackId, setFeedbackId] = useState<string | null>(null);
   const [savingFeedback, setSavingFeedback] = useState(false);
   const [swapFor, setSwapFor] = useState<Exercise | null>(null);
@@ -334,10 +336,10 @@ function TrainingPage() {
       // Download
       const blob: Blob = await new Promise((res) => canvas.toBlob((b) => res(b!), "image/jpeg", 0.92));
       const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url; a.download = `franzen-team-${todayISO}.jpg`; a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-      toast.success("Story gerado! Compartilhe no Instagram 📲");
+      if (storyUrl) URL.revokeObjectURL(storyUrl);
+      setStoryUrl(url);
+      setStoryBlob(blob);
+      toast.success("Story pronto! Baixe ou compartilhe abaixo 📲");
     } catch (e) {
       console.error(e);
       toast.error("Erro ao gerar story");
