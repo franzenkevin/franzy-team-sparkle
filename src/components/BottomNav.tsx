@@ -7,7 +7,7 @@ const items = [
   { to: "/training", label: "Treino", icon: Dumbbell },
   { to: "/diet", label: "Dieta", icon: Apple },
   { to: "/hormones", label: "Hormônios", icon: Pill },
-  { to: "/feedback", label: "Feedback", icon: Heart },
+  { to: "/feedback/weekly", label: "Feedback", icon: Heart },
 ] as const;
 
 export function BottomNav() {
