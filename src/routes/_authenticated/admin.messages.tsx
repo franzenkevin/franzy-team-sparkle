@@ -3,8 +3,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, MessageSquare, Send, Users } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Loader2, MessageSquare, Send, Users, Sparkles } from "lucide-react";
 import { notify } from "@/lib/notifications";
+import { useServerFn } from "@tanstack/react-start";
+import { adminSuggestReply } from "@/lib/adminMessage.functions";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/admin/messages")({
   head: () => ({ meta: [{ title: "Mensagens dos alunos — Admin" }] }),
@@ -35,7 +39,10 @@ function AdminMessagesPage() {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [suggesting, setSuggesting] = useState(false);
+  const [extra, setExtra] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const suggestFn = useServerFn(adminSuggestReply);
 
   const loadContacts = async (uid: string) => {
     const { data: profs } = await supabase
@@ -139,6 +146,18 @@ function AdminMessagesPage() {
 
   const activeContact = useMemo(() => contacts.find((c) => c.user_id === active), [contacts, active]);
 
+  const suggest = async () => {
+    if (!active) return;
+    setSuggesting(true);
+    try {
+      const r = await suggestFn({ data: { targetUserId: active, thread: messages, extra: extra.trim() || undefined } });
+      if (r.suggestion) setText(r.suggestion);
+      else toast.error("IA não gerou sugestão");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro IA");
+    } finally { setSuggesting(false); }
+  };
+
   if (loading) {
     return <div className="min-h-[60vh] grid place-items-center"><Loader2 className="animate-spin text-primary" /></div>;
   }
@@ -191,17 +210,34 @@ function AdminMessagesPage() {
           })}
         </div>
         {active && (
-          <div className="border-t border-border p-3 flex gap-2">
-            <Input
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
-              placeholder="Responder ao aluno…"
-              maxLength={2000}
-            />
-            <Button onClick={send} disabled={sending || !text.trim()}>
-              {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-            </Button>
+          <div className="border-t border-border p-3 space-y-2">
+            <div className="flex gap-2">
+              <Input
+                value={extra}
+                onChange={(e) => setExtra(e.target.value)}
+                placeholder="Direção para IA (opcional): 'explica o ajuste de kcal', 'pede foto', etc."
+                className="text-xs"
+                maxLength={300}
+              />
+              <Button variant="outline" size="sm" onClick={suggest} disabled={suggesting}>
+                {suggesting ? <Loader2 size={14} className="animate-spin"/> : <Sparkles size={14} className="mr-1"/>}
+                Sugerir IA
+              </Button>
+            </div>
+            <div className="flex gap-2 items-end">
+              <Textarea
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); send(); } }}
+                placeholder="Edite o rascunho ou escreva sua resposta… (Ctrl/Cmd+Enter envia)"
+                maxLength={2000}
+                rows={3}
+                className="text-sm resize-none"
+              />
+              <Button onClick={send} disabled={sending || !text.trim()}>
+                {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+              </Button>
+            </div>
           </div>
         )}
       </section>
