@@ -20,7 +20,7 @@ const mainItems = [
   { title: "Hormônios", url: "/hormones", icon: Pill },
   { title: "Progresso", url: "/progress", icon: LineChart },
   { title: "Feedback semanal", url: "/feedback/weekly", icon: CalendarDays },
-  { title: "Feedback mensal", url: "/monthly-analysis", icon: Activity },
+  { title: "Avaliação postural", url: "/monthly-analysis", icon: Activity },
   { title: "Conquistas", url: "/achievements", icon: Award },
   { title: "Ranking", url: "/ranking", icon: Trophy },
   { title: "Desafios", url: "/challenges", icon: Flame },
