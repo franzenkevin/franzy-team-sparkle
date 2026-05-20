@@ -1,15 +1,17 @@
 import { Link, useRouterState } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar,
 } from "@/components/ui/sidebar";
-import { LayoutDashboard, Users, BookOpen, Wrench, Settings, LogOut, Dumbbell } from "lucide-react";
+import { LayoutDashboard, Users, BookOpen, Wrench, Settings, LogOut, Dumbbell, MessageSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 
 const items = [
   { to: "/admin", label: "Resumo", icon: LayoutDashboard, exact: true },
   { to: "/admin/clients", label: "Clientes", icon: Users },
+  { to: "/admin/messages", label: "Mensagens", icon: MessageSquare },
   { to: "/admin/library", label: "Bibliotecas", icon: BookOpen },
   { to: "/admin/exercises", label: "Exercícios", icon: Dumbbell },
   { to: "/admin/tools", label: "Ferramentas", icon: Wrench },
@@ -22,6 +24,27 @@ export function AdminSidebar() {
   const path = useRouterState({ select: (r) => r.location.pathname });
   const isActive = (to: string, exact?: boolean) =>
     exact ? path === to : path === to || path.startsWith(to + "/");
+  const [unread, setUnread] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const refresh = async () => {
+        const { count } = await supabase.from("messages")
+          .select("id", { count: "exact", head: true })
+          .eq("recipient_id", user.id).is("read_at", null);
+        if (active) setUnread(count ?? 0);
+      };
+      await refresh();
+      const ch = supabase.channel(`admin-msg-count-${user.id}`)
+        .on("postgres_changes", { event: "*", schema: "public", table: "messages", filter: `recipient_id=eq.${user.id}` }, refresh)
+        .subscribe();
+      return () => { supabase.removeChannel(ch); };
+    })();
+    return () => { active = false; };
+  }, []);
 
   const signOut = async () => { await supabase.auth.signOut(); window.location.href = "/login"; };
 
@@ -45,7 +68,10 @@ export function AdminSidebar() {
                     <SidebarMenuButton asChild isActive={isActive(it.to, (it as any).exact)}>
                       <Link to={it.to} className="flex items-center gap-2">
                         <Icon className="h-4 w-4" />
-                        {!collapsed && <span>{it.label}</span>}
+                        {!collapsed && <span className="flex-1">{it.label}</span>}
+                        {!collapsed && it.to === "/admin/messages" && unread > 0 && (
+                          <span className="ml-auto rounded-full bg-primary text-primary-foreground text-[10px] px-1.5 min-w-5 text-center">{unread}</span>
+                        )}
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
