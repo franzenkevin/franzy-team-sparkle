@@ -13,6 +13,7 @@ import { generateShoppingListPdf } from "@/lib/shoppingList";
 import { NotificationBell } from "@/components/NotificationBell";
 import { AchievementsCard } from "@/components/AchievementsCard";
 import { toast } from "sonner";
+import { CoachContactDialog } from "@/components/CoachContactDialog";
 
 const WEEKDAYS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
@@ -258,7 +259,15 @@ function DashboardPage() {
 
         <div className="mt-4 grid gap-3 grid-cols-2 md:grid-cols-2">
           <DashCard to="/feedback/weekly" icon={CalendarDays} title="Feedback" desc="Semanal" />
-          <DashCard to="/messages" icon={MessageSquare} title="Mensagens" desc="Falar com o coach" />
+          <CoachContactDialog
+            trigger={
+              <button className="text-left rounded-xl border border-border bg-card p-4 sm:p-5 hover:border-primary transition flex flex-col gap-2">
+                <MessageSquare size={20} className="text-primary" />
+                <h3 className="font-heading text-sm sm:text-base font-semibold">Falar com o coach</h3>
+                <p className="text-xs text-muted-foreground">Mensagens ou WhatsApp</p>
+              </button>
+            }
+          />
         </div>
 
         <div className="mt-5 flex flex-wrap gap-2">
