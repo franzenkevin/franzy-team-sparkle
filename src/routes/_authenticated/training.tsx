@@ -752,6 +752,59 @@ function TrainingPage() {
                         Gerar story
                       </Button>
                     </div>
+                    {storyUrl && (
+                      <div className="mt-4 space-y-3">
+                        <div className="rounded-lg overflow-hidden border border-border bg-black flex justify-center">
+                          <img
+                            src={storyUrl}
+                            alt="Story Franzen Team"
+                            className="max-h-[420px] w-auto object-contain"
+                          />
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">
+                          No celular, segure a imagem para salvar na galeria, ou use os botões abaixo.
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          <a
+                            href={storyUrl}
+                            download={`franzen-team-${todayISO}.jpg`}
+                            className="inline-flex items-center justify-center rounded-md border border-border px-3 py-2 text-xs hover:bg-muted"
+                          >
+                            Baixar imagem
+                          </a>
+                          {typeof navigator !== "undefined" && "share" in navigator && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={async () => {
+                                if (!storyBlob) return;
+                                const file = new File([storyBlob], `franzen-team-${todayISO}.jpg`, { type: "image/jpeg" });
+                                try {
+                                  // @ts-expect-error canShare with files
+                                  if (navigator.canShare && !navigator.canShare({ files: [file] })) {
+                                    await navigator.share({ title: "Franzen Team", text: `${totalKgLifted} kg levantados hoje! #FranzenTeam` });
+                                  } else {
+                                    await navigator.share({ files: [file], title: "Franzen Team", text: "#FranzenTeam" });
+                                  }
+                                } catch (e) {
+                                  console.error(e);
+                                }
+                              }}
+                            >
+                              Compartilhar
+                            </Button>
+                          )}
+                          <a
+                            href="https://www.instagram.com/"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center justify-center rounded-md border border-border px-3 py-2 text-xs hover:bg-muted"
+                          >
+                            Abrir Instagram
+                          </a>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
