@@ -44,7 +44,7 @@ export const getLeaderboard = createServerFn({ method: "GET" }).handler(async ()
   const rows = Array.from(tally.values()).map((r) => ({
     ...r,
     points: r.workouts * POINTS.workout + r.checkins * POINTS.checkin + r.achievements * POINTS.achievement + r.challenges * POINTS.challenge,
-  }));
+  })).filter((r) => r.points > 1);
   rows.sort((a, b) => b.points - a.points);
   return rows;
 });
