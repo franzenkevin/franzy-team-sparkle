@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ChevronDown, ChevronUp, Utensils, Loader2, Info, Leaf, Zap, Pill } from "lucide-react";
 import logo from "@/assets/logo.png";
+import { FoodDiary } from "@/components/FoodDiary";
 
 export const Route = createFileRoute("/_authenticated/diet")({
   head: () => ({ meta: [{ title: "Dieta — Franzen Team" }] }),
@@ -75,6 +76,17 @@ function DietPage() {
         <h1 className="text-3xl md:text-4xl font-heading font-bold flex items-center gap-3">
           <Utensils className="text-primary" /> Dieta
         </h1>
+
+        <div className="mt-6">
+          <FoodDiary
+            targets={{
+              kcal: diet?.totalCalories,
+              protein: diet?.protein,
+              carbs: diet?.carbs,
+              fat: diet?.fat,
+            }}
+          />
+        </div>
 
         {!diet || meals.length === 0 ? (
           <div className="mt-8 rounded-xl border border-border bg-card p-8 text-center">

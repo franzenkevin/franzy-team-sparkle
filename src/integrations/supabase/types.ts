@@ -261,6 +261,57 @@ export type Database = {
         }
         Relationships: []
       }
+      food_logs: {
+        Row: {
+          amount_g: number
+          barcode: string | null
+          calories: number
+          carbs: number
+          created_at: string
+          fat: number
+          food_name: string
+          id: string
+          log_date: string
+          meal_type: string
+          protein: number
+          source: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_g?: number
+          barcode?: string | null
+          calories?: number
+          carbs?: number
+          created_at?: string
+          fat?: number
+          food_name: string
+          id?: string
+          log_date?: string
+          meal_type?: string
+          protein?: number
+          source?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_g?: number
+          barcode?: string | null
+          calories?: number
+          carbs?: number
+          created_at?: string
+          fat?: number
+          food_name?: string
+          id?: string
+          log_date?: string
+          meal_type?: string
+          protein?: number
+          source?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       journal_entries: {
         Row: {
           created_at: string
