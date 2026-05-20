@@ -18,6 +18,10 @@ import {
   YAxis,
   Tooltip,
   CartesianGrid,
+  Legend,
+  Scatter,
+  ComposedChart,
+  Bar,
 } from "recharts";
 
 export const Route = createFileRoute("/_authenticated/progress")({
@@ -55,6 +59,8 @@ function ProgressPage() {
   const [shareOpen, setShareOpen] = useState(false);
   const [loadHistory, setLoadHistory] = useState<Record<string, { date: string; max: number; volume: number }[]>>({});
   const [selectedExercise, setSelectedExercise] = useState<string>("");
+  const [periodWeeks, setPeriodWeeks] = useState<4 | 8 | 0>(0); // 0 = tudo
+  const [compareMode, setCompareMode] = useState(false);
 
   const load = async () => {
     const { data: { user } } = await supabase.auth.getUser();
