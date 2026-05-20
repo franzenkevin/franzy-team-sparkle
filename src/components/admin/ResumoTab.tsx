@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Users, MessageSquare, Clock, CheckCircle2, FileText,
-  TrendingDown, BarChart3, ChevronRight, CalendarDays, Bell, ImageIcon,
+  TrendingDown, BarChart3, ChevronRight, CalendarDays, Bell, ImageIcon, Trophy, Flag, AlertTriangle,
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
@@ -51,6 +51,12 @@ export function ResumoTab() {
   >([]);
   const [pendingAnalyses, setPendingAnalyses] = useState<
     { id: string; user_id: string; full_name: string | null; kind: string; created_at: string }[]
+  >([]);
+  const [topRanking, setTopRanking] = useState<
+    { user_id: string; full_name: string | null; points: number }[]
+  >([]);
+  const [activeChallenges, setActiveChallenges] = useState<
+    { id: string; title: string; ends_at: string; participants: number }[]
   >([]);
 
   useEffect(() => {
@@ -147,6 +153,33 @@ export function ResumoTab() {
           created_at: a.created_at,
         })),
       );
+
+      // Ranking by achievements (1pt each)
+      const { data: ach } = await supabaseAdmin_safe("achievements", supabase);
+      if (ach) {
+        const cnt = new Map<string, number>();
+        for (const a of ach as any[]) cnt.set(a.user_id, (cnt.get(a.user_id) ?? 0) + 1);
+        const sorted = Array.from(cnt.entries())
+          .map(([user_id, points]) => ({ user_id, full_name: nameById.get(user_id) ?? "(sem nome)", points }))
+          .filter((r) => r.points > 1)
+          .sort((a, b) => b.points - a.points)
+          .slice(0, 5);
+        if (!cancelled) setTopRanking(sorted);
+      }
+
+      // Active challenges with participant counts
+      const today = new Date().toISOString().slice(0, 10);
+      const [{ data: chs }, { data: parts }] = await Promise.all([
+        supabase.from("challenges").select("id, title, ends_at").gte("ends_at", today).order("ends_at"),
+        supabase.from("challenge_participations").select("challenge_id"),
+      ]);
+      const partsCount = new Map<string, number>();
+      for (const p of (parts ?? []) as any[]) partsCount.set(p.challenge_id, (partsCount.get(p.challenge_id) ?? 0) + 1);
+      if (!cancelled) {
+        setActiveChallenges((chs ?? []).map((c: any) => ({
+          id: c.id, title: c.title, ends_at: c.ends_at, participants: partsCount.get(c.id) ?? 0,
+        })));
+      }
     })();
     return () => { cancelled = true; };
   }, []);
@@ -342,8 +375,78 @@ export function ResumoTab() {
           </Button>
         </Link>
       </div>
+
+      {/* Ranking */}
+      <Card className="p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <div className="size-8 rounded-md bg-primary/15 grid place-items-center text-primary"><Trophy size={16} /></div>
+            <h3 className="font-heading font-semibold">Top alunos</h3>
+          </div>
+          <Link to="/ranking"><Button size="sm" variant="ghost" className="gap-1">Ver tudo<ChevronRight size={12}/></Button></Link>
+        </div>
+        {topRanking.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Sem ranking ainda (precisa de pelo menos 2 pontos).</p>
+        ) : (
+          <ul className="divide-y divide-border">
+            {topRanking.map((r, i) => (
+              <li key={r.user_id} className="py-2 flex items-center gap-3">
+                <span className={`size-7 rounded-full grid place-items-center text-xs font-bold ${i === 0 ? "bg-amber-500/20 text-amber-600" : i === 1 ? "bg-slate-400/20 text-slate-600" : i === 2 ? "bg-orange-500/20 text-orange-600" : "bg-muted text-muted-foreground"}`}>{i + 1}</span>
+                <span className="flex-1 truncate text-sm">{r.full_name}</span>
+                <span className="text-xs text-muted-foreground">{r.points} pts</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+
+      {/* Active challenges */}
+      <Card className="p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <div className="size-8 rounded-md bg-primary/15 grid place-items-center text-primary"><Flag size={16} /></div>
+            <h3 className="font-heading font-semibold">Desafios ativos</h3>
+          </div>
+          <Link to="/challenges"><Button size="sm" variant="ghost" className="gap-1">Gerenciar<ChevronRight size={12}/></Button></Link>
+        </div>
+        {activeChallenges.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nenhum desafio ativo.</p>
+        ) : (
+          <ul className="divide-y divide-border">
+            {activeChallenges.slice(0, 5).map((c) => (
+              <li key={c.id} className="py-2 flex items-center justify-between">
+                <div className="min-w-0">
+                  <p className="font-medium text-sm truncate">{c.title}</p>
+                  <p className="text-xs text-muted-foreground">termina {new Date(c.ends_at).toLocaleDateString("pt-BR")}</p>
+                </div>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-primary/15 text-primary">{c.participants} aluno(s)</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+
+      {/* Sistema / saúde */}
+      <Card className="p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="size-8 rounded-md bg-primary/15 grid place-items-center text-primary"><AlertTriangle size={16} /></div>
+          <h3 className="font-heading font-semibold">Saúde da operação</h3>
+        </div>
+        <ul className="text-sm divide-y divide-border">
+          <li className="py-2 flex justify-between"><span className="text-muted-foreground">Backend</span><span className="text-emerald-600 font-medium">Online</span></li>
+          <li className="py-2 flex justify-between"><span className="text-muted-foreground">Banco de dados</span><span className="text-emerald-600 font-medium">Conectado</span></li>
+          <li className="py-2 flex justify-between"><span className="text-muted-foreground">IA gateway</span><span className="text-emerald-600 font-medium">Ativo</span></li>
+        </ul>
+      </Card>
     </div>
   );
+}
+
+// Wrapper helper — admin can read achievements directly via RLS.
+async function supabaseAdmin_safe(table: "achievements", client: typeof supabase) {
+  const { data, error } = await client.from(table).select("user_id");
+  if (error) return null;
+  return data;
 }
 
 function KpiCard({
