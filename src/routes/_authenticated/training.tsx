@@ -482,6 +482,15 @@ function TrainingPage() {
                   <h2 className="font-heading text-xl font-semibold">{day.name}</h2>
                   <span className="text-xs text-muted-foreground">{day.exercises.length} exerc.</span>
                 </div>
+                <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Tonelagem total hoje</p>
+                    <p className="text-2xl font-heading font-bold text-primary tabular-nums">
+                      {totalKgLifted.toLocaleString("pt-BR")} <span className="text-sm text-muted-foreground font-normal">kg</span>
+                    </p>
+                  </div>
+                  <Dumbbell className="text-primary/60" size={28} />
+                </div>
 
                 {day.rationale && (
                   <div className="rounded-xl border border-border bg-card overflow-hidden">
