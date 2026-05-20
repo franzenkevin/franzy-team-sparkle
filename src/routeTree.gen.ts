@@ -38,6 +38,7 @@ import { Route as AuthenticatedFeedbackWeeklyRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin.settings'
 import { Route as AuthenticatedAdminMessagesRouteImport } from './routes/_authenticated/admin.messages'
 import { Route as AuthenticatedAdminLibraryRouteImport } from './routes/_authenticated/admin.library'
+import { Route as AuthenticatedAdminFoodsRouteImport } from './routes/_authenticated/admin.foods'
 import { Route as AuthenticatedAdminExercisesRouteImport } from './routes/_authenticated/admin.exercises'
 import { Route as AuthenticatedAdminClientsRouteImport } from './routes/_authenticated/admin.clients'
 import { Route as ApiPublicShareTokenRouteImport } from './routes/api/public/share.$token'
@@ -195,6 +196,11 @@ const AuthenticatedAdminLibraryRoute =
     path: '/library',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminFoodsRoute = AuthenticatedAdminFoodsRouteImport.update({
+  id: '/foods',
+  path: '/foods',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 const AuthenticatedAdminExercisesRoute =
   AuthenticatedAdminExercisesRouteImport.update({
     id: '/exercises',
@@ -250,6 +256,7 @@ export interface FileRoutesByFullPath {
   '/s/$token': typeof STokenRoute
   '/admin/clients': typeof AuthenticatedAdminClientsRouteWithChildren
   '/admin/exercises': typeof AuthenticatedAdminExercisesRoute
+  '/admin/foods': typeof AuthenticatedAdminFoodsRoute
   '/admin/library': typeof AuthenticatedAdminLibraryRoute
   '/admin/messages': typeof AuthenticatedAdminMessagesRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
@@ -284,6 +291,7 @@ export interface FileRoutesByTo {
   '/s/$token': typeof STokenRoute
   '/admin/clients': typeof AuthenticatedAdminClientsRouteWithChildren
   '/admin/exercises': typeof AuthenticatedAdminExercisesRoute
+  '/admin/foods': typeof AuthenticatedAdminFoodsRoute
   '/admin/library': typeof AuthenticatedAdminLibraryRoute
   '/admin/messages': typeof AuthenticatedAdminMessagesRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
@@ -321,6 +329,7 @@ export interface FileRoutesById {
   '/s/$token': typeof STokenRoute
   '/_authenticated/admin/clients': typeof AuthenticatedAdminClientsRouteWithChildren
   '/_authenticated/admin/exercises': typeof AuthenticatedAdminExercisesRoute
+  '/_authenticated/admin/foods': typeof AuthenticatedAdminFoodsRoute
   '/_authenticated/admin/library': typeof AuthenticatedAdminLibraryRoute
   '/_authenticated/admin/messages': typeof AuthenticatedAdminMessagesRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
@@ -358,6 +367,7 @@ export interface FileRouteTypes {
     | '/s/$token'
     | '/admin/clients'
     | '/admin/exercises'
+    | '/admin/foods'
     | '/admin/library'
     | '/admin/messages'
     | '/admin/settings'
@@ -392,6 +402,7 @@ export interface FileRouteTypes {
     | '/s/$token'
     | '/admin/clients'
     | '/admin/exercises'
+    | '/admin/foods'
     | '/admin/library'
     | '/admin/messages'
     | '/admin/settings'
@@ -428,6 +439,7 @@ export interface FileRouteTypes {
     | '/s/$token'
     | '/_authenticated/admin/clients'
     | '/_authenticated/admin/exercises'
+    | '/_authenticated/admin/foods'
     | '/_authenticated/admin/library'
     | '/_authenticated/admin/messages'
     | '/_authenticated/admin/settings'
@@ -657,6 +669,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminLibraryRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/foods': {
+      id: '/_authenticated/admin/foods'
+      path: '/foods'
+      fullPath: '/admin/foods'
+      preLoaderRoute: typeof AuthenticatedAdminFoodsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/exercises': {
       id: '/_authenticated/admin/exercises'
       path: '/exercises'
@@ -712,6 +731,7 @@ const AuthenticatedAdminClientsRouteWithChildren =
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminClientsRoute: typeof AuthenticatedAdminClientsRouteWithChildren
   AuthenticatedAdminExercisesRoute: typeof AuthenticatedAdminExercisesRoute
+  AuthenticatedAdminFoodsRoute: typeof AuthenticatedAdminFoodsRoute
   AuthenticatedAdminLibraryRoute: typeof AuthenticatedAdminLibraryRoute
   AuthenticatedAdminMessagesRoute: typeof AuthenticatedAdminMessagesRoute
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
@@ -721,6 +741,7 @@ interface AuthenticatedAdminRouteChildren {
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminClientsRoute: AuthenticatedAdminClientsRouteWithChildren,
   AuthenticatedAdminExercisesRoute: AuthenticatedAdminExercisesRoute,
+  AuthenticatedAdminFoodsRoute: AuthenticatedAdminFoodsRoute,
   AuthenticatedAdminLibraryRoute: AuthenticatedAdminLibraryRoute,
   AuthenticatedAdminMessagesRoute: AuthenticatedAdminMessagesRoute,
   AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
@@ -788,3 +809,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
