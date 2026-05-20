@@ -1,19 +1,16 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
-  Dumbbell, Apple, LineChart, Bell, Download, ShoppingCart,
-  Coffee, Flame, Calendar, CalendarDays, Pill, ChevronRight, MessageSquare,
+  Dumbbell, Apple, LineChart, Bell,
+  Coffee, Flame, Calendar, CalendarDays, Pill, ChevronRight, MessageSquare, Activity,
 } from "lucide-react";
 import { useReminders } from "@/hooks/useReminders";
-import { generateProtocolPdf } from "@/lib/protocolPdf";
-import { generateShoppingListPdf } from "@/lib/shoppingList";
 import { NotificationBell } from "@/components/NotificationBell";
 import { AchievementsCard } from "@/components/AchievementsCard";
-import { toast } from "sonner";
 import { CoachContactDialog } from "@/components/CoachContactDialog";
+import { LineChart as RLineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 
 const WEEKDAYS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
@@ -25,13 +22,14 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 function DashboardPage() {
   const [name, setName] = useState<string>("");
   const [permission, setPermission] = useState<NotificationPermission>("default");
-  const [downloading, setDownloading] = useState(false);
-  const [downloadingList, setDownloadingList] = useState(false);
   const [protocol, setProtocol] = useState<any | null>(null);
   const [trainingDays, setTrainingDays] = useState<any[]>([]);
   const [workoutsDone, setWorkoutsDone] = useState(0);
   const [totalVolume, setTotalVolume] = useState(0);
   const [adherence, setAdherence] = useState<number | null>(null);
+  const [evolution, setEvolution] = useState<{ date: string; weight: number }[]>([]);
+  const [lastWeeklyAt, setLastWeeklyAt] = useState<string | null>(null);
+  const [lastMonthlyAt, setLastMonthlyAt] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useReminders(8, 0, "Franzen Team", "Bom dia! Hora do treino e check-in.");
@@ -82,6 +80,25 @@ function DashboardPage() {
         const vals = (ch ?? []).map((c: any) => Number(c.adherence)).filter((n) => !isNaN(n));
         setAdherence(vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null);
       }
+
+      // Evolução de peso (check-ins + feedbacks semanais + análises mensais)
+      const [{ data: checks }, { data: weeklies }, { data: monthlies }] = await Promise.all([
+        supabase.from("checkins").select("created_at, weight").eq("user_id", user.id).not("weight", "is", null).order("created_at", { ascending: true }),
+        supabase.from("weekly_feedbacks").select("week_start, weight").eq("user_id", user.id).not("weight", "is", null).order("week_start", { ascending: true }),
+        supabase.from("monthly_analyses").select("analysis_date, weight").eq("user_id", user.id).not("weight", "is", null).order("analysis_date", { ascending: true }),
+      ]);
+      const points: { date: string; weight: number }[] = [];
+      for (const c of checks ?? []) points.push({ date: (c.created_at as string).slice(0, 10), weight: Number(c.weight) });
+      for (const w of weeklies ?? []) points.push({ date: w.week_start as string, weight: Number(w.weight) });
+      for (const m of monthlies ?? []) points.push({ date: m.analysis_date as string, weight: Number(m.weight) });
+      points.sort((a, b) => a.date.localeCompare(b.date));
+      setEvolution(points);
+
+      // Últimos registros
+      const lastW = (weeklies ?? []).slice(-1)[0]?.week_start as string | undefined;
+      setLastWeeklyAt(lastW ?? null);
+      const lastM = (monthlies ?? []).slice(-1)[0]?.analysis_date as string | undefined;
+      setLastMonthlyAt(lastM ?? null);
     })();
   }, [navigate]);
 
@@ -89,60 +106,6 @@ function DashboardPage() {
     if (typeof Notification === "undefined") return;
     const r = await Notification.requestPermission();
     setPermission(r);
-  };
-
-  const downloadPdf = async () => {
-    setDownloading(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const [{ data: profile }, { data: protocol }] = await Promise.all([
-        supabase.from("profiles").select("full_name").eq("user_id", user.id).maybeSingle(),
-        supabase.from("protocols").select("training, diet, start_date, end_date, version")
-          .eq("user_id", user.id).eq("status", "active")
-          .order("created_at", { ascending: false }).limit(1).maybeSingle(),
-      ]);
-      if (!protocol) {
-        toast.error("Nenhum protocolo ativo encontrado");
-        return;
-      }
-      generateProtocolPdf({
-        fullName: profile?.full_name ?? "",
-        protocol: protocol as any,
-      });
-    } catch (e) {
-      console.error(e);
-      toast.error("Erro ao gerar PDF");
-    } finally {
-      setDownloading(false);
-    }
-  };
-
-  const downloadShoppingList = async () => {
-    setDownloadingList(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const [{ data: profile }, { data: protocol }] = await Promise.all([
-        supabase.from("profiles").select("full_name").eq("user_id", user.id).maybeSingle(),
-        supabase.from("protocols").select("diet")
-          .eq("user_id", user.id).eq("status", "active")
-          .order("created_at", { ascending: false }).limit(1).maybeSingle(),
-      ]);
-      if (!protocol?.diet) {
-        toast.error("Nenhuma dieta ativa encontrada");
-        return;
-      }
-      generateShoppingListPdf({
-        fullName: profile?.full_name ?? "",
-        diet: protocol.diet as any,
-      });
-    } catch (e) {
-      console.error(e);
-      toast.error("Erro ao gerar lista");
-    } finally {
-      setDownloadingList(false);
-    }
   };
 
   const journey = useMemo(() => {
@@ -159,12 +122,20 @@ function DashboardPage() {
 
   const todayName = WEEKDAYS[new Date().getDay()];
   const todayDay = trainingDays.find((d: any) => d?.weekday === todayName);
-  const trainingDaysPerWeek = trainingDays.filter((d: any) => d?.weekday && (d.exercises?.length ?? 0) > 0).length;
   const nextDay = trainingDays.find((d: any) => {
     if (!d?.weekday) return false;
     const idx = WEEKDAYS.indexOf(d.weekday);
     return idx > new Date().getDay() && (d.exercises?.length ?? 0) > 0;
   }) || trainingDays.find((d: any) => (d?.exercises?.length ?? 0) > 0);
+
+  const daysSince = (iso: string | null) =>
+    iso ? Math.floor((Date.now() - new Date(iso).getTime()) / 86400_000) : Infinity;
+  const weeklyDaysAgo = daysSince(lastWeeklyAt);
+  const monthlyDaysAgo = daysSince(lastMonthlyAt);
+  const weeklyDue = 7 - weeklyDaysAgo; // dias restantes; negativo = atrasado
+  const monthlyDue = 30 - monthlyDaysAgo;
+  const showWeekly = weeklyDue <= 2; // mostra a 2 dias do vencimento ou atrasado
+  const showMonthly = monthlyDue <= 5;
 
   return (
     <div>
@@ -179,23 +150,76 @@ function DashboardPage() {
           <NotificationBell />
         </div>
 
-        {protocol ? (
-          <Card className="mt-5 p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-heading font-semibold">Protocolo Atual</h3>
-              <span className="text-[10px] uppercase tracking-wider px-2 py-1 rounded-full border border-primary/40 text-primary">
-                Ativo
-              </span>
-            </div>
-            <div className="grid grid-cols-3 gap-3 text-center">
-              <BigStat value={`${trainingDaysPerWeek}x`} label="Dias/semana" />
-              <BigStat value={`${journey?.remaining ?? "—"}`} label="Dias p/ troca" />
-              <BigStat value={`v${protocol.version ?? 1}`} label="Versão" />
-            </div>
-          </Card>
-        ) : (
+        {!protocol && (
           <Card className="mt-5 p-5 text-center text-muted-foreground">
             Nenhum protocolo ativo. Aguarde seu coach liberar.
+          </Card>
+        )}
+
+        {(showWeekly || showMonthly) && (
+          <div className="mt-5 space-y-2">
+            {showWeekly && (
+              <Link to="/feedback/weekly" className="block rounded-xl border border-primary/40 bg-primary/5 p-4 hover:bg-primary/10 transition">
+                <div className="flex items-center gap-3">
+                  <CalendarDays className="text-primary" size={18} />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold">Feedback semanal</p>
+                    <p className="text-xs text-muted-foreground">
+                      {weeklyDue < 0
+                        ? `Atrasado em ${Math.abs(weeklyDue)} dia(s)`
+                        : weeklyDue === 0
+                          ? "Vence hoje"
+                          : `Faltam ${weeklyDue} dia(s)`}
+                    </p>
+                  </div>
+                  <ChevronRight size={16} className="text-primary" />
+                </div>
+              </Link>
+            )}
+            {showMonthly && (
+              <Link to="/monthly-analysis" className="block rounded-xl border border-primary/40 bg-primary/5 p-4 hover:bg-primary/10 transition">
+                <div className="flex items-center gap-3">
+                  <Activity className="text-primary" size={18} />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold">Avaliação postural</p>
+                    <p className="text-xs text-muted-foreground">
+                      {monthlyDue < 0
+                        ? `Atrasada em ${Math.abs(monthlyDue)} dia(s)`
+                        : monthlyDue === 0
+                          ? "Vence hoje"
+                          : `Faltam ${monthlyDue} dia(s)`}
+                    </p>
+                  </div>
+                  <ChevronRight size={16} className="text-primary" />
+                </div>
+              </Link>
+            )}
+          </div>
+        )}
+
+        {evolution.length >= 2 && (
+          <Card className="mt-4 p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <LineChart className="text-primary" size={18} />
+                <h3 className="font-heading font-semibold">Sua evolução</h3>
+              </div>
+              <p className="text-xs text-muted-foreground">{evolution.length} registros</p>
+            </div>
+            <div className="h-48">
+              <ResponsiveContainer width="100%" height="100%">
+                <RLineChart data={evolution}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="date" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+                  <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" domain={["dataMin - 1", "dataMax + 1"]} />
+                  <Tooltip
+                    contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
+                    formatter={(v: any) => [`${v} kg`, "Peso"]}
+                  />
+                  <Line type="monotone" dataKey="weight" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} />
+                </RLineChart>
+              </ResponsiveContainer>
+            </div>
           </Card>
         )}
 
@@ -270,8 +294,8 @@ function DashboardPage() {
           />
         </div>
 
-        <div className="mt-5 flex flex-wrap gap-2">
-          {permission !== "granted" && (
+        {permission !== "granted" && (
+          <div className="mt-5">
             <button
               onClick={requestNotif}
               className="w-full sm:w-auto inline-flex items-center gap-2 rounded-lg border border-primary/40 bg-primary/5 hover:bg-primary/10 transition px-4 py-2 text-sm"
@@ -279,42 +303,13 @@ function DashboardPage() {
               <Bell size={16} className="text-primary" />
               Ativar lembretes diários
             </button>
-          )}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={downloadPdf}
-            disabled={downloading}
-            className="w-full sm:w-auto"
-          >
-            <Download size={16} className="mr-2" />
-            {downloading ? "Gerando..." : "Baixar protocolo (PDF)"}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={downloadShoppingList}
-            disabled={downloadingList}
-            className="w-full sm:w-auto"
-          >
-            <ShoppingCart size={16} className="mr-2" />
-            {downloadingList ? "Gerando..." : "Lista de compras"}
-          </Button>
-        </div>
+          </div>
+        )}
 
         <div className="mt-6">
           <AchievementsCard />
         </div>
       </main>
-    </div>
-  );
-}
-
-function BigStat({ value, label }: { value: string; label: string }) {
-  return (
-    <div>
-      <p className="text-2xl sm:text-3xl font-bold text-primary font-heading">{value}</p>
-      <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
     </div>
   );
 }
