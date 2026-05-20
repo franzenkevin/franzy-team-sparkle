@@ -4,7 +4,7 @@ import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar,
 } from "@/components/ui/sidebar";
-import { LayoutDashboard, Users, BookOpen, Wrench, Settings, LogOut, Dumbbell, MessageSquare } from "lucide-react";
+import { LayoutDashboard, Users, BookOpen, Settings, LogOut, Dumbbell, MessageSquare, Apple } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 
@@ -14,7 +14,7 @@ const items = [
   { to: "/admin/messages", label: "Mensagens", icon: MessageSquare },
   { to: "/admin/library", label: "Bibliotecas", icon: BookOpen },
   { to: "/admin/exercises", label: "Exercícios", icon: Dumbbell },
-  { to: "/admin/tools", label: "Ferramentas", icon: Wrench },
+  { to: "/admin/foods", label: "Alimentos", icon: Apple },
   { to: "/admin/settings", label: "Minha conta", icon: Settings },
 ] as const;
 

@@ -35,10 +35,10 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedAchievementsRouteImport } from './routes/_authenticated/achievements'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedFeedbackWeeklyRouteImport } from './routes/_authenticated/feedback.weekly'
-import { Route as AuthenticatedAdminToolsRouteImport } from './routes/_authenticated/admin.tools'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin.settings'
 import { Route as AuthenticatedAdminMessagesRouteImport } from './routes/_authenticated/admin.messages'
 import { Route as AuthenticatedAdminLibraryRouteImport } from './routes/_authenticated/admin.library'
+import { Route as AuthenticatedAdminFoodsRouteImport } from './routes/_authenticated/admin.foods'
 import { Route as AuthenticatedAdminExercisesRouteImport } from './routes/_authenticated/admin.exercises'
 import { Route as AuthenticatedAdminClientsRouteImport } from './routes/_authenticated/admin.clients'
 import { Route as ApiPublicShareTokenRouteImport } from './routes/api/public/share.$token'
@@ -178,11 +178,6 @@ const AuthenticatedFeedbackWeeklyRoute =
     path: '/feedback/weekly',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedAdminToolsRoute = AuthenticatedAdminToolsRouteImport.update({
-  id: '/tools',
-  path: '/tools',
-  getParentRoute: () => AuthenticatedAdminRoute,
-} as any)
 const AuthenticatedAdminSettingsRoute =
   AuthenticatedAdminSettingsRouteImport.update({
     id: '/settings',
@@ -201,6 +196,11 @@ const AuthenticatedAdminLibraryRoute =
     path: '/library',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminFoodsRoute = AuthenticatedAdminFoodsRouteImport.update({
+  id: '/foods',
+  path: '/foods',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 const AuthenticatedAdminExercisesRoute =
   AuthenticatedAdminExercisesRouteImport.update({
     id: '/exercises',
@@ -256,10 +256,10 @@ export interface FileRoutesByFullPath {
   '/s/$token': typeof STokenRoute
   '/admin/clients': typeof AuthenticatedAdminClientsRouteWithChildren
   '/admin/exercises': typeof AuthenticatedAdminExercisesRoute
+  '/admin/foods': typeof AuthenticatedAdminFoodsRoute
   '/admin/library': typeof AuthenticatedAdminLibraryRoute
   '/admin/messages': typeof AuthenticatedAdminMessagesRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
-  '/admin/tools': typeof AuthenticatedAdminToolsRoute
   '/feedback/weekly': typeof AuthenticatedFeedbackWeeklyRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/admin/clients/$id': typeof AuthenticatedAdminClientsIdRoute
@@ -291,10 +291,10 @@ export interface FileRoutesByTo {
   '/s/$token': typeof STokenRoute
   '/admin/clients': typeof AuthenticatedAdminClientsRouteWithChildren
   '/admin/exercises': typeof AuthenticatedAdminExercisesRoute
+  '/admin/foods': typeof AuthenticatedAdminFoodsRoute
   '/admin/library': typeof AuthenticatedAdminLibraryRoute
   '/admin/messages': typeof AuthenticatedAdminMessagesRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
-  '/admin/tools': typeof AuthenticatedAdminToolsRoute
   '/feedback/weekly': typeof AuthenticatedFeedbackWeeklyRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/admin/clients/$id': typeof AuthenticatedAdminClientsIdRoute
@@ -329,10 +329,10 @@ export interface FileRoutesById {
   '/s/$token': typeof STokenRoute
   '/_authenticated/admin/clients': typeof AuthenticatedAdminClientsRouteWithChildren
   '/_authenticated/admin/exercises': typeof AuthenticatedAdminExercisesRoute
+  '/_authenticated/admin/foods': typeof AuthenticatedAdminFoodsRoute
   '/_authenticated/admin/library': typeof AuthenticatedAdminLibraryRoute
   '/_authenticated/admin/messages': typeof AuthenticatedAdminMessagesRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
-  '/_authenticated/admin/tools': typeof AuthenticatedAdminToolsRoute
   '/_authenticated/feedback/weekly': typeof AuthenticatedFeedbackWeeklyRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/admin/clients/$id': typeof AuthenticatedAdminClientsIdRoute
@@ -367,10 +367,10 @@ export interface FileRouteTypes {
     | '/s/$token'
     | '/admin/clients'
     | '/admin/exercises'
+    | '/admin/foods'
     | '/admin/library'
     | '/admin/messages'
     | '/admin/settings'
-    | '/admin/tools'
     | '/feedback/weekly'
     | '/admin/'
     | '/admin/clients/$id'
@@ -402,10 +402,10 @@ export interface FileRouteTypes {
     | '/s/$token'
     | '/admin/clients'
     | '/admin/exercises'
+    | '/admin/foods'
     | '/admin/library'
     | '/admin/messages'
     | '/admin/settings'
-    | '/admin/tools'
     | '/feedback/weekly'
     | '/admin'
     | '/admin/clients/$id'
@@ -439,10 +439,10 @@ export interface FileRouteTypes {
     | '/s/$token'
     | '/_authenticated/admin/clients'
     | '/_authenticated/admin/exercises'
+    | '/_authenticated/admin/foods'
     | '/_authenticated/admin/library'
     | '/_authenticated/admin/messages'
     | '/_authenticated/admin/settings'
-    | '/_authenticated/admin/tools'
     | '/_authenticated/feedback/weekly'
     | '/_authenticated/admin/'
     | '/_authenticated/admin/clients/$id'
@@ -648,13 +648,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFeedbackWeeklyRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/admin/tools': {
-      id: '/_authenticated/admin/tools'
-      path: '/tools'
-      fullPath: '/admin/tools'
-      preLoaderRoute: typeof AuthenticatedAdminToolsRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
     '/_authenticated/admin/settings': {
       id: '/_authenticated/admin/settings'
       path: '/settings'
@@ -674,6 +667,13 @@ declare module '@tanstack/react-router' {
       path: '/library'
       fullPath: '/admin/library'
       preLoaderRoute: typeof AuthenticatedAdminLibraryRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/foods': {
+      id: '/_authenticated/admin/foods'
+      path: '/foods'
+      fullPath: '/admin/foods'
+      preLoaderRoute: typeof AuthenticatedAdminFoodsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/exercises': {
@@ -731,20 +731,20 @@ const AuthenticatedAdminClientsRouteWithChildren =
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminClientsRoute: typeof AuthenticatedAdminClientsRouteWithChildren
   AuthenticatedAdminExercisesRoute: typeof AuthenticatedAdminExercisesRoute
+  AuthenticatedAdminFoodsRoute: typeof AuthenticatedAdminFoodsRoute
   AuthenticatedAdminLibraryRoute: typeof AuthenticatedAdminLibraryRoute
   AuthenticatedAdminMessagesRoute: typeof AuthenticatedAdminMessagesRoute
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
-  AuthenticatedAdminToolsRoute: typeof AuthenticatedAdminToolsRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminClientsRoute: AuthenticatedAdminClientsRouteWithChildren,
   AuthenticatedAdminExercisesRoute: AuthenticatedAdminExercisesRoute,
+  AuthenticatedAdminFoodsRoute: AuthenticatedAdminFoodsRoute,
   AuthenticatedAdminLibraryRoute: AuthenticatedAdminLibraryRoute,
   AuthenticatedAdminMessagesRoute: AuthenticatedAdminMessagesRoute,
   AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
-  AuthenticatedAdminToolsRoute: AuthenticatedAdminToolsRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
 

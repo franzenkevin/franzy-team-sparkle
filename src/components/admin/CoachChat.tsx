@@ -99,7 +99,7 @@ export function CoachChat({ profiles }: { profiles: Array<{ user_id: string; ful
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
-            placeholder="Ex.: Aluna parou de evoluir nas pernas, ajustar split e subir +100 kcal..."
+            placeholder="Ex.: analise esse exame / monta treino PPL 4x / coloca 25mg de proviron…"
             rows={2}
             className="resize-none text-sm"
           />

@@ -192,6 +192,57 @@ export type Database = {
           },
         ]
       }
+      custom_foods: {
+        Row: {
+          brand: string | null
+          carbs: number
+          category: string | null
+          created_at: string
+          created_by: string | null
+          fat: number
+          fiber: number | null
+          id: string
+          kcal: number
+          name: string
+          notes: string | null
+          protein: number
+          serving_g: number
+          updated_at: string
+        }
+        Insert: {
+          brand?: string | null
+          carbs?: number
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          fat?: number
+          fiber?: number | null
+          id?: string
+          kcal?: number
+          name: string
+          notes?: string | null
+          protein?: number
+          serving_g?: number
+          updated_at?: string
+        }
+        Update: {
+          brand?: string | null
+          carbs?: number
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          fat?: number
+          fiber?: number | null
+          id?: string
+          kcal?: number
+          name?: string
+          notes?: string | null
+          protein?: number
+          serving_g?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       diet_feedback: {
         Row: {
           created_at: string
