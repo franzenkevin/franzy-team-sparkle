@@ -18,6 +18,10 @@ import {
   YAxis,
   Tooltip,
   CartesianGrid,
+  Legend,
+  Scatter,
+  ComposedChart,
+  Bar,
 } from "recharts";
 
 export const Route = createFileRoute("/_authenticated/progress")({
@@ -55,6 +59,8 @@ function ProgressPage() {
   const [shareOpen, setShareOpen] = useState(false);
   const [loadHistory, setLoadHistory] = useState<Record<string, { date: string; max: number; volume: number }[]>>({});
   const [selectedExercise, setSelectedExercise] = useState<string>("");
+  const [periodWeeks, setPeriodWeeks] = useState<4 | 8 | 0>(0); // 0 = tudo
+  const [compareMode, setCompareMode] = useState(false);
 
   const load = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -294,50 +300,111 @@ function ProgressPage() {
               </select>
             </div>
             {selectedExercise && loadHistory[selectedExercise] && (() => {
-              const data = loadHistory[selectedExercise].map((d) => ({
+              const allSessions = loadHistory[selectedExercise];
+              // tag PRs (running max)
+              let runningMax = 0;
+              const tagged = allSessions.map((d) => {
+                const isPR = d.max > runningMax;
+                if (isPR) runningMax = d.max;
+                return { ...d, isPR };
+              });
+              const cutoffDays = periodWeeks === 0 ? null : periodWeeks * 7;
+              const filtered = cutoffDays
+                ? tagged.filter((d) => (Date.now() - new Date(d.date).getTime()) / 86400000 <= cutoffDays)
+                : tagged;
+              const data = filtered.map((d) => ({
                 date: new Date(d.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
                 carga: d.max,
                 volume: d.volume,
+                pr: d.isPR ? d.max : null,
               }));
-              const first = data[0]?.carga ?? 0;
-              const lastV = data[data.length - 1]?.carga ?? 0;
+              // comparison: split last 8w into two 4w halves
+              let compareData: { date: string; recente: number | null; anterior: number | null }[] = [];
+              if (compareMode) {
+                const now = Date.now();
+                const recent = tagged.filter((d) => (now - new Date(d.date).getTime()) / 86400000 <= 28);
+                const previous = tagged.filter((d) => {
+                  const age = (now - new Date(d.date).getTime()) / 86400000;
+                  return age > 28 && age <= 56;
+                });
+                const N = Math.max(recent.length, previous.length);
+                compareData = Array.from({ length: N }).map((_, i) => ({
+                  date: `Sessão ${i + 1}`,
+                  recente: recent[i]?.max ?? null,
+                  anterior: previous[i]?.max ?? null,
+                }));
+              }
+              const first = filtered[0]?.max ?? 0;
+              const lastV = filtered[filtered.length - 1]?.max ?? 0;
               const delta = lastV - first;
+              const prCount = tagged.filter((d) => d.isPR).length;
+              const allTimePR = Math.max(0, ...tagged.map((d) => d.max));
+              const totalVolume = filtered.reduce((acc, d) => acc + d.volume, 0);
+              const avgVolume = filtered.length ? Math.round(totalVolume / filtered.length) : 0;
               return (
                 <>
-                  <div className="grid grid-cols-3 gap-3 mb-4">
-                    <Stat label="Sessões" value={data.length} />
+                  <div className="flex items-center gap-2 mb-4 flex-wrap">
+                    <div className="inline-flex rounded-md border border-border overflow-hidden text-xs">
+                      {([
+                        { v: 4, label: "4 sem" },
+                        { v: 8, label: "8 sem" },
+                        { v: 0, label: "Tudo" },
+                      ] as const).map((opt) => (
+                        <button
+                          key={opt.v}
+                          onClick={() => { setPeriodWeeks(opt.v); setCompareMode(false); }}
+                          className={`px-3 py-1.5 ${!compareMode && periodWeeks === opt.v ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => setCompareMode((v) => !v)}
+                      className={`px-3 py-1.5 rounded-md border border-border text-xs ${compareMode ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted"}`}
+                    >
+                      Comparar 4 vs 8 sem
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+                    <Stat label="Sessões" value={filtered.length} />
                     <Stat label="Carga atual" value={`${lastV} kg`} />
                     <Stat
                       label="Evolução"
                       value={`${delta > 0 ? "+" : ""}${delta.toFixed(1)} kg`}
                       accent={delta > 0 ? "text-primary" : delta < 0 ? "text-destructive" : undefined}
                     />
+                    <Stat label="PRs" value={prCount} accent="text-primary" />
+                    <Stat label="Volume médio" value={`${avgVolume.toLocaleString("pt-BR")} kg`} />
                   </div>
-                  <div className="h-56 w-full">
+                  <div className="mb-3 text-xs text-muted-foreground">
+                    Recorde absoluto: <span className="text-primary font-semibold">{allTimePR} kg</span> · Volume total do período: <span className="text-foreground font-semibold">{totalVolume.toLocaleString("pt-BR")} kg</span>
+                  </div>
+                  <div className="h-64 w-full">
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                        <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={11} />
-                        <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} domain={["auto", "auto"]} />
-                        <Tooltip
-                          contentStyle={{
-                            background: "hsl(var(--card))",
-                            border: "1px solid hsl(var(--border))",
-                            borderRadius: 8,
-                            fontSize: 12,
-                          }}
-                          labelStyle={{ color: "hsl(var(--foreground))" }}
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="carga"
-                          name="Carga máx (kg)"
-                          stroke="hsl(var(--primary))"
-                          strokeWidth={2}
-                          dot={{ r: 3, fill: "hsl(var(--primary))" }}
-                          activeDot={{ r: 5 }}
-                        />
-                      </LineChart>
+                      {compareMode ? (
+                        <LineChart data={compareData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                          <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={11} />
+                          <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} domain={["auto", "auto"]} />
+                          <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }} />
+                          <Legend wrapperStyle={{ fontSize: 11 }} />
+                          <Line type="monotone" dataKey="recente" name="Últimas 4 sem" stroke="hsl(var(--primary))" strokeWidth={2} connectNulls dot={{ r: 3 }} />
+                          <Line type="monotone" dataKey="anterior" name="4 sem anteriores" stroke="hsl(var(--muted-foreground))" strokeWidth={2} strokeDasharray="4 4" connectNulls dot={{ r: 3 }} />
+                        </LineChart>
+                      ) : (
+                        <ComposedChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                          <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={11} />
+                          <YAxis yAxisId="left" stroke="hsl(var(--muted-foreground))" fontSize={11} domain={["auto", "auto"]} />
+                          <YAxis yAxisId="right" orientation="right" stroke="hsl(var(--muted-foreground))" fontSize={11} />
+                          <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }} />
+                          <Legend wrapperStyle={{ fontSize: 11 }} />
+                          <Bar yAxisId="right" dataKey="volume" name="Volume (kg)" fill="hsl(var(--muted))" opacity={0.6} />
+                          <Line yAxisId="left" type="monotone" dataKey="carga" name="Carga máx (kg)" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3, fill: "hsl(var(--primary))" }} activeDot={{ r: 5 }} />
+                          <Scatter yAxisId="left" dataKey="pr" name="PR 🏆" fill="#f5a623" shape="star" />
+                        </ComposedChart>
+                      )}
                     </ResponsiveContainer>
                   </div>
                 </>

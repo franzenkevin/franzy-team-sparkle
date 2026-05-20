@@ -80,6 +80,8 @@ function TrainingPage() {
   const [feedbackNotes, setFeedbackNotes] = useState<string>("");
   const [storyPhoto, setStoryPhoto] = useState<File | null>(null);
   const [generatingStory, setGeneratingStory] = useState(false);
+  const [storyUrl, setStoryUrl] = useState<string | null>(null);
+  const [storyBlob, setStoryBlob] = useState<Blob | null>(null);
   const [feedbackId, setFeedbackId] = useState<string | null>(null);
   const [savingFeedback, setSavingFeedback] = useState(false);
   const [swapFor, setSwapFor] = useState<Exercise | null>(null);
@@ -334,10 +336,10 @@ function TrainingPage() {
       // Download
       const blob: Blob = await new Promise((res) => canvas.toBlob((b) => res(b!), "image/jpeg", 0.92));
       const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url; a.download = `franzen-team-${todayISO}.jpg`; a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-      toast.success("Story gerado! Compartilhe no Instagram 📲");
+      if (storyUrl) URL.revokeObjectURL(storyUrl);
+      setStoryUrl(url);
+      setStoryBlob(blob);
+      toast.success("Story pronto! Baixe ou compartilhe abaixo 📲");
     } catch (e) {
       console.error(e);
       toast.error("Erro ao gerar story");
@@ -750,6 +752,59 @@ function TrainingPage() {
                         Gerar story
                       </Button>
                     </div>
+                    {storyUrl && (
+                      <div className="mt-4 space-y-3">
+                        <div className="rounded-lg overflow-hidden border border-border bg-black flex justify-center">
+                          <img
+                            src={storyUrl}
+                            alt="Story Franzen Team"
+                            className="max-h-[420px] w-auto object-contain"
+                          />
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">
+                          No celular, segure a imagem para salvar na galeria, ou use os botões abaixo.
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          <a
+                            href={storyUrl}
+                            download={`franzen-team-${todayISO}.jpg`}
+                            className="inline-flex items-center justify-center rounded-md border border-border px-3 py-2 text-xs hover:bg-muted"
+                          >
+                            Baixar imagem
+                          </a>
+                          {typeof navigator !== "undefined" && "share" in navigator && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={async () => {
+                                if (!storyBlob) return;
+                                const file = new File([storyBlob], `franzen-team-${todayISO}.jpg`, { type: "image/jpeg" });
+                                try {
+                                  const nav = navigator as Navigator & { canShare?: (d: { files: File[] }) => boolean };
+                                  if (nav.canShare && !nav.canShare({ files: [file] })) {
+                                    await navigator.share({ title: "Franzen Team", text: `${totalKgLifted} kg levantados hoje! #FranzenTeam` });
+                                  } else {
+                                    await navigator.share({ files: [file], title: "Franzen Team", text: "#FranzenTeam" });
+                                  }
+                                } catch (e) {
+                                  console.error(e);
+                                }
+                              }}
+                            >
+                              Compartilhar
+                            </Button>
+                          )}
+                          <a
+                            href="https://www.instagram.com/"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center justify-center rounded-md border border-border px-3 py-2 text-xs hover:bg-muted"
+                          >
+                            Abrir Instagram
+                          </a>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
