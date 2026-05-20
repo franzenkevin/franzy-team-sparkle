@@ -144,6 +144,108 @@ function RootComponent() {
     }).catch(() => {});
   }, []);
 
+  // Auto-update: detect a new published build and reload all open tabs.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const STORAGE_KEY = "app:build-signature";
+    let initialSig: string | null = null;
+    let timer: number | null = null;
+    let cancelled = false;
+
+    const extractSignature = (html: string) => {
+      // Collect all hashed asset URLs referenced by index.html
+      // (Vite emits hashed filenames like /_build/assets/index-abcd1234.js)
+      const matches = html.match(/[\w./-]+-[A-Za-z0-9_]{8,}\.(?:js|css|mjs)/g);
+      if (!matches || matches.length === 0) return null;
+      return matches.sort().join("|");
+    };
+
+    const reloadEverything = async () => {
+      try {
+        if ("caches" in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.map((k) => caches.delete(k)));
+        }
+        if ("serviceWorker" in navigator) {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map((r) => r.unregister().catch(() => {})));
+        }
+      } catch { /* ignore */ }
+      // Add a cache-busting query so the next request bypasses any HTTP cache
+      const url = new URL(window.location.href);
+      url.searchParams.set("_v", Date.now().toString());
+      window.location.replace(url.toString());
+    };
+
+    const check = async () => {
+      if (cancelled || document.hidden) return;
+      try {
+        const res = await fetch("/", {
+          method: "GET",
+          cache: "no-store",
+          headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
+          credentials: "same-origin",
+        });
+        if (!res.ok) return;
+        const html = await res.text();
+        const sig = extractSignature(html);
+        if (!sig) return;
+        if (initialSig === null) {
+          initialSig = sig;
+          try { sessionStorage.setItem(STORAGE_KEY, sig); } catch { /* ignore */ }
+          return;
+        }
+        if (sig !== initialSig) {
+          // New build detected — force reload across the tab.
+          await reloadEverything();
+        }
+      } catch { /* network hiccup; try again next tick */ }
+    };
+
+    // First check immediately, then every 60s, plus on focus/visibility change.
+    check();
+    timer = window.setInterval(check, 60_000);
+    const onVisible = () => { if (!document.hidden) check(); };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+
+    return () => {
+      cancelled = true;
+      if (timer !== null) window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+    };
+  }, []);
+
+  // If a hashed asset fails to load (404 after redeploy), force a reload.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onError = (e: ErrorEvent) => {
+      const msg = String(e?.message || "");
+      if (
+        msg.includes("Failed to fetch dynamically imported module") ||
+        msg.includes("Importing a module script failed") ||
+        msg.includes("error loading dynamically imported module")
+      ) {
+        const url = new URL(window.location.href);
+        url.searchParams.set("_v", Date.now().toString());
+        window.location.replace(url.toString());
+      }
+    };
+    window.addEventListener("error", onError);
+    window.addEventListener("unhandledrejection", (e) => {
+      const reason = (e as PromiseRejectionEvent).reason;
+      const msg = String(reason?.message || reason || "");
+      if (msg.includes("dynamically imported module") || msg.includes("ChunkLoadError")) {
+        const url = new URL(window.location.href);
+        url.searchParams.set("_v", Date.now().toString());
+        window.location.replace(url.toString());
+      }
+    });
+    return () => window.removeEventListener("error", onError);
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />
