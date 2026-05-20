@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ResumoTab } from "@/components/admin/ResumoTab";
 import { Card } from "@/components/ui/card";
-import { Users, BookOpen, Wrench, Archive } from "lucide-react";
+import { Users, BookOpen, Apple, Dumbbell, MessageSquare } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   component: AdminIndex,
@@ -10,9 +10,10 @@ export const Route = createFileRoute("/_authenticated/admin/")({
 function AdminIndex() {
   const quick = [
     { to: "/admin/clients", label: "Clientes", desc: "Lista e edição dos alunos", icon: Users },
+    { to: "/admin/messages", label: "Mensagens", desc: "Conversas com os alunos", icon: MessageSquare },
     { to: "/admin/library", label: "Bibliotecas", desc: "Templates de treino e dieta", icon: BookOpen },
-    { to: "/admin/tools", label: "Ferramentas", desc: "Calculadoras e IA Coach", icon: Wrench },
-    { to: "/admin/legacy", label: "Painel completo", desc: "Acesso às demais abas", icon: Archive },
+    { to: "/admin/exercises", label: "Exercícios", desc: "Banco de exercícios e vídeos", icon: Dumbbell },
+    { to: "/admin/foods", label: "Alimentos", desc: "Cadastro de alimentos", icon: Apple },
   ] as const;
   return (
     <div className="space-y-6">
