@@ -155,7 +155,7 @@ export function ResumoTab() {
       );
 
       // Ranking by achievements (1pt each)
-      const { data: ach } = await supabaseAdmin_safe("achievements", supabase);
+      const ach = await supabaseAdmin_safe("achievements", supabase);
       if (ach) {
         const cnt = new Map<string, number>();
         for (const a of ach as any[]) cnt.set(a.user_id, (cnt.get(a.user_id) ?? 0) + 1);
