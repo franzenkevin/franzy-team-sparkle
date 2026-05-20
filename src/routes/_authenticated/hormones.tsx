@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Pill, Loader2, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Pill, Loader2, AlertTriangle, MessageSquare } from "lucide-react";
+import { CoachContactDialog } from "@/components/CoachContactDialog";
 
 export const Route = createFileRoute("/_authenticated/hormones")({
   head: () => ({ meta: [{ title: "Hormônios — Franzen Team" }] }),
@@ -92,7 +93,13 @@ function HormonesPage() {
       )}
 
       <div className="mt-6">
-        <Link to="/messages"><Button variant="outline" size="sm">Falar com o coach</Button></Link>
+        <CoachContactDialog
+          trigger={
+            <Button variant="outline" size="sm" className="gap-2">
+              <MessageSquare className="h-4 w-4" /> Falar com o coach
+            </Button>
+          }
+        />
       </div>
     </div>
   );
