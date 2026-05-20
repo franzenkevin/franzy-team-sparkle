@@ -482,6 +482,15 @@ function TrainingPage() {
                   <h2 className="font-heading text-xl font-semibold">{day.name}</h2>
                   <span className="text-xs text-muted-foreground">{day.exercises.length} exerc.</span>
                 </div>
+                <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Tonelagem total hoje</p>
+                    <p className="text-2xl font-heading font-bold text-primary tabular-nums">
+                      {totalKgLifted.toLocaleString("pt-BR")} <span className="text-sm text-muted-foreground font-normal">kg</span>
+                    </p>
+                  </div>
+                  <Dumbbell className="text-primary/60" size={28} />
+                </div>
 
                 {day.rationale && (
                   <div className="rounded-xl border border-border bg-card overflow-hidden">
@@ -539,6 +548,17 @@ function TrainingPage() {
                           </p>
                         </div>
                         <div className="flex gap-2">
+                          {video && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-primary"
+                              onClick={() => setExpandedEx((p) => ({ ...p, [ex.id]: !isExpanded }))}
+                              title="Ver vídeo"
+                            >
+                              <Play size={14} />
+                            </Button>
+                          )}
                           <Button size="sm" variant="ghost" onClick={() => setExpandedEx((p) => ({ ...p, [ex.id]: !isExpanded }))}>
                             {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                           </Button>
@@ -557,8 +577,20 @@ function TrainingPage() {
                         </div>
                       </div>
 
+                      {video && !isExpanded && (
+                        <button
+                          onClick={() => setExpandedEx((p) => ({ ...p, [ex.id]: true }))}
+                          className="mt-2 inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
+                        >
+                          <Play size={12} /> Ver demonstração do exercício
+                        </button>
+                      )}
+
                       {isExpanded && (ex.rationale || video) && (
                         <div className="mt-3 space-y-3 border-t border-border pt-3">
+                          {video && (
+                            <EmbeddedVideo url={video} />
+                          )}
                           {ex.rationale && (
                             <div className="text-sm text-muted-foreground whitespace-pre-wrap">
                               <span className="inline-flex items-center gap-1 text-primary text-xs font-medium mb-1">
@@ -566,9 +598,6 @@ function TrainingPage() {
                               </span>
                               <p>{ex.rationale}</p>
                             </div>
-                          )}
-                          {video && (
-                            <EmbeddedVideo url={video} />
                           )}
                         </div>
                       )}

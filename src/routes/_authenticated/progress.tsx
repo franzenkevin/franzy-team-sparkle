@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, TrendingUp, Loader2, Plus, Camera, Share2 } from "lucide-react";
+import { ArrowLeft, TrendingUp, Loader2, Plus, Camera, Share2, Dumbbell } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 import { ShareProgressDialog } from "@/components/ShareProgressDialog";
@@ -53,6 +53,8 @@ function ProgressPage() {
   const [files, setFiles] = useState<Record<string, File | null>>({});
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
   const [shareOpen, setShareOpen] = useState(false);
+  const [loadHistory, setLoadHistory] = useState<Record<string, { date: string; max: number; volume: number }[]>>({});
+  const [selectedExercise, setSelectedExercise] = useState<string>("");
 
   const load = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -77,6 +79,36 @@ function ProgressPage() {
       })
     );
     setSignedUrls(urls);
+
+    // Load workout logs to build per-exercise load progression
+    const { data: logs } = await supabase
+      .from("workout_logs")
+      .select("exercise_name, session_date, sets")
+      .eq("user_id", user.id)
+      .order("session_date", { ascending: true });
+    const grouped: Record<string, { date: string; max: number; volume: number }[]> = {};
+    for (const l of logs ?? []) {
+      const name = (l.exercise_name as string) || "—";
+      const sets = (l.sets ?? []) as Array<{ type?: string; weight?: number; reps?: number; completed?: boolean }>;
+      let maxW = 0, vol = 0;
+      for (const s of sets) {
+        if (s.type !== "valid" || !s.completed) continue;
+        const w = Number(s.weight) || 0;
+        const r = Number(s.reps) || 0;
+        if (w > maxW) maxW = w;
+        vol += w * r;
+      }
+      if (maxW === 0 && vol === 0) continue;
+      if (!grouped[name]) grouped[name] = [];
+      grouped[name].push({ date: l.session_date as string, max: maxW, volume: Math.round(vol) });
+    }
+    setLoadHistory(grouped);
+    const names = Object.keys(grouped);
+    if (names.length > 0 && !names.includes(selectedExercise)) {
+      // pick exercise with most sessions
+      const top = names.sort((a, b) => grouped[b].length - grouped[a].length)[0];
+      setSelectedExercise(top);
+    }
     setLoading(false);
   };
 
@@ -242,6 +274,75 @@ function ProgressPage() {
                 </LineChart>
               </ResponsiveContainer>
             </div>
+          </div>
+        )}
+
+        {Object.keys(loadHistory).length > 0 && (
+          <div className="mt-6 rounded-xl border border-border bg-card p-5">
+            <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+              <h3 className="font-heading font-semibold flex items-center gap-2">
+                <Dumbbell size={16} className="text-primary" /> Progresso de cargas
+              </h3>
+              <select
+                value={selectedExercise}
+                onChange={(e) => setSelectedExercise(e.target.value)}
+                className="rounded-md border border-border bg-background px-3 py-1.5 text-xs"
+              >
+                {Object.keys(loadHistory).sort().map((n) => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
+            </div>
+            {selectedExercise && loadHistory[selectedExercise] && (() => {
+              const data = loadHistory[selectedExercise].map((d) => ({
+                date: new Date(d.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
+                carga: d.max,
+                volume: d.volume,
+              }));
+              const first = data[0]?.carga ?? 0;
+              const lastV = data[data.length - 1]?.carga ?? 0;
+              const delta = lastV - first;
+              return (
+                <>
+                  <div className="grid grid-cols-3 gap-3 mb-4">
+                    <Stat label="Sessões" value={data.length} />
+                    <Stat label="Carga atual" value={`${lastV} kg`} />
+                    <Stat
+                      label="Evolução"
+                      value={`${delta > 0 ? "+" : ""}${delta.toFixed(1)} kg`}
+                      accent={delta > 0 ? "text-primary" : delta < 0 ? "text-destructive" : undefined}
+                    />
+                  </div>
+                  <div className="h-56 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                        <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={11} />
+                        <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} domain={["auto", "auto"]} />
+                        <Tooltip
+                          contentStyle={{
+                            background: "hsl(var(--card))",
+                            border: "1px solid hsl(var(--border))",
+                            borderRadius: 8,
+                            fontSize: 12,
+                          }}
+                          labelStyle={{ color: "hsl(var(--foreground))" }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="carga"
+                          name="Carga máx (kg)"
+                          stroke="hsl(var(--primary))"
+                          strokeWidth={2}
+                          dot={{ r: 3, fill: "hsl(var(--primary))" }}
+                          activeDot={{ r: 5 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </>
+              );
+            })()}
           </div>
         )}
 
