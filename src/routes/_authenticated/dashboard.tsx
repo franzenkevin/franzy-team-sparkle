@@ -1,6 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
+import { markFirstAccess } from "@/lib/adminStudents.functions";
 import { Card } from "@/components/ui/card";
 import {
   Dumbbell, Apple, LineChart, Bell,
@@ -20,6 +22,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 });
 
 function DashboardPage() {
+  const markAccess = useServerFn(markFirstAccess);
   const [name, setName] = useState<string>("");
   const [permission, setPermission] = useState<NotificationPermission>("default");
   const [protocol, setProtocol] = useState<any | null>(null);
@@ -33,6 +36,8 @@ function DashboardPage() {
   const navigate = useNavigate();
 
   useReminders(8, 0, "Franzen Team", "Bom dia! Hora do treino e check-in.");
+
+  useEffect(() => { (markAccess as any)().catch(() => {}); }, [markAccess]);
 
   useEffect(() => {
     if (typeof Notification !== "undefined") setPermission(Notification.permission);
