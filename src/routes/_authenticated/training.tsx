@@ -297,7 +297,7 @@ function TrainingPage() {
       if (!ctx) { toast.error("Navegador sem suporte a canvas"); return; }
       // Fundo escuro com gradiente
       const grad = ctx.createLinearGradient(0, 0, 0, H);
-      grad.addColorStop(0, "#0b0b0b"); grad.addColorStop(1, "#1a1a1a");
+      grad.addColorStop(0, "#050505"); grad.addColorStop(1, "#0d0d0d");
       ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
       // Foto do usuário (se houver) como fundo
       let photoUrl: string | null = null;
@@ -314,33 +314,26 @@ function TrainingPage() {
           const ratio = Math.max(W / img.width, H / img.height);
           const w = img.width * ratio, h = img.height * ratio;
           ctx.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
-          ctx.fillStyle = "rgba(0,0,0,0.45)"; ctx.fillRect(0, 0, W, H);
+          ctx.fillStyle = "rgba(0,0,0,0.62)"; ctx.fillRect(0, 0, W, H);
         } catch (err) {
           console.warn("Falha ao carregar foto, usando fundo padrão", err);
         }
       }
-      // Logo
-      try {
-        const logoImg = await new Promise<HTMLImageElement>((res, rej) => {
-          const i = new Image();
-          i.onload = () => res(i); i.onerror = rej;
-          i.src = logo;
-        });
-        ctx.drawImage(logoImg, W / 2 - 80, 120, 160, 160);
-      } catch {}
-      ctx.textAlign = "center"; ctx.fillStyle = "#fff";
-      ctx.font = "bold 56px system-ui, sans-serif";
-      ctx.fillText("FRANZEN TEAM", W / 2, 340);
-      ctx.font = "500 36px system-ui, sans-serif"; ctx.fillStyle = "#aaa";
-      ctx.fillText(days[selectedDay]?.name ?? "Treino", W / 2, 400);
-      // KG total
-      ctx.fillStyle = "#fff";
-      ctx.font = "900 220px system-ui, sans-serif";
-      ctx.fillText(`${totalKgLifted.toLocaleString("pt-BR")}`, W / 2, H / 2 + 60);
-      ctx.font = "bold 60px system-ui, sans-serif"; ctx.fillStyle = "#f5a623";
-      ctx.fillText("KG LEVANTADOS HOJE", W / 2, H / 2 + 140);
-      ctx.font = "500 40px system-ui, sans-serif"; ctx.fillStyle = "#ddd";
-      ctx.fillText("#FranzenTeam", W / 2, H - 200);
+      // Estilo minimalista — Quinta — Push / KG VOLUME TOTAL / domínio
+      ctx.textAlign = "center";
+      const dayName = days[selectedDay]?.name ?? "Treino";
+      const weekday = days[selectedDay]?.weekday ?? todayWeekday;
+      ctx.font = "500 40px system-ui, -apple-system, sans-serif";
+      ctx.fillStyle = "rgba(255,255,255,0.72)";
+      ctx.fillText(`${weekday} — ${dayName}`, W / 2, H / 2 - 140);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "900 360px system-ui, -apple-system, sans-serif";
+      ctx.fillText(`${totalKgLifted.toLocaleString("pt-BR")}KG`, W / 2, H / 2 + 100);
+      ctx.font = "700 46px system-ui, sans-serif"; ctx.fillStyle = "#2dd4a8";
+      ctx.fillText("VOLUME TOTAL", W / 2, H / 2 + 190);
+      ctx.font = "500 36px system-ui, sans-serif"; ctx.fillStyle = "rgba(255,255,255,0.55)";
+      const domain = typeof window !== "undefined" ? window.location.hostname : "franzenteam.app";
+      ctx.fillText(domain, W / 2, H / 2 + 280);
       // Download
       const blob: Blob | null = await new Promise((res) =>
         canvas.toBlob((b) => res(b), "image/jpeg", 0.92),
@@ -351,12 +344,43 @@ function TrainingPage() {
       if (storyUrl) URL.revokeObjectURL(storyUrl);
       setStoryUrl(url);
       setStoryBlob(blob);
-      toast.success("Story pronto! Baixe ou compartilhe abaixo 📲");
     } catch (e) {
       console.error(e);
       toast.error("Erro ao gerar story. Tente sem foto de fundo.");
     } finally {
       setGeneratingStory(false);
+    }
+  };
+
+  // Gera/atualiza o preview do story automaticamente quando o treino ou kg muda
+  useEffect(() => {
+    if (!day) return;
+    const t = window.setTimeout(() => { generateStory().catch(() => {}); }, 250);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [day?.name, totalKgLifted, storyPhoto]);
+
+  const requestSubstitution = async (ex: Exercise) => {
+    setSubSuggestion((p) => ({ ...p, [ex.id]: { loading: true } }));
+    try {
+      const { data: src } = await supabase
+        .from("exercises")
+        .select("category, equipment")
+        .ilike("name", ex.name)
+        .maybeSingle();
+      let q = supabase.from("exercises").select("id, name, category, equipment").limit(8);
+      if (src?.category) q = q.eq("category", src.category);
+      else {
+        const token = ex.name.split(" ")[0]?.slice(0, 6) ?? "";
+        if (token) q = q.ilike("name", `%${token}%`);
+      }
+      const { data } = await q;
+      const alt = (data ?? []).find((a) => a.name.toLowerCase() !== ex.name.toLowerCase()) ?? null;
+      setSubSuggestion((p) => ({ ...p, [ex.id]: { loading: false, alt: alt as any } }));
+      if (!alt) toast.info("Sem alternativa cadastrada para esse exercício.");
+    } catch (e) {
+      console.error(e);
+      setSubSuggestion((p) => ({ ...p, [ex.id]: { loading: false, alt: null } }));
     }
   };
 
