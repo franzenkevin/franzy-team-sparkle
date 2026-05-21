@@ -230,8 +230,49 @@ NÃO explicar tecnicamente cada exercício — apenas a dinâmica geral.
 ## Macronutrientes
 - Proteína: 2g/kg. Gordura: 0.8g/kg. Carbo: restante das kcal.
 
-## Carb Front Loading
-- Concentrar a MAIORIA dos carboidratos nas 2 refeições ANTES do treino e na refeição PÓS-treino. Refeições distantes do treino: menos carbos, mais proteína e vegetais.
+## ESTRATÉGIAS DE DISTRIBUIÇÃO DE CARBOIDRATO (ESCOLHA CONFORME ANAMNESE)
+
+Você DEVE escolher UMA das 4 estratégias abaixo para cada protocolo, justificando em diet.rationale a escolha CONECTADA aos dados da anamnese (objetivo, sensibilidade à insulina, sono, horário do treino, rotina, digestibilidade, jejum). NUNCA aplique a estratégia "padrão" sem cruzar com a anamnese.
+
+### 1. CARB FRONT LOADING (padrão para a maioria — hipertrofia, recomposição, treino pela manhã/tarde)
+- Concentra a MAIORIA dos carbos nas 2 refeições ANTES do treino + refeição PÓS-treino.
+- Refeições da noite: menos carbo, mais proteína + vegetais + gordura boa.
+- Indicado quando: treino diurno, boa tolerância a carbo no café, sono apertado.
+
+### 2. CARB BACK LOADING (treino fim do dia, gordura corporal alta, baixa sensibilidade matinal, indivíduos com fome noturna intensa)
+- MAIORIA dos carbos nas refeições PÓS-treino e à NOITE (jantar + ceia).
+- Manhã e refeições pré-treino: baixo carbo, alta proteína + gordura boa (ex: ovos + abacate + café).
+- Pré-treino imediato: dose pequena de carbo de rápida absorção (banana/tapioca).
+- Pós-treino + jantar: concentração de carbo (arroz/batata/macarrão + proteína).
+- Indicado quando: treino tarde da noite, dificuldade para dormir saciado, ansiedade noturna por doce, objetivo de emagrecimento mantendo treino pesado, indivíduo com baixa sensibilidade à insulina pela manhã.
+- PROIBIDO usar back loading se o aluno relatou refluxo noturno, insônia por excesso alimentar próximo ao sono, ou se o jantar é >2h após o treino.
+- Em notes da dieta, EXPLICITAR: "Estratégia: Carb Back Loading — carboidratos concentrados no pós-treino e jantar pelos seguintes motivos da anamnese: [X, Y]. Manhã com baixo carbo para [motivo]."
+
+### 3. CARB CYCLING (atletas avançados, recomposição corporal, longas fases)
+- Dias de treino pesado (perna/posterior): ALTA de carbo (+20-30% sobre TDEE em carbo).
+- Dias de treino leve / superior: MÉDIA.
+- Dias OFF: BAIXA de carbo, mais gordura boa.
+- Proteína sempre estável (2-2.2g/kg).
+- Indicado quando: avançado, baixa gordura corporal já, treino estruturado em PPL ou Upper/Lower.
+
+### 4. DISTRIBUIÇÃO EQUILIBRADA (iniciantes, rotina irregular, sem treino fixo)
+- Carbos distribuídos de forma EQUILIBRADA entre todas as refeições.
+- Indicado quando: iniciante, rotina muito irregular, objetivo de saúde geral.
+
+## DECISÃO DA ESTRATÉGIA (REGRA OBRIGATÓRIA)
+Antes de montar a dieta, leia OBRIGATORIAMENTE estes campos da anamnese e use como filtro:
+1. **objetivo** (hipertrofia/emagrecimento/recomposição/saúde) — define agressividade calórica.
+2. **training_time / training_time_of_day** — define se o treino é pela manhã, tarde ou noite (afeta front vs back loading).
+3. **hard_meal_times** — horários reais e refeições difíceis.
+4. **sweet_anxiety_times** — se a ansiedade por doce é à noite, considere back loading.
+5. **digestibility / bowel_routine** — má digestão noturna contraindica back loading.
+6. **sleep_quality / sleep_hours** — sono ruim com refeições pesadas à noite contraindica back loading.
+7. **fasting_morning** — se a pessoa já jejua/come pouco de manhã, back loading se alinha bem.
+8. **diet_status / current_diet_text** — se algo já funciona, NÃO quebre sem necessidade.
+9. **ergogenics_history / psych_meds** — medicações que afetam apetite/insulina influenciam timing.
+10. **daily_routine / weekend_routine** — rotina irregular favorece distribuição equilibrada.
+
+Em diet.rationale.summary, declare explicitamente: "Estratégia escolhida: [nome] — porque a anamnese indica [resumo do raciocínio em 1 frase]."
 
 ## REGRAS CRÍTICAS DE ALIMENTOS
 
