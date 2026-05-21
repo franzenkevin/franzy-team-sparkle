@@ -125,12 +125,10 @@ function AdminFoodsPage() {
           <p className="text-sm text-muted-foreground">{list.length} alimentos cadastrados — valores por porção em gramas.</p>
         </div>
         <div className="flex gap-2">
-          {list.length === 0 && (
-            <Button variant="outline" size="sm" onClick={seedFromTaco} disabled={seeding}>
-              {seeding ? <Loader2 className="animate-spin mr-1" size={14}/> : null}
-              Importar base TACO/TBCA
-            </Button>
-          )}
+          <Button variant="outline" size="sm" onClick={seedFromTaco} disabled={seeding}>
+            {seeding ? <Loader2 className="animate-spin mr-1" size={14}/> : null}
+            Importar base TACO/TBCA
+          </Button>
           <Button size="sm" onClick={() => setSelected(blank())}>
             <Plus size={14} className="mr-1"/>Novo
           </Button>
