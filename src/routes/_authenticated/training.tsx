@@ -146,82 +146,85 @@ function TrainingPage() {
   // Load saved logs for selected day
   useEffect(() => {
     if (!protocol || !day) return;
+    // Inicializa séries vazias IMEDIATAMENTE para o usuário ver os campos sem esperar I/O
+    const blank: Record<string, WorkoutSet[]> = {};
+    for (const ex of day.exercises) {
+      const validCount = Math.min(Math.max(Number(ex.sets) || 3, 1), 6);
+      const warmupCount = Math.min(
+        Math.max(ex.warmupSets === undefined ? 2 : Number(ex.warmupSets) || 0, 0),
+        3,
+      );
+      blank[ex.id] = Array.from({ length: warmupCount + validCount }, (_, idx) => ({
+        type: (idx < warmupCount ? "warmup" : "valid") as "warmup" | "valid",
+        weight: 0,
+        reps: 0,
+        rpe: 0,
+        completed: false,
+      }));
+    }
+    setExerciseSets(blank);
+
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data: logs } = await supabase
-        .from("workout_logs")
-        .select("exercise_id, sets")
-        .eq("user_id", user.id)
-        .eq("protocol_id", protocol.id)
-        .eq("day_index", selectedDay)
-        .eq("session_date", todayISO);
+      const exerciseIds = day.exercises.map((e) => e.id);
+      // Paralelizar: hoje, feedback, sessão anterior, vídeos
+      const [{ data: logs }, { data: fb }, prevRes, catRes] = await Promise.all([
+        supabase
+          .from("workout_logs")
+          .select("exercise_id, sets")
+          .eq("user_id", user.id)
+          .eq("protocol_id", protocol.id)
+          .eq("day_index", selectedDay)
+          .eq("session_date", todayISO),
+        supabase
+          .from("workout_feedback")
+          .select("id, rating, notes")
+          .eq("user_id", user.id)
+          .eq("protocol_id", protocol.id)
+          .eq("day_index", selectedDay)
+          .eq("session_date", todayISO)
+          .maybeSingle(),
+        exerciseIds.length > 0
+          ? supabase
+              .from("workout_logs")
+              .select("exercise_id, sets, session_date")
+              .eq("user_id", user.id)
+              .in("exercise_id", exerciseIds)
+              .lt("session_date", todayISO)
+              .order("session_date", { ascending: false })
+              .limit(50)
+          : Promise.resolve({ data: [] as { exercise_id: string; sets: WorkoutSet[]; session_date: string }[] }),
+        (() => {
+          const needsVideo = day.exercises.filter((e) => !e.videoUrl && !e.video_url).map((e) => e.id);
+          return needsVideo.length > 0
+            ? supabase.from("exercises").select("id, video_url").in("id", needsVideo)
+            : Promise.resolve({ data: [] as { id: string; video_url: string | null }[] });
+        })(),
+      ]);
 
-      const initial: Record<string, WorkoutSet[]> = {};
+      const initial: Record<string, WorkoutSet[]> = { ...blank };
       for (const ex of day.exercises) {
         const saved = logs?.find((l) => l.exercise_id === ex.id);
         if (saved) {
           initial[ex.id] = saved.sets as WorkoutSet[];
-        } else {
-          const validCount = Math.min(Math.max(Number(ex.sets) || 3, 1), 6);
-          // 2 séries de aquecimento fixas por padrão (sobrescritível pelo coach via warmupSets)
-          const warmupCount = Math.min(
-            Math.max(ex.warmupSets === undefined ? 2 : Number(ex.warmupSets) || 0, 0),
-            3,
-          );
-          initial[ex.id] = Array.from({ length: warmupCount + validCount }, (_, idx) => ({
-            type: (idx < warmupCount ? "warmup" : "valid") as "warmup" | "valid",
-            weight: 0,
-            reps: 0,
-              rpe: 0,
-            completed: false,
-          }));
         }
       }
       setExerciseSets(initial);
 
-      // Load today's feedback for this day, if any
-      const { data: fb } = await supabase
-        .from("workout_feedback")
-        .select("id, rating, notes")
-        .eq("user_id", user.id)
-        .eq("protocol_id", protocol.id)
-        .eq("day_index", selectedDay)
-        .eq("session_date", todayISO)
-        .maybeSingle();
       setFeedbackId(fb?.id ?? null);
       setFeedbackRating(fb?.rating ?? 0);
       setFeedbackNotes(fb?.notes ?? "");
 
-      // Load previous session per exercise (most recent before today)
-      const exerciseIds = day.exercises.map((e) => e.id);
-      if (exerciseIds.length > 0) {
-        const { data: prev } = await supabase
-          .from("workout_logs")
-          .select("exercise_id, sets, session_date")
-          .eq("user_id", user.id)
-          .in("exercise_id", exerciseIds)
-          .lt("session_date", todayISO)
-          .order("session_date", { ascending: false })
-          .limit(50);
-        const prevMap: Record<string, WorkoutSet[]> = {};
-        for (const row of prev ?? []) {
-          if (!prevMap[row.exercise_id]) prevMap[row.exercise_id] = row.sets as WorkoutSet[];
-        }
-        setPreviousSets(prevMap);
-
-        // Fetch missing video URLs from exercises catalog
-        const needsVideo = day.exercises.filter((e) => !e.videoUrl && !e.video_url).map((e) => e.id);
-        if (needsVideo.length > 0) {
-          const { data: cat } = await supabase
-            .from("exercises").select("id, video_url").in("id", needsVideo);
-          const map: Record<string, string> = {};
-          for (const c of cat ?? []) if (c.video_url) map[c.id as string] = c.video_url as string;
-          setExerciseVideos(map);
-        } else {
-          setExerciseVideos({});
-        }
+      const prevMap: Record<string, WorkoutSet[]> = {};
+      for (const row of prevRes.data ?? []) {
+        if (!prevMap[row.exercise_id]) prevMap[row.exercise_id] = row.sets as WorkoutSet[];
       }
+      setPreviousSets(prevMap);
+
+      const vmap: Record<string, string> = {};
+      for (const c of catRes.data ?? []) if (c.video_url) vmap[c.id as string] = c.video_url as string;
+      setExerciseVideos(vmap);
     })();
   }, [protocol?.id, selectedDay, day]);
 
@@ -567,6 +570,9 @@ function TrainingPage() {
                   const video = ex.videoUrl || ex.video_url || exerciseVideos[ex.id];
                   const isExpanded = expandedEx[ex.id] ?? false;
                   const sub = subSuggestion[ex.id];
+                  const prevSets = previousSets[ex.id];
+                  const lastValid = prevSets?.filter((s) => s.type === "valid" && (s.weight || s.reps)) ?? [];
+                  const lastTop = lastValid.length > 0 ? lastValid[lastValid.length - 1] : null;
                   return (
                     <div key={ex.id} className="rounded-xl border border-border bg-card p-5">
                       <div className="flex items-start justify-between gap-3">
@@ -577,6 +583,16 @@ function TrainingPage() {
                             {ex.reps ? ` de ${ex.reps} reps (última na falha)` : ""}
                             {ex.rest ? ` • Descanso: ${ex.rest}` : ""}
                           </p>
+                          {lastTop && (
+                            <p className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-1 rounded-md bg-primary/10 text-primary border border-primary/30">
+                              <Target size={11} /> Última sessão: {lastTop.weight || 0}kg × {lastTop.reps || 0} reps
+                              {lastValid.length > 1 && (
+                                <span className="text-muted-foreground font-normal">
+                                  {" "}· top {Math.max(...lastValid.map((s) => Number(s.weight) || 0))}kg
+                                </span>
+                              )}
+                            </p>
+                          )}
                         </div>
                         <Button size="sm" variant="ghost" onClick={() => setExpandedEx((p) => ({ ...p, [ex.id]: !isExpanded }))}>
                           {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}

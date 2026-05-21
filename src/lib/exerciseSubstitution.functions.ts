@@ -58,10 +58,21 @@ export const suggestExerciseSubstitution = createServerFn({ method: "POST" })
 2) Musculatura agonista e sinergista (mesmos grupos primários, mesma cabeça/região quando aplicável: ex. peitoral clavicular vs esternal, deltoide anterior/medial/posterior, isquiotibiais vs glúteo).
 3) Amplitude articular e curva de resistência (ROM equivalente, pico de tensão na mesma porção do movimento).
 4) Tipo de contração e estabilidade exigida (livre vs guiada, bilateral vs unilateral).
-5) Equipamento disponível na lista (não invente exercício fora da lista).
+5) Equipamento DIFERENTE do original (o aluno está pedindo troca por NÃO TER o equipamento — nunca devolva o mesmo exercício com outro nome).
+
+REGRAS ANTI-SINÔNIMO (CRÍTICO):
+- NÃO devolva um candidato que seja apenas o MESMO exercício renomeado. Exemplos de sinônimos PROIBIDOS para troca:
+  • "Pulldown com corda" ≡ "Pulôver na polia alta" ≡ "Straight-arm pulldown" — são o MESMO movimento (extensão de ombro com cotovelo travado).
+  • "Remada baixa" ≡ "Remada sentado na polia".
+  • "Cadeira extensora" ≡ "Extensão de joelho na máquina".
+  • "Crucifixo invertido" ≡ "Voador invertido" ≡ "Reverse fly".
+  • "Stiff" ≡ "RDL" ≡ "Romanian deadlift".
+  • "Tríceps pulley barra" ≡ "Tríceps corda" (variação de pegada do mesmo padrão — só troque se o motivo for pegada/punho).
+- Se TODOS os candidatos forem sinônimos, escolha o que muda o EQUIPAMENTO (livre↔máquina, cabo↔halter), nunca apenas o nome.
+- Padrão de movimento DEVE ser preservado, mas o EXERCÍCIO deve ser claramente diferente em equipamento ou posicionamento.
 
 Responda APENAS com JSON válido neste formato:
-{"id":"<id do candidato>","rationale":"<frase curta em português explicando o porquê do match (vetor, músculos, amplitude)>"}`;
+{"id":"<id do candidato>","rationale":"<frase curta em português explicando o porquê do match (vetor, músculos, amplitude) e por que NÃO é apenas sinônimo do original>"}`;
 
     const user = `Exercício original: ${src?.name ?? data.exerciseName}
 Categoria: ${src?.category ?? "?"}

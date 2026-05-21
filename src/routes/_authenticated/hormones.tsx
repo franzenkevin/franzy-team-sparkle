@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Pill, Loader2, AlertTriangle, MessageSquare } from "lucide-react";
+import { ArrowLeft, Pill, Loader2, AlertTriangle, MessageSquare, FlaskConical } from "lucide-react";
 import { CoachContactDialog } from "@/components/CoachContactDialog";
 
 export const Route = createFileRoute("/_authenticated/hormones")({
@@ -91,6 +91,21 @@ function HormonesPage() {
           ))}
         </div>
       )}
+
+      <Card className="mt-6 p-4 flex items-center justify-between gap-3">
+        <div className="flex items-start gap-3">
+          <FlaskConical className="text-primary shrink-0 mt-0.5" size={18} />
+          <div>
+            <p className="text-sm font-medium">Exames laboratoriais</p>
+            <p className="text-xs text-muted-foreground">
+              Suba seus exames e veja a lista recomendada para acompanhamento hormonal.
+            </p>
+          </div>
+        </div>
+        <Button asChild size="sm" variant="outline">
+          <Link to="/exams">Ir para exames</Link>
+        </Button>
+      </Card>
 
       <div className="mt-6">
         <CoachContactDialog

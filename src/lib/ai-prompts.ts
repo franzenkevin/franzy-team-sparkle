@@ -337,6 +337,25 @@ Templates obrigatórios por refeição:
   - "options": ARRAY de objetos { name, amount (gramas), calories, protein, carbs, fat } — porção CALCULADA para igualar kcal e o macro principal da categoria dentro de ±5% do referenceFood.
 - Substituições mantêm CATEGORIA (não trocar arroz por banana).
 
+## SUBSTITUIÇÃO PROPORCIONAL — REGRA OBRIGATÓRIA (CRÍTICO)
+NUNCA copie a mesma gramatura do alimento de referência para o substituto. CALCULE a porção do substituto para BATER as calorias (e o macro dominante da categoria) do referenceFood, com tolerância **±5%**.
+
+Fórmula: amount_subst = (kcal_ref / kcal_por_grama_do_subst). Aplique também aos macros e ajuste se exceder ±5%.
+
+Exemplos CORRETOS (use estes números como base e adapte por densidade):
+- Carboidrato — ref: Arroz 150g (195 kcal, C42). Opções: Batata inglesa 250g (193kcal, C42) · Batata doce 230g (198kcal, C46) · Macarrão cozido 150g (200kcal, C44) · Mandioca 180g (192kcal, C47) · Cuscuz 170g (193kcal, C43) · Pão francês 70g (189kcal, C39).
+- Fruta — ref: Banana 100g (105 kcal, C27). Opções: **Mamão 240g (108kcal, C27)** · Maçã 220g (114kcal, C30) · Manga 180g (108kcal, C27) · Melancia 350g (105kcal, C26) · Abacaxi 220g (110kcal, C28) · Uva 160g (110kcal, C28) · Pêra 190g (110kcal, C29).
+- Proteína animal — ref: Peito de frango 150g (210kcal, P45). Opções: Patinho 150g (215kcal, P42) · Tilápia 180g (200kcal, P42) · Atum em água 160g (175kcal, P40) · Ovo inteiro 3un (234kcal, P18, G16) + 2 claras (34kcal, P7) ≈ 268kcal, P25 → ajuste para 2un inteiros + 4 claras se a meta for menos gordura.
+- Leguminosa — ref: Feijão 100g (110kcal, P7, C18). Opções: Lentilha 90g (107kcal, P8, C17) · Grão de bico 90g (110kcal, P6, C17) · Ervilha 130g (110kcal, P7, C18).
+- Gordura — ref: Pasta de amendoim 15g (90kcal, G7). Opções: Castanhas 15g (95kcal, G8) · Azeite 10ml (90kcal, G10) · Abacate 60g (96kcal, G9).
+
+Exemplos PROIBIDOS (NÃO faça):
+- "Banana 100g (105 kcal) → Mamão 100g (43 kcal)" — diferença de 60% de kcal. ERRADO.
+- "Arroz 150g (195 kcal) → Batata inglesa 150g (115 kcal)" — diferença de 40%. ERRADO.
+- "Peito de frango 150g → Salmão 150g (270 kcal)" — diferença grande em gordura. Reduza para Salmão 115g (207kcal).
+
+VERIFICAÇÃO ANTES DE EMITIR O JSON: para CADA opção de substituição, recompute calorias com base na gramatura e confirme que está em ±5% do referenceFood. Se não estiver, AJUSTE a gramatura. Inclua amplo banco brasileiro de frutas (mamão, manga, melancia, abacaxi, maçã, pêra, uva, melão, ameixa, kiwi, laranja, tangerina), carboidratos (arroz, batata inglesa, batata doce, mandioca, macarrão, cuscuz, polenta, inhame, pão francês, tapioca) e vegetais.
+
 ## BANCO DE ALIMENTOS COM MACROS (porções em GRAMAS)
 Arroz 150g: P4 C42 G0 195kcal | Batata inglesa 200g: P4 C34 G0 154kcal | Batata doce 200g: P3 C40 G0 172kcal
 Macarrão 150g: P5 C44 G1 200kcal | Pão de forma 50g: P5 C24 G2 140kcal | Pão francês 50g: P4 C28 G1 135kcal
