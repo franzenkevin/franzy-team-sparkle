@@ -6,6 +6,7 @@ import { PROTOCOL_SYSTEM_PROMPT, PROTOCOL_CYCLE_AND_REANALYSIS_SECTION } from ".
 import { getMethodologyPromptSection } from "./workoutRules";
 import { generateProtocol as fallbackProtocol, type ProfileLike } from "./generateProtocol";
 import { extractJsonFromResponse } from "./ai-json";
+import { enrichTrainingWithCatalog } from "./enrichTraining";
 
 export const generateProtocol = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -115,6 +116,13 @@ Aplique o CHECKLIST DO COMITÊ DE 3 PROFISSIONAIS antes de gerar o JSON. Respond
       console.warn("[generateProtocol] IA falhou — usando fallback rule-based:", e);
       const fb = fallbackProtocol(profile as ProfileLike);
       out = { training: fb.training, diet: fb.diet, summary: fb.summary };
+    }
+
+    // Enriquecer treino com vídeo/instruções da base de exercícios
+    try {
+      out.training = await enrichTrainingWithCatalog(out.training, supabase);
+    } catch (e) {
+      console.warn("[generateProtocol] falha ao enriquecer com catálogo:", e);
     }
 
     // Nunca substitui o ativo: cria/atualiza um registro pending_review.
