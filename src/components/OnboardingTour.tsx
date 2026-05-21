@@ -1,17 +1,16 @@
 import { useEffect, useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Dumbbell, Apple, Bot, LineChart, Sparkles, ChevronRight, ChevronLeft, X } from "lucide-react";
+import { Dumbbell, Apple, FlaskConical, MessageSquare, LifeBuoy, ChevronRight, ChevronLeft, X } from "lucide-react";
 
 const KEY = "franzen.tourSeen.v1";
 
 const steps = [
-  { icon: LayoutDashboard, title: "Bem-vindo!", text: "Aqui está seu painel: treino do dia, dieta e progresso em um só lugar." },
-  { icon: Dumbbell, title: "Treino", text: "Acesse seu treino do dia, marque as séries e veja seu histórico." },
-  { icon: Apple, title: "Dieta", text: "Veja suas refeições, faça substituições e baixe a lista de compras." },
-  { icon: Bot, title: "Coach IA", text: "Tire dúvidas a qualquer hora com nossa IA treinada para hipertrofia." },
-  { icon: LineChart, title: "Progresso", text: "Registre check-ins, feedbacks e veja a evolução de peso, fotos e adesão." },
-  { icon: Sparkles, title: "Análise corporal IA", text: "Envie 3 fotos e receba uma análise completa do seu físico, postura e recomendações." },
+  { icon: Dumbbell, title: "Treino", text: "Na aba Treino você encontra o treino do dia, vídeo de cada exercício e onde registrar carga e reps." },
+  { icon: Apple, title: "Dieta", text: "Na aba Dieta ficam suas refeições, macros e o diário onde você adiciona o que comeu." },
+  { icon: FlaskConical, title: "Hormônios", text: "Em Hormônios você acompanha a prescrição enviada pelo coach e as orientações de uso." },
+  { icon: MessageSquare, title: "Feedbacks", text: "Mande seus feedbacks semanais e check-ins por aqui — é assim que o coach ajusta seu plano." },
+  { icon: LifeBuoy, title: "Qualquer dúvida", text: "Qualquer dúvida, é só entrar em contato direto com o seu treinador pela aba de mensagens." },
 ];
 
 export function OnboardingTour() {
