@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useProtocolRealtime } from "@/hooks/useProtocolRealtime";
+import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Pill, Loader2, AlertTriangle, MessageSquare, FlaskConical } from "lucide-react";
@@ -25,23 +27,24 @@ function HormonesPage() {
   const [items, setItems] = useState<HormoneItem[]>([]);
   const [version, setVersion] = useState<number | null>(null);
 
-  useEffect(() => {
-    (async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      const user = session?.user;
-      if (!user) { setLoading(false); return; }
-      const { data } = await supabase
-        .from("protocols")
-        .select("hormones, version")
-        .eq("user_id", user.id).eq("status", "active")
-        .order("created_at", { ascending: false })
-        .limit(1).maybeSingle();
-      const arr = Array.isArray(data?.hormones) ? (data!.hormones as HormoneItem[]) : [];
-      setItems(arr);
-      setVersion(data?.version ?? null);
-      setLoading(false);
-    })();
+  const loadProtocol = useCallback(async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
+    if (!user) { setLoading(false); return; }
+    const { data } = await supabase
+      .from("protocols")
+      .select("hormones, version")
+      .eq("user_id", user.id).eq("status", "active")
+      .order("created_at", { ascending: false })
+      .limit(1).maybeSingle();
+    const arr = Array.isArray(data?.hormones) ? (data!.hormones as HormoneItem[]) : [];
+    setItems(arr);
+    setVersion(data?.version ?? null);
+    setLoading(false);
   }, []);
+
+  useEffect(() => { loadProtocol(); }, [loadProtocol]);
+  useProtocolRealtime(() => { loadProtocol(); toast.info("Prescrição hormonal atualizada"); });
 
   if (loading) {
     return <div className="min-h-[60vh] grid place-items-center"><Loader2 className="animate-spin text-primary" /></div>;
