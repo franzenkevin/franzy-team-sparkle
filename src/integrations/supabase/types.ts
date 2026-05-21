@@ -855,6 +855,48 @@ export type Database = {
         }
         Relationships: []
       }
+      user_exams: {
+        Row: {
+          created_at: string
+          exam_date: string | null
+          exam_name: string
+          exam_type: string | null
+          file_mime: string | null
+          file_path: string
+          file_size: number | null
+          id: string
+          notes: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          exam_date?: string | null
+          exam_name: string
+          exam_type?: string | null
+          file_mime?: string | null
+          file_path: string
+          file_size?: number | null
+          id?: string
+          notes?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          exam_date?: string | null
+          exam_name?: string
+          exam_type?: string | null
+          file_mime?: string | null
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          notes?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
