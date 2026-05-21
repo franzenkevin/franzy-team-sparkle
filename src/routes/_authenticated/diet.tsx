@@ -15,7 +15,26 @@ export const Route = createFileRoute("/_authenticated/diet")({
 
 type Food = { name: string; amount?: string; calories?: number; protein?: number; carbs?: number; fat?: number };
 type MealOption = { label?: string; foods?: Food[] };
-type Meal = { label: string; time?: string; options?: MealOption[] };
+type SubstitutionOption = {
+  name: string;
+  amount?: string | number;
+  calories?: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
+};
+type Substitution = {
+  category: string;
+  referenceFood?: SubstitutionOption;
+  options?: SubstitutionOption[];
+};
+type Meal = {
+  label: string;
+  name?: string;
+  time?: string;
+  options?: MealOption[];
+  substitutions?: Substitution[];
+};
 type Supplement = { name: string; dose?: string; timing?: string; notes?: string };
 type Diet = {
   totalCalories?: number;
@@ -196,6 +215,56 @@ function DietPage() {
                             </div>
                           </div>
                         ))}
+
+                        {Array.isArray(meal.substitutions) && meal.substitutions.length > 0 && (
+                          <div className="pt-3 mt-1 border-t border-border/40 space-y-2">
+                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                              Substituições equivalentes (±5% kcal/macros)
+                            </p>
+                            {meal.substitutions.map((sub, si) => (
+                              <div key={si} className="rounded-md bg-background/40 border border-border/60 p-2">
+                                <div className="flex items-center gap-2 mb-1.5">
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/15 text-primary font-medium">
+                                    {sub.category}
+                                  </span>
+                                  {sub.referenceFood?.name && (
+                                    <span className="text-[11px] text-muted-foreground">
+                                      base: {sub.referenceFood.name} {sub.referenceFood.amount ? `(${sub.referenceFood.amount})` : ""}
+                                    </span>
+                                  )}
+                                </div>
+                                {Array.isArray(sub.options) && sub.options.length > 0 ? (
+                                  <div className="space-y-1">
+                                    {sub.options.map((o, oi2) => (
+                                      <div key={oi2} className="flex items-center justify-between text-xs py-0.5">
+                                        <div className="flex-1 min-w-0">
+                                          <span className="font-medium">{o.name}</span>{" "}
+                                          {o.amount != null && (
+                                            <span className="text-primary/80 font-mono text-[11px]">
+                                              {typeof o.amount === "number" ? `${o.amount}g` : o.amount}
+                                            </span>
+                                          )}
+                                        </div>
+                                        <div className="text-right">
+                                          <span className="text-[10px] text-muted-foreground block">
+                                            {Math.round(Number(o.calories ?? 0))} kcal
+                                          </span>
+                                          <span className="text-[10px] text-muted-foreground">
+                                            P:{Math.round(Number(o.protein ?? 0))} C:{Math.round(Number(o.carbs ?? 0))} G:{Math.round(Number(o.fat ?? 0))}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p className="text-[11px] text-muted-foreground italic">
+                                    Sem alternativas cadastradas — peça ao coach para incluir.
+                                  </p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

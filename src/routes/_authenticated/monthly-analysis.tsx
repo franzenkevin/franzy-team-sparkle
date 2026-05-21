@@ -158,10 +158,12 @@ function MonthlyPage() {
       </Card>
       )}
 
-      <h2 className="font-heading font-semibold mt-8 mb-3">Histórico</h2>
+      <h2 className="font-heading font-semibold mt-8 mb-3">Última avaliação postural</h2>
       <div className="space-y-3">
-        {list.length === 0 && <p className="text-sm text-muted-foreground">Sem análises ainda.</p>}
-        {list.map((m) => (
+        {list.length === 0 && (
+          <p className="text-sm text-muted-foreground">Ainda não há avaliação registrada.</p>
+        )}
+        {list.slice(0, 1).map((m) => (
           <Card key={m.id} className="p-4">
             <div className="flex justify-between text-sm"><strong>{m.analysis_date}</strong><span className="text-muted-foreground">{m.weight ?? "—"}kg</span></div>
             {(m.photo_front || m.photo_side || m.photo_back) && (
@@ -192,6 +194,11 @@ function MonthlyPage() {
             )}
           </Card>
         ))}
+        {list.length > 1 && (
+          <p className="text-xs text-muted-foreground text-center pt-1">
+            Apenas a última avaliação fica visível aqui. O histórico completo está no seu Progresso.
+          </p>
+        )}
       </div>
     </div>
   );

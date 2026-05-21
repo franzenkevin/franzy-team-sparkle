@@ -1,13 +1,13 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Dumbbell, Apple, Pill, Heart } from "lucide-react";
+import { LayoutDashboard, Dumbbell, Apple, FlaskConical, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const items = [
   { to: "/dashboard", label: "Home", icon: LayoutDashboard },
   { to: "/training", label: "Treino", icon: Dumbbell },
   { to: "/diet", label: "Dieta", icon: Apple },
-  { to: "/hormones", label: "Hormônios", icon: Pill },
-  { to: "/feedback/weekly", label: "Feedback", icon: Heart },
+  { to: "/exams", label: "Exames", icon: FlaskConical },
+  { to: "/feedback", label: "Feedback", icon: Heart },
 ] as const;
 
 export function BottomNav() {

@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { BookOpen, Plus, Search, Trash2, Loader2, Barcode } from "lucide-react";
+import { BookOpen, Plus, Search, Trash2, Loader2, Barcode, AlertTriangle } from "lucide-react";
 import {
   searchLocalFoods,
   searchOpenFoodFacts,
@@ -124,6 +124,33 @@ export function FoodDiary({ targets }: { targets?: Targets }) {
         <Macro label="Carb" value={totals.carbs} target={targets?.carbs} accent="text-amber-400" unit="g" />
         <Macro label="Gord" value={totals.fat} target={targets?.fat} accent="text-rose-400" unit="g" />
       </div>
+
+      {targets?.kcal && totals.kcal > targets.kcal * 0.95 && (
+        <div
+          className={`mx-4 mt-3 rounded-md border p-3 flex items-start gap-2 text-xs ${
+            totals.kcal > targets.kcal
+              ? "border-rose-500/40 bg-rose-500/10 text-rose-200"
+              : "border-amber-500/40 bg-amber-500/10 text-amber-200"
+          }`}
+        >
+          <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+          <div className="flex-1">
+            {totals.kcal > targets.kcal ? (
+              <p>
+                <strong>Você ultrapassou suas calorias do dia</strong> —{" "}
+                {Math.round(totals.kcal - targets.kcal)} kcal acima da meta
+                ({Math.round(targets.kcal)} kcal). Anote no feedback diário da dieta o motivo do ajuste.
+              </p>
+            ) : (
+              <p>
+                Você está chegando perto da meta calórica do dia
+                ({Math.round(totals.kcal)} / {Math.round(targets.kcal)} kcal).
+                Cuidado nas próximas refeições para não ultrapassar.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <div className="p-8 grid place-items-center"><Loader2 className="animate-spin text-primary" /></div>

@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet, redirect, useLocation } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider, useSidebar } from "@/components/ui/sidebar";
+import { Menu } from "lucide-react";
 import { AppSidebar } from "@/components/AppSidebar";
 import { BottomNav } from "@/components/BottomNav";
 import { InstallPwaPrompt } from "@/components/InstallPwaPrompt";
@@ -44,8 +45,8 @@ function AuthenticatedLayout() {
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="h-12 flex items-center gap-2 border-b border-border px-3 sticky top-0 bg-background/80 backdrop-blur z-30">
-            <SidebarTrigger />
+          <header className="h-14 flex items-center gap-2 border-b border-border px-3 sticky top-0 bg-background/80 backdrop-blur z-30">
+            <MenuButton />
           </header>
           <main className="flex-1 min-w-0">
             <Outlet />
@@ -57,5 +58,20 @@ function AuthenticatedLayout() {
       <InstallPwaPrompt />
       <OnboardingTour />
     </SidebarProvider>
+  );
+}
+
+function MenuButton() {
+  const { toggleSidebar } = useSidebar();
+  return (
+    <button
+      type="button"
+      onClick={toggleSidebar}
+      className="inline-flex items-center gap-2 rounded-md border border-border bg-card/50 hover:bg-accent hover:text-accent-foreground transition px-3 py-2 text-sm font-medium"
+      aria-label="Abrir menu"
+    >
+      <Menu size={20} />
+      <span>Menu</span>
+    </button>
   );
 }

@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import {
   Dumbbell, Apple, LineChart, Bell,
-  Coffee, Flame, Calendar, CalendarDays, Pill, ChevronRight, MessageSquare, Activity,
+  Coffee, Flame, Calendar, CalendarDays, Pill, ChevronRight, MessageSquare, Activity, FlaskConical, ClipboardList,
 } from "lucide-react";
 import { useReminders } from "@/hooks/useReminders";
 import { NotificationBell } from "@/components/NotificationBell";
@@ -281,8 +281,9 @@ function DashboardPage() {
           <DashCard to="/progress" icon={LineChart} title="Progresso" desc="Check-ins e fotos" />
         </div>
 
-        <div className="mt-4 grid gap-3 grid-cols-2 md:grid-cols-2">
-          <DashCard to="/feedback/weekly" icon={CalendarDays} title="Feedback" desc="Semanal" />
+        <div className="mt-4 grid gap-3 grid-cols-2 md:grid-cols-3">
+          <DashCard to="/feedback" icon={ClipboardList} title="Feedback" desc="Semanal e mensal" />
+          <DashCard to="/exams" icon={FlaskConical} title="Exames" desc="Laboratoriais e imagens" />
           <CoachContactDialog
             trigger={
               <button className="text-left rounded-xl border border-border bg-card p-4 sm:p-5 hover:border-primary transition flex flex-col gap-2">
