@@ -40,7 +40,7 @@ import { Route as AuthenticatedAdminMessagesRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminLibraryRouteImport } from './routes/_authenticated/admin.library'
 import { Route as AuthenticatedAdminFoodsRouteImport } from './routes/_authenticated/admin.foods'
 import { Route as AuthenticatedAdminExercisesRouteImport } from './routes/_authenticated/admin.exercises'
-import { Route as AuthenticatedAdminClientsRouteImport } from './routes/_authenticated/admin.clients'
+import { Route as AuthenticatedAdminClientsIndexRouteImport } from './routes/_authenticated/admin.clients.index'
 import { Route as ApiPublicShareTokenRouteImport } from './routes/api/public/share.$token'
 import { Route as ApiPublicShareOgTokenRouteImport } from './routes/api/public/share-og.$token'
 import { Route as AuthenticatedAdminClientsIdRouteImport } from './routes/_authenticated/admin.clients.$id'
@@ -207,10 +207,10 @@ const AuthenticatedAdminExercisesRoute =
     path: '/exercises',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
-const AuthenticatedAdminClientsRoute =
-  AuthenticatedAdminClientsRouteImport.update({
-    id: '/clients',
-    path: '/clients',
+const AuthenticatedAdminClientsIndexRoute =
+  AuthenticatedAdminClientsIndexRouteImport.update({
+    id: '/clients/',
+    path: '/clients/',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const ApiPublicShareTokenRoute = ApiPublicShareTokenRouteImport.update({
@@ -225,9 +225,9 @@ const ApiPublicShareOgTokenRoute = ApiPublicShareOgTokenRouteImport.update({
 } as any)
 const AuthenticatedAdminClientsIdRoute =
   AuthenticatedAdminClientsIdRouteImport.update({
-    id: '/$id',
-    path: '/$id',
-    getParentRoute: () => AuthenticatedAdminClientsRoute,
+    id: '/clients/$id',
+    path: '/clients/$id',
+    getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -254,7 +254,6 @@ export interface FileRoutesByFullPath {
   '/admin/login': typeof AdminLoginRoute
   '/api/coach': typeof ApiCoachRoute
   '/s/$token': typeof STokenRoute
-  '/admin/clients': typeof AuthenticatedAdminClientsRouteWithChildren
   '/admin/exercises': typeof AuthenticatedAdminExercisesRoute
   '/admin/foods': typeof AuthenticatedAdminFoodsRoute
   '/admin/library': typeof AuthenticatedAdminLibraryRoute
@@ -265,6 +264,7 @@ export interface FileRoutesByFullPath {
   '/admin/clients/$id': typeof AuthenticatedAdminClientsIdRoute
   '/api/public/share-og/$token': typeof ApiPublicShareOgTokenRoute
   '/api/public/share/$token': typeof ApiPublicShareTokenRoute
+  '/admin/clients/': typeof AuthenticatedAdminClientsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -289,7 +289,6 @@ export interface FileRoutesByTo {
   '/admin/login': typeof AdminLoginRoute
   '/api/coach': typeof ApiCoachRoute
   '/s/$token': typeof STokenRoute
-  '/admin/clients': typeof AuthenticatedAdminClientsRouteWithChildren
   '/admin/exercises': typeof AuthenticatedAdminExercisesRoute
   '/admin/foods': typeof AuthenticatedAdminFoodsRoute
   '/admin/library': typeof AuthenticatedAdminLibraryRoute
@@ -300,6 +299,7 @@ export interface FileRoutesByTo {
   '/admin/clients/$id': typeof AuthenticatedAdminClientsIdRoute
   '/api/public/share-og/$token': typeof ApiPublicShareOgTokenRoute
   '/api/public/share/$token': typeof ApiPublicShareTokenRoute
+  '/admin/clients': typeof AuthenticatedAdminClientsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -327,7 +327,6 @@ export interface FileRoutesById {
   '/admin/login': typeof AdminLoginRoute
   '/api/coach': typeof ApiCoachRoute
   '/s/$token': typeof STokenRoute
-  '/_authenticated/admin/clients': typeof AuthenticatedAdminClientsRouteWithChildren
   '/_authenticated/admin/exercises': typeof AuthenticatedAdminExercisesRoute
   '/_authenticated/admin/foods': typeof AuthenticatedAdminFoodsRoute
   '/_authenticated/admin/library': typeof AuthenticatedAdminLibraryRoute
@@ -338,6 +337,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/clients/$id': typeof AuthenticatedAdminClientsIdRoute
   '/api/public/share-og/$token': typeof ApiPublicShareOgTokenRoute
   '/api/public/share/$token': typeof ApiPublicShareTokenRoute
+  '/_authenticated/admin/clients/': typeof AuthenticatedAdminClientsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -365,7 +365,6 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/api/coach'
     | '/s/$token'
-    | '/admin/clients'
     | '/admin/exercises'
     | '/admin/foods'
     | '/admin/library'
@@ -376,6 +375,7 @@ export interface FileRouteTypes {
     | '/admin/clients/$id'
     | '/api/public/share-og/$token'
     | '/api/public/share/$token'
+    | '/admin/clients/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -400,7 +400,6 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/api/coach'
     | '/s/$token'
-    | '/admin/clients'
     | '/admin/exercises'
     | '/admin/foods'
     | '/admin/library'
@@ -411,6 +410,7 @@ export interface FileRouteTypes {
     | '/admin/clients/$id'
     | '/api/public/share-og/$token'
     | '/api/public/share/$token'
+    | '/admin/clients'
   id:
     | '__root__'
     | '/'
@@ -437,7 +437,6 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/api/coach'
     | '/s/$token'
-    | '/_authenticated/admin/clients'
     | '/_authenticated/admin/exercises'
     | '/_authenticated/admin/foods'
     | '/_authenticated/admin/library'
@@ -448,6 +447,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/clients/$id'
     | '/api/public/share-og/$token'
     | '/api/public/share/$token'
+    | '/_authenticated/admin/clients/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -683,11 +683,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminExercisesRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
-    '/_authenticated/admin/clients': {
-      id: '/_authenticated/admin/clients'
+    '/_authenticated/admin/clients/': {
+      id: '/_authenticated/admin/clients/'
       path: '/clients'
-      fullPath: '/admin/clients'
-      preLoaderRoute: typeof AuthenticatedAdminClientsRouteImport
+      fullPath: '/admin/clients/'
+      preLoaderRoute: typeof AuthenticatedAdminClientsIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/api/public/share/$token': {
@@ -706,46 +706,34 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/admin/clients/$id': {
       id: '/_authenticated/admin/clients/$id'
-      path: '/$id'
+      path: '/clients/$id'
       fullPath: '/admin/clients/$id'
       preLoaderRoute: typeof AuthenticatedAdminClientsIdRouteImport
-      parentRoute: typeof AuthenticatedAdminClientsRoute
+      parentRoute: typeof AuthenticatedAdminRoute
     }
   }
 }
 
-interface AuthenticatedAdminClientsRouteChildren {
-  AuthenticatedAdminClientsIdRoute: typeof AuthenticatedAdminClientsIdRoute
-}
-
-const AuthenticatedAdminClientsRouteChildren: AuthenticatedAdminClientsRouteChildren =
-  {
-    AuthenticatedAdminClientsIdRoute: AuthenticatedAdminClientsIdRoute,
-  }
-
-const AuthenticatedAdminClientsRouteWithChildren =
-  AuthenticatedAdminClientsRoute._addFileChildren(
-    AuthenticatedAdminClientsRouteChildren,
-  )
-
 interface AuthenticatedAdminRouteChildren {
-  AuthenticatedAdminClientsRoute: typeof AuthenticatedAdminClientsRouteWithChildren
   AuthenticatedAdminExercisesRoute: typeof AuthenticatedAdminExercisesRoute
   AuthenticatedAdminFoodsRoute: typeof AuthenticatedAdminFoodsRoute
   AuthenticatedAdminLibraryRoute: typeof AuthenticatedAdminLibraryRoute
   AuthenticatedAdminMessagesRoute: typeof AuthenticatedAdminMessagesRoute
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
+  AuthenticatedAdminClientsIdRoute: typeof AuthenticatedAdminClientsIdRoute
+  AuthenticatedAdminClientsIndexRoute: typeof AuthenticatedAdminClientsIndexRoute
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
-  AuthenticatedAdminClientsRoute: AuthenticatedAdminClientsRouteWithChildren,
   AuthenticatedAdminExercisesRoute: AuthenticatedAdminExercisesRoute,
   AuthenticatedAdminFoodsRoute: AuthenticatedAdminFoodsRoute,
   AuthenticatedAdminLibraryRoute: AuthenticatedAdminLibraryRoute,
   AuthenticatedAdminMessagesRoute: AuthenticatedAdminMessagesRoute,
   AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
+  AuthenticatedAdminClientsIdRoute: AuthenticatedAdminClientsIdRoute,
+  AuthenticatedAdminClientsIndexRoute: AuthenticatedAdminClientsIndexRoute,
 }
 
 const AuthenticatedAdminRouteWithChildren =
@@ -809,3 +797,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

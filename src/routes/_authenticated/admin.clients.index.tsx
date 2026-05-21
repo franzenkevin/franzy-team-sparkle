@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Search, ChevronRight, Camera, Dumbbell, Apple, FileText, Heart } from "lucide-react";
 
-export const Route = createFileRoute("/_authenticated/admin/clients")({
+export const Route = createFileRoute("/_authenticated/admin/clients/")({
   component: ClientsList,
 });
 
