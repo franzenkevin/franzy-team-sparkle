@@ -105,8 +105,9 @@ function AdminExercisesPage() {
               {filtered.map((e) => (
                 <li key={e.id}>
                   <button
+                    type="button"
                     onClick={() => setSelected(e)}
-                    className={`w-full text-left px-3 py-2 hover:bg-accent/40 transition rounded-md flex items-center justify-between gap-2 ${selected?.id === e.id ? "bg-accent/50" : ""}`}
+                    className={`w-full text-left px-3 py-2 hover:bg-accent/40 transition rounded-md flex items-center justify-between gap-2 cursor-pointer ${selected?.id === e.id ? "bg-accent/50" : ""}`}
                   >
                     <div className="min-w-0">
                       <p className="text-sm font-medium truncate">{e.name}</p>
