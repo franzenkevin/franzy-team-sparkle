@@ -17,11 +17,11 @@ export const suggestExerciseSubstitution = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase } = context;
 
-    // Source exercise context
+    // Source exercise context (lookup by name; id may not exist in catalog)
     const { data: src } = await supabase
       .from("exercises")
       .select("id, name, category, equipment, instructions")
-      .or(`id.eq.${data.exerciseId},name.ilike.${data.exerciseName}`)
+      .ilike("name", data.exerciseName)
       .limit(1)
       .maybeSingle();
 
