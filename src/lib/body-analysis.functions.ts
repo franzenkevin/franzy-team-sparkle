@@ -17,7 +17,9 @@ type Input = {
 
 async function signed(supabase: any, path: string): Promise<string> {
   if (/^https?:\/\//.test(path)) return path;
-  const { data } = await supabase.storage.from("photos").createSignedUrl(path, 3600);
+  const { data } = await supabase.storage.from("photos").createSignedUrl(path, 3600, {
+    transform: { width: 1600, height: 1600, resize: "contain", quality: 80 },
+  });
   return data?.signedUrl || path;
 }
 
@@ -114,7 +116,9 @@ async function ensureAdmin(userId: string) {
 
 async function signedAdmin(path: string): Promise<string> {
   if (/^https?:\/\//.test(path)) return path;
-  const { data } = await supabaseAdmin.storage.from("photos").createSignedUrl(path, 3600);
+  const { data } = await supabaseAdmin.storage.from("photos").createSignedUrl(path, 3600, {
+    transform: { width: 1600, height: 1600, resize: "contain", quality: 80 },
+  });
   return data?.signedUrl || path;
 }
 
