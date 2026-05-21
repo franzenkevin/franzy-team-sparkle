@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { enrichTrainingWithCatalog } from "./enrichTraining";
 
 type ProtocolStatus = "active" | "pending_review" | "archived" | "rejected";
 
@@ -92,6 +93,15 @@ export const adminSaveProtocol = createServerFn({ method: "POST" })
     const status = (["active", "pending_review", "archived", "rejected"] as ProtocolStatus[]).includes(data.status)
       ? data.status
       : "pending_review";
+
+    // Enriquecer treino com vídeo/instruções da base de exercícios
+    let trainingPayload: unknown = data.training;
+    try {
+      trainingPayload = await enrichTrainingWithCatalog(data.training, supabaseAdmin);
+    } catch (e) {
+      console.warn("[adminSaveProtocol] falha ao enriquecer com catálogo:", e);
+    }
+
     if (status === "active") {
       let q = supabaseAdmin.from("protocols").update({ status: "archived" }).eq("user_id", data.targetUserId).eq("status", "active");
       if (data.protocolId) q = q.neq("id", data.protocolId);
@@ -110,7 +120,7 @@ export const adminSaveProtocol = createServerFn({ method: "POST" })
       const { error } = await supabaseAdmin
         .from("protocols")
         .update({
-          training: data.training as any,
+          training: trainingPayload as any,
           diet: data.diet as any,
           hormones: Array.isArray(data.hormones) ? data.hormones as any : [],
           status,
@@ -129,7 +139,7 @@ export const adminSaveProtocol = createServerFn({ method: "POST" })
         .maybeSingle();
       const { error } = await supabaseAdmin.from("protocols").insert({
         user_id: data.targetUserId,
-        training: data.training as any,
+        training: trainingPayload as any,
         diet: data.diet as any,
         hormones: Array.isArray(data.hormones) ? data.hormones as any : [],
         status,
