@@ -841,14 +841,6 @@ function TrainingPage() {
           </div>
         </div>
       )}
-      {swapFor && (
-        <SubstitutionDialog
-          open={!!swapFor}
-          onOpenChange={(v) => !v && setSwapFor(null)}
-          exerciseName={swapFor.name}
-          onPick={(alt) => toast.success(`Sugestão: ${alt.name}. Avise seu coach para atualizar o protocolo.`)}
-        />
-      )}
     </div>
   );
 }
