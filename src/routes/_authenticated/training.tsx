@@ -567,6 +567,9 @@ function TrainingPage() {
                   const video = ex.videoUrl || ex.video_url || exerciseVideos[ex.id];
                   const isExpanded = expandedEx[ex.id] ?? false;
                   const sub = subSuggestion[ex.id];
+                  const prevSets = previousSets[ex.id];
+                  const lastValid = prevSets?.filter((s) => s.type === "valid" && (s.weight || s.reps)) ?? [];
+                  const lastTop = lastValid.length > 0 ? lastValid[lastValid.length - 1] : null;
                   return (
                     <div key={ex.id} className="rounded-xl border border-border bg-card p-5">
                       <div className="flex items-start justify-between gap-3">
@@ -577,6 +580,16 @@ function TrainingPage() {
                             {ex.reps ? ` de ${ex.reps} reps (última na falha)` : ""}
                             {ex.rest ? ` • Descanso: ${ex.rest}` : ""}
                           </p>
+                          {lastTop && (
+                            <p className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-1 rounded-md bg-primary/10 text-primary border border-primary/30">
+                              <Target size={11} /> Última sessão: {lastTop.weight || 0}kg × {lastTop.reps || 0} reps
+                              {lastValid.length > 1 && (
+                                <span className="text-muted-foreground font-normal">
+                                  {" "}· top {Math.max(...lastValid.map((s) => Number(s.weight) || 0))}kg
+                                </span>
+                              )}
+                            </p>
+                          )}
                         </div>
                         <Button size="sm" variant="ghost" onClick={() => setExpandedEx((p) => ({ ...p, [ex.id]: !isExpanded }))}>
                           {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
