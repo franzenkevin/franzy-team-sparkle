@@ -851,8 +851,8 @@ function TrainingPage() {
   );
 }
 
-function EmbeddedVideo({ url }: { url: string }) {
-  const ytMatch = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/);
+function EmbeddedVideo({ url }: { url?: string | null }) {
+  const ytMatch = url ? url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/) : null;
   if (ytMatch) {
     return (
       <div className="aspect-video w-full rounded-lg overflow-hidden border border-border">
@@ -863,6 +863,17 @@ function EmbeddedVideo({ url }: { url: string }) {
           allowFullScreen
           className="w-full h-full"
         />
+      </div>
+    );
+  }
+  if (!url) {
+    return (
+      <div className="aspect-video w-full rounded-lg border border-dashed border-border bg-muted/30 grid place-items-center text-center px-4">
+        <div className="flex flex-col items-center gap-2 text-muted-foreground">
+          <Youtube size={28} className="opacity-60" />
+          <p className="text-sm font-medium">Vídeo não disponível</p>
+          <p className="text-xs">O vídeo aparecerá aqui assim que for publicado.</p>
+        </div>
       </div>
     );
   }
