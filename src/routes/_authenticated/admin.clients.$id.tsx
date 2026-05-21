@@ -17,6 +17,7 @@ import { TrainingEditor } from "@/components/admin/TrainingEditor";
 import { DietEditor } from "@/components/admin/DietEditor";
 import { HormonesEditor } from "@/components/admin/HormonesEditor";
 import { CoachChat } from "@/components/admin/CoachChat";
+import { EditStudentDialog } from "@/components/admin/EditStudentDialog";
 import { adminSaveProtocol, adminSetAnalysisStatus } from "@/lib/admin.functions";
 import { adminGenerateBodyAnalysis, adminUpdateAnalysisContent } from "@/lib/body-analysis.functions";
 import { prescribeFromAnamnese, analyzeAnamnese } from "@/lib/anamnese.functions";
@@ -44,6 +45,7 @@ function ClientDetail() {
   const [checkins, setCheckins] = useState<any[]>([]);
   const [signedPhotos, setSignedPhotos] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  const [editOpen, setEditOpen] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -122,6 +124,12 @@ function ClientDetail() {
               {profile.height && <Badge variant="secondary">{profile.height} cm</Badge>}
               {profile.weight && <Badge variant="secondary">{profile.weight} kg</Badge>}
               {profile.goal && <Badge variant="outline">{profile.goal}</Badge>}
+              {profile.plan && <Badge variant="secondary">{profile.plan}</Badge>}
+              {profile.plan_end && (
+                <Badge variant="outline">
+                  Plano até {new Date(profile.plan_end).toLocaleDateString("pt-BR")}
+                </Badge>
+              )}
               {protocol?.end_date && (
                 <Badge className="bg-emerald-500/15 text-emerald-700 border-emerald-500/30">
                   {Math.max(0, Math.round((new Date(protocol.end_date).getTime() - Date.now()) / 86400_000))} dias restantes
@@ -129,8 +137,19 @@ function ClientDetail() {
               )}
             </div>
           </div>
+          <Button size="sm" variant="outline" onClick={() => setEditOpen(true)} className="gap-1">
+            <Pencil size={12} /> Editar dados
+          </Button>
         </div>
       </Card>
+
+      <EditStudentDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        userId={id}
+        onSaved={load}
+        onDeleted={() => nav({ to: "/admin/clients" })}
+      />
 
       <Tabs defaultValue={protocol ? "training" : "anamnese"} className="w-full">
         <TabsList className="w-full flex-wrap h-auto justify-start gap-1">

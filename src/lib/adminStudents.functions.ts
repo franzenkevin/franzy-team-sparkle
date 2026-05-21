@@ -175,3 +175,103 @@ export const markFirstAccess = createServerFn({ method: "POST" })
     if (error) console.warn("[markFirstAccess]", error.message);
     return { ok: true };
   });
+
+export const adminGetStudent = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { userId: string }) => data)
+  .handler(async ({ data, context }) => {
+    await ensureAdmin(context.userId);
+    const { data: u, error } = await supabaseAdmin.auth.admin.getUserById(data.userId);
+    if (error) throw new Error(error.message);
+    const { data: prof } = await supabaseAdmin
+      .from("profiles")
+      .select("full_name, plan, plan_start, plan_end, account_status")
+      .eq("user_id", data.userId)
+      .maybeSingle();
+    return {
+      email: u.user?.email ?? null,
+      fullName: prof?.full_name ?? null,
+      plan: prof?.plan ?? null,
+      planStart: prof?.plan_start ?? null,
+      planEnd: prof?.plan_end ?? null,
+      accountStatus: prof?.account_status ?? null,
+    };
+  });
+
+export const adminUpdateStudent = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: {
+    userId: string;
+    fullName?: string | null;
+    email?: string | null;
+    password?: string | null;
+    plan?: string | null;
+    planStart?: string | null;
+    planEnd?: string | null;
+  }) => data)
+  .handler(async ({ data, context }) => {
+    await ensureAdmin(context.userId);
+    if (!data.userId) throw new Error("userId obrigatório");
+
+    const authUpdate: { email?: string; password?: string } = {};
+    if (data.email && data.email.trim()) {
+      const email = data.email.trim().toLowerCase();
+      if (!/^\S+@\S+\.\S+$/.test(email)) throw new Error("E-mail inválido");
+      authUpdate.email = email;
+    }
+    if (data.password && data.password.length > 0) {
+      if (data.password.length < 6) throw new Error("Senha deve ter ao menos 6 caracteres");
+      authUpdate.password = data.password;
+    }
+    if (Object.keys(authUpdate).length > 0) {
+      const { error } = await supabaseAdmin.auth.admin.updateUserById(data.userId, {
+        ...authUpdate,
+        ...(authUpdate.email ? { email_confirm: true } : {}),
+      } as any);
+      if (error) throw new Error(error.message);
+    }
+
+    const profileUpdate: Record<string, any> = {};
+    if (data.fullName !== undefined) profileUpdate.full_name = data.fullName?.trim() || null;
+    if (data.plan !== undefined) profileUpdate.plan = data.plan || null;
+    if (data.planStart !== undefined) profileUpdate.plan_start = data.planStart || null;
+    if (data.planEnd !== undefined) profileUpdate.plan_end = data.planEnd || null;
+    if (Object.keys(profileUpdate).length > 0) {
+      const { error } = await supabaseAdmin
+        .from("profiles")
+        .update(profileUpdate as any)
+        .eq("user_id", data.userId);
+      if (error) throw new Error(error.message);
+    }
+
+    return { ok: true };
+  });
+
+export const adminDeleteStudent = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { userId: string }) => data)
+  .handler(async ({ data, context }) => {
+    await ensureAdmin(context.userId);
+    if (!data.userId) throw new Error("userId obrigatório");
+    if (data.userId === context.userId) throw new Error("Você não pode excluir a si mesmo");
+
+    // Limpeza de dados dependentes (best-effort; FKs sem cascade)
+    const tables = [
+      "notifications", "messages", "achievements", "challenge_participations",
+      "checkins", "diet_feedback", "food_logs", "journal_entries",
+      "monthly_analyses", "protocols", "share_links", "user_exams",
+      "weekly_feedbacks", "workout_feedback", "workout_logs", "ai_analyses",
+      "user_roles", "profiles",
+    ];
+    for (const t of tables) {
+      const col = t === "messages" ? "recipient_id" : "user_id";
+      await supabaseAdmin.from(t as any).delete().eq(col, data.userId);
+      if (t === "messages") {
+        await supabaseAdmin.from("messages").delete().eq("sender_id", data.userId);
+      }
+    }
+
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(data.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
