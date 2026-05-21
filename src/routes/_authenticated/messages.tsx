@@ -3,8 +3,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, MessageSquare, Send, Users } from "lucide-react";
+import { Loader2, MessageSquare, Phone, Send, Users } from "lucide-react";
 import { notify } from "@/lib/notifications";
+import { COACH_WHATSAPP } from "@/components/CoachContactDialog";
 
 export const Route = createFileRoute("/_authenticated/messages")({
   head: () => ({ meta: [{ title: "Mensagens — Franzen Team" }] }),
@@ -158,9 +159,22 @@ function MessagesPage() {
       </aside>
 
       <section className="rounded-xl border border-border bg-card flex flex-col min-h-0">
-        <div className="border-b border-border p-3 flex items-center gap-2">
+        <div className="border-b border-border p-3 flex items-center gap-2 flex-wrap">
           <MessageSquare size={16} className="text-primary" />
-          <span className="font-semibold text-sm">{activeContact?.full_name ?? "Selecione um contato"}</span>
+          <span className="font-semibold text-sm flex-1 truncate">
+            {activeContact?.full_name ?? "Selecione um contato"}
+          </span>
+          {!isAdmin && (
+            <Button asChild size="sm" variant="outline" className="gap-1.5">
+              <a
+                href={`https://wa.me/${COACH_WHATSAPP}?text=${encodeURIComponent("Olá Kevin, sou aluno da Franzen Team.")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Phone size={14} /> WhatsApp do coach
+              </a>
+            </Button>
+          )}
         </div>
         <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-2">
           {!active && (
