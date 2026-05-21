@@ -9,6 +9,8 @@ import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 import { Textarea } from "@/components/ui/textarea";
 import { evaluateWorkoutAchievements } from "@/lib/achievements";
+import { useServerFn } from "@tanstack/react-start";
+import { suggestExerciseSubstitution } from "@/lib/exerciseSubstitution.functions";
 
 export const Route = createFileRoute("/_authenticated/training")({
   head: () => ({ meta: [{ title: "Treino — Franzen Team" }] }),
@@ -87,7 +89,8 @@ function TrainingPage() {
   const [showDynamics, setShowDynamics] = useState(false);
   const [expandedEx, setExpandedEx] = useState<Record<string, boolean>>({});
   const [exerciseVideos, setExerciseVideos] = useState<Record<string, string>>({});
-  const [subSuggestion, setSubSuggestion] = useState<Record<string, { loading?: boolean; alt?: { id: string; name: string; category: string; equipment: string | null } | null }>>({});
+  const [subSuggestion, setSubSuggestion] = useState<Record<string, { loading?: boolean; alt?: { id: string; name: string; category: string; equipment: string | null } | null; rationale?: string }>>({});
+  const suggestSubFn = useServerFn(suggestExerciseSubstitution);
 
   // Rest timer countdown
   useEffect(() => {
@@ -363,24 +366,13 @@ function TrainingPage() {
   const requestSubstitution = async (ex: Exercise) => {
     setSubSuggestion((p) => ({ ...p, [ex.id]: { loading: true } }));
     try {
-      const { data: src } = await supabase
-        .from("exercises")
-        .select("category, equipment")
-        .ilike("name", ex.name)
-        .maybeSingle();
-      let q = supabase.from("exercises").select("id, name, category, equipment").limit(8);
-      if (src?.category) q = q.eq("category", src.category);
-      else {
-        const token = ex.name.split(" ")[0]?.slice(0, 6) ?? "";
-        if (token) q = q.ilike("name", `%${token}%`);
-      }
-      const { data } = await q;
-      const alt = (data ?? []).find((a) => a.name.toLowerCase() !== ex.name.toLowerCase()) ?? null;
-      setSubSuggestion((p) => ({ ...p, [ex.id]: { loading: false, alt: alt as any } }));
-      if (!alt) toast.info("Sem alternativa cadastrada para esse exercício.");
+      const res = await suggestSubFn({ data: { exerciseId: ex.id, exerciseName: ex.name } });
+      setSubSuggestion((p) => ({ ...p, [ex.id]: { loading: false, alt: res.alt as any, rationale: res.rationale } }));
+      if (!res.alt) toast.info("Sem alternativa cadastrada para esse exercício.");
     } catch (e) {
       console.error(e);
       setSubSuggestion((p) => ({ ...p, [ex.id]: { loading: false, alt: null } }));
+      toast.error("Falha ao buscar substituição.");
     }
   };
 
@@ -623,7 +615,7 @@ function TrainingPage() {
                               <span className="font-semibold">Substituir por:</span>{" "}
                               <span className="text-warning font-medium">{sub.alt.name}</span>
                               <span className="block text-xs text-muted-foreground mt-1">
-                                Mesma categoria{sub.alt.equipment ? ` • ${sub.alt.equipment}` : ""}. Mantém o padrão de movimento original.
+                                {sub.rationale ?? `Mesma categoria${sub.alt.equipment ? ` • ${sub.alt.equipment}` : ""}. Mantém o padrão de movimento original.`}
                               </span>
                             </span>
                           </p>
@@ -644,21 +636,19 @@ function TrainingPage() {
                         </div>
                       )}
 
-                      {video && (
-                        <div className="mt-4">
-                          {isExpanded ? (
-                            <EmbeddedVideo url={video} />
-                          ) : (
-                            <Button
-                              variant="default"
-                              className="w-full bg-primary/15 text-primary hover:bg-primary/25 border border-primary/30"
-                              onClick={() => setExpandedEx((p) => ({ ...p, [ex.id]: true }))}
-                            >
-                              <Youtube size={16} className="mr-2" /> Ver vídeo de execução
-                            </Button>
-                          )}
-                        </div>
-                      )}
+                      <div className="mt-4">
+                        {isExpanded ? (
+                          <EmbeddedVideo url={video} />
+                        ) : (
+                          <Button
+                            variant="default"
+                            className="w-full bg-primary/15 text-primary hover:bg-primary/25 border border-primary/30"
+                            onClick={() => setExpandedEx((p) => ({ ...p, [ex.id]: true }))}
+                          >
+                            <Youtube size={16} className="mr-2" /> {video ? "Ver vídeo de execução" : "Visualizar vídeo (em breve)"}
+                          </Button>
+                        )}
+                      </div>
 
                       <div className="mt-4 space-y-2">
                         <div className="grid grid-cols-12 gap-2 text-xs text-muted-foreground px-1">
@@ -861,8 +851,8 @@ function TrainingPage() {
   );
 }
 
-function EmbeddedVideo({ url }: { url: string }) {
-  const ytMatch = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/);
+function EmbeddedVideo({ url }: { url?: string | null }) {
+  const ytMatch = url ? url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/) : null;
   if (ytMatch) {
     return (
       <div className="aspect-video w-full rounded-lg overflow-hidden border border-border">
@@ -873,6 +863,17 @@ function EmbeddedVideo({ url }: { url: string }) {
           allowFullScreen
           className="w-full h-full"
         />
+      </div>
+    );
+  }
+  if (!url) {
+    return (
+      <div className="aspect-video w-full rounded-lg border border-dashed border-border bg-muted/30 grid place-items-center text-center px-4">
+        <div className="flex flex-col items-center gap-2 text-muted-foreground">
+          <Youtube size={28} className="opacity-60" />
+          <p className="text-sm font-medium">Vídeo não disponível</p>
+          <p className="text-xs">O vídeo aparecerá aqui assim que for publicado.</p>
+        </div>
       </div>
     );
   }
