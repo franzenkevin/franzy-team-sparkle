@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useProtocolRealtime } from "@/hooks/useProtocolRealtime";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -115,22 +116,23 @@ function TrainingPage() {
     return unit.startsWith("m") ? n * 60 : n;
   };
 
-  useEffect(() => {
-    (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data } = await supabase
-        .from("protocols")
-        .select("id, training")
-        .eq("user_id", user.id)
-        .eq("status", "active")
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      setProtocol(data);
-      setLoading(false);
-    })();
+  const loadProtocol = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data } = await supabase
+      .from("protocols")
+      .select("id, training")
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    setProtocol(data);
+    setLoading(false);
   }, []);
+
+  useEffect(() => { loadProtocol(); }, [loadProtocol]);
+  useProtocolRealtime(() => { loadProtocol(); toast.info("Protocolo atualizado pelo coach"); });
 
   const days = useMemo(() => normalizeTraining(protocol?.training), [protocol]);
 
