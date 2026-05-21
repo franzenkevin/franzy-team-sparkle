@@ -138,9 +138,12 @@ function OnboardingPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Sem sessão");
-      const ext = file.name.split(".").pop() || "jpg";
-      const path = `${user.id}/onboarding/${slot}-${Date.now()}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("photos").upload(path, file, { upsert: true });
+      const { compressImage } = await import("@/lib/imageCompress");
+      const compressed = await compressImage(file, { maxSize: 1920, targetBytes: 1_500_000 });
+      const path = `${user.id}/onboarding/${slot}-${Date.now()}.jpg`;
+      const { error: upErr } = await supabase.storage
+        .from("photos")
+        .upload(path, compressed, { upsert: true, contentType: "image/jpeg" });
       if (upErr) throw upErr;
       const { data: signed } = await supabase.storage.from("photos").createSignedUrl(path, 60 * 60 * 24 * 365);
       const url = signed?.signedUrl || path;
