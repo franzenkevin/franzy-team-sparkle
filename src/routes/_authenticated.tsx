@@ -6,6 +6,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { BottomNav } from "@/components/BottomNav";
 import { InstallPwaPrompt } from "@/components/InstallPwaPrompt";
 import { OnboardingTour } from "@/components/OnboardingTour";
+import { PlanGate } from "@/components/PlanGate";
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async ({ location }) => {
@@ -49,8 +50,10 @@ function AuthenticatedLayout() {
             <MenuButton />
           </header>
           <main className="flex-1 min-w-0">
-            <Outlet />
-            <div className="h-16" aria-hidden />
+            <PlanGate>
+              <Outlet />
+              <div className="h-16" aria-hidden />
+            </PlanGate>
           </main>
         </div>
       </div>
