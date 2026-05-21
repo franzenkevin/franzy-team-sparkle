@@ -28,39 +28,49 @@ type Exam = {
 };
 
 const EXAM_TYPES = [
-  "Hemograma completo",
-  "Glicemia em jejum",
-  "Hemoglobina glicada (HbA1c)",
-  "Insulina + HOMA-IR",
-  "Perfil lipídico (colesterol total/HDL/LDL/triglicerídeos)",
-  "TSH e T4 livre",
-  "T3 total / T3 livre / T3 reverso",
-  "Cortisol matinal",
-  "Testosterona total e livre",
+  "Glicose jejum",
+  "Hemograma total",
+  "Ureia",
+  "Creatinina",
+  "CPK",
+  "Albumina",
+  "Ferritina",
+  "Ferro",
+  "Sódio",
+  "Potássio",
+  "TGO",
+  "TGP",
+  "Gama GT",
+  "Bilirrubinas",
+  "Testosterona livre",
+  "Testosterona total",
+  "DHT",
   "SHBG",
-  "Estradiol",
-  "Progesterona",
-  "DHEA-S",
   "Prolactina",
-  "FSH e LH",
-  "Vitamina D (25-OH)",
-  "Vitamina B12 e ácido fólico",
-  "Ferritina + ferro sérico + saturação de transferrina",
-  "PCR ultrassensível",
-  "TGO / TGP / GGT (função hepática)",
-  "Ureia e creatinina (função renal)",
-  "Ácido úrico",
-  "Eletrólitos (sódio/potássio/magnésio/cálcio)",
-  "Urina tipo I (EAS)",
-  "Bioimpedância / DEXA / Adipometria",
-  "ECG / Teste ergométrico (esforço)",
+  "Estradiol",
+  "LH",
+  "FSH",
+  "TSH",
+  "T4 livre",
+  "T3 reverso",
+  "T3",
+  "Triglicerídeos",
+  "Colesterol total",
+  "HDL",
+  "LDL",
+  "Hidroxivitamina D (25-OH)",
+  "Vitamina B12",
+  "PSA Livre",
+  "Troponina",
+  "Insulina",
+  "HOMA-IR",
+  "HOMA-beta",
+  "Hemoglobina glicada (HbA1c)",
 ];
 
 function ExamsPage() {
   const [items, setItems] = useState<Exam[]>([]);
   const [loading, setLoading] = useState(true);
-  const [name, setName] = useState("");
-  const [type, setType] = useState("");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [notes, setNotes] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -83,18 +93,18 @@ function ExamsPage() {
 
   const upload = async () => {
     if (!file) { toast.error("Selecione o arquivo do exame"); return; }
-    if (!name.trim()) { toast.error("Informe o nome do exame"); return; }
     setSaving(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setSaving(false); return; }
-    const ext = file.name.split(".").pop() ?? "bin";
-    const path = `${user.id}/${Date.now()}_${name.trim().replace(/\s+/g, "_")}.${ext}`;
+    const ext = (file.name.split(".").pop() ?? "pdf").toLowerCase();
+    const path = `${user.id}/${Date.now()}_exame.${ext}`;
+    const autoName = `Exame ${date ? new Date(date + "T00:00:00").toLocaleDateString("pt-BR") : new Date().toLocaleDateString("pt-BR")}`;
     const { error: upErr } = await supabase.storage.from("exams").upload(path, file, { upsert: false });
     if (upErr) { toast.error(upErr.message); setSaving(false); return; }
     const { error } = await supabase.from("user_exams").insert({
       user_id: user.id,
-      exam_name: name.trim(),
-      exam_type: type || null,
+      exam_name: autoName,
+      exam_type: null,
       exam_date: date || null,
       notes: notes.trim() || null,
       file_path: path,
@@ -104,7 +114,7 @@ function ExamsPage() {
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     toast.success("Exame enviado");
-    setName(""); setType(""); setNotes(""); setFile(null);
+    setNotes(""); setFile(null);
     load();
   };
 
@@ -140,23 +150,12 @@ function ExamsPage() {
         </h2>
         <div className="grid sm:grid-cols-2 gap-3">
           <div>
-            <Label>Nome do exame</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Hemograma de 11/2025" />
-          </div>
-          <div>
-            <Label>Tipo (opcional)</Label>
-            <Input list="exam-types" value={type} onChange={(e) => setType(e.target.value)} placeholder="Categoria" />
-            <datalist id="exam-types">
-              {EXAM_TYPES.map((t) => <option key={t} value={t} />)}
-            </datalist>
-          </div>
-          <div>
             <Label>Data do exame</Label>
             <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           </div>
           <div>
-            <Label>Arquivo (PDF ou imagem)</Label>
-            <Input type="file" accept="application/pdf,image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+            <Label>Arquivo (PDF)</Label>
+            <Input type="file" accept="application/pdf" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
           </div>
         </div>
         <div>
@@ -174,10 +173,23 @@ function ExamsPage() {
         <h2 className="font-heading font-semibold flex items-center gap-2 mb-3">
           <ListChecks size={16} className="text-primary" /> Lista completa de exames recomendados
         </h2>
-        <p className="text-xs text-muted-foreground mb-3">
-          Use esta lista como referência ao solicitar exames com seu médico. Não é prescrição —
-          serve para orientar a coleta de dados que o coach utiliza no acompanhamento.
-        </p>
+        <div className="text-xs text-muted-foreground mb-3 space-y-2">
+          <p>
+            Use esta lista como referência. Não é prescrição — serve para orientar a coleta de dados
+            que o coach utiliza no acompanhamento.
+          </p>
+          <p>
+            <strong className="text-foreground">Como solicitar:</strong> se você tem convênio médico,
+            peça a requisição ao seu médico de confiança. Sem convênio, a maioria dos laboratórios
+            aceita pedido <strong>diretamente no balcão</strong>, por conta própria, sem precisar de
+            receita.
+          </p>
+          <p>
+            <strong className="text-foreground">Dica:</strong> os preços variam muito entre laboratórios
+            da mesma cidade — vale pesquisar 2 ou 3 antes de fechar. Costuma compensar pedir o painel
+            completo de uma vez (sai mais barato que parcelado).
+          </p>
+        </div>
         <ul className="grid sm:grid-cols-2 gap-x-4 gap-y-1 text-sm">
           {EXAM_TYPES.map((t) => (
             <li key={t} className="flex items-start gap-2 text-muted-foreground">
