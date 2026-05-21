@@ -19,7 +19,6 @@ const mainItems = [
   { title: "Home", url: "/dashboard", icon: LayoutDashboard },
   { title: "Treino", url: "/training", icon: Dumbbell },
   { title: "Dieta", url: "/diet", icon: Apple },
-  { title: "Hormônios", url: "/hormones", icon: Pill },
   { title: "Exames", url: "/exams", icon: FlaskConical },
   { title: "Progresso", url: "/progress", icon: LineChart },
   { title: "Feedback", url: "/feedback", icon: ClipboardList },
@@ -29,6 +28,7 @@ const mainItems = [
   { title: "Desafios", url: "/challenges", icon: Flame },
   { title: "Mensagens", url: "/messages", icon: MessageSquare },
   { title: "Notificações", url: "/notifications", icon: Bell },
+  { title: "Hormônios", url: "/hormones", icon: Pill },
   { title: "Perfil", url: "/profile", icon: User },
 ] as const;
 
