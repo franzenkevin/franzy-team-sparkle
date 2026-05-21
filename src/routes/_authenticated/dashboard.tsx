@@ -37,7 +37,7 @@ function DashboardPage() {
 
   useReminders(8, 0, "Franzen Team", "Bom dia! Hora do treino e check-in.");
 
-  useEffect(() => { markAccess({}).catch(() => {}); }, [markAccess]);
+  useEffect(() => { (markAccess as any)().catch(() => {}); }, [markAccess]);
 
   useEffect(() => {
     if (typeof Notification !== "undefined") setPermission(Notification.permission);
