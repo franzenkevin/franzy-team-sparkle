@@ -1087,7 +1087,6 @@ export type Database = {
         }
         Returns: boolean
       }
-      mark_profile_active: { Args: { _user_id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "user"
