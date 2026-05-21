@@ -82,11 +82,15 @@ function MonthlyPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setSaving(false); return; }
     const uploads: Record<string, string | null> = {};
+    const { compressImage } = await import("@/lib/imageCompress");
     for (const a of ANGLES) {
       const f = files[a.key];
       if (!f) { uploads[a.key] = null; continue; }
+      const compressed = await compressImage(f, { maxSize: 1920, targetBytes: 1_500_000 });
       const path = `${user.id}/monthly/${Date.now()}_${a.key}.jpg`;
-      const { error: upErr } = await supabase.storage.from("photos").upload(path, f, { upsert: true });
+      const { error: upErr } = await supabase.storage
+        .from("photos")
+        .upload(path, compressed, { upsert: true, contentType: "image/jpeg" });
       if (upErr) { toast.error(upErr.message); setSaving(false); return; }
       uploads[a.key] = path;
     }
