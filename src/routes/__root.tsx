@@ -207,7 +207,7 @@ function RootComponent() {
 
     // First check immediately, then every 60s, plus on focus/visibility change.
     check();
-    timer = window.setInterval(check, 15_000);
+    timer = window.setInterval(check, 60_000);
     const onVisible = () => { if (!document.hidden) check(); };
     document.addEventListener("visibilitychange", onVisible);
     window.addEventListener("focus", onVisible);
