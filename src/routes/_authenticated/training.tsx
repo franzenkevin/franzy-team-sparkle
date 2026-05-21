@@ -4,11 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, Save, Dumbbell, Loader2, Timer, X, Star, MessageSquare, Replace, LineChart, Coffee, Flame, ChevronDown, ChevronUp, Activity, Play, Info } from "lucide-react";
+import { ArrowLeft, Save, Dumbbell, Loader2, Timer, X, Star, MessageSquare, Replace, Coffee, Flame, ChevronDown, ChevronUp, Activity, Play, Info, Check, Target, Youtube } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 import { Textarea } from "@/components/ui/textarea";
-import { SubstitutionDialog } from "@/components/SubstitutionDialog";
 import { evaluateWorkoutAchievements } from "@/lib/achievements";
 
 export const Route = createFileRoute("/_authenticated/training")({
@@ -84,10 +83,11 @@ function TrainingPage() {
   const [storyBlob, setStoryBlob] = useState<Blob | null>(null);
   const [feedbackId, setFeedbackId] = useState<string | null>(null);
   const [savingFeedback, setSavingFeedback] = useState(false);
-  const [swapFor, setSwapFor] = useState<Exercise | null>(null);
   const [showWhy, setShowWhy] = useState(false);
+  const [showDynamics, setShowDynamics] = useState(false);
   const [expandedEx, setExpandedEx] = useState<Record<string, boolean>>({});
   const [exerciseVideos, setExerciseVideos] = useState<Record<string, string>>({});
+  const [subSuggestion, setSubSuggestion] = useState<Record<string, { loading?: boolean; alt?: { id: string; name: string; category: string; equipment: string | null } | null }>>({});
 
   // Rest timer countdown
   useEffect(() => {
