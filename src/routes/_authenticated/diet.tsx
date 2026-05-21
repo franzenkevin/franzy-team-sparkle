@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useProtocolRealtime } from "@/hooks/useProtocolRealtime";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ChevronDown, ChevronUp, Utensils, Loader2, Info, Leaf, Zap, Pill, Star, BookOpen } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
@@ -58,23 +59,24 @@ function DietPage() {
   const [fbNotes, setFbNotes] = useState("");
   const [savingFb, setSavingFb] = useState(false);
 
-  useEffect(() => {
-    (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data } = await supabase
-        .from("protocols")
-        .select("id, diet")
-        .eq("user_id", user.id)
-        .eq("status", "active")
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      setDiet((data?.diet as Diet) ?? null);
-      setProtocolId((data as any)?.id ?? null);
-      setLoading(false);
-    })();
+  const loadProtocol = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data } = await supabase
+      .from("protocols")
+      .select("id, diet")
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    setDiet((data?.diet as Diet) ?? null);
+    setProtocolId((data as any)?.id ?? null);
+    setLoading(false);
   }, []);
+
+  useEffect(() => { loadProtocol(); }, [loadProtocol]);
+  useProtocolRealtime(() => { loadProtocol(); toast.info("Dieta atualizada pelo coach"); });
 
   async function sendFeedback() {
     if (!fbRating) { toast.error("Selecione de 1 a 5 estrelas"); return; }
