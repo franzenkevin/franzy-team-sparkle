@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -31,6 +32,8 @@ type Training = { days?: Day[]; notes?: string };
 const LETTERS = ["A","B","C","D","E","F","G","H"];
 const WEEKDAYS = ["Seg","Ter","Qua","Qui","Sex","Sáb","Dom"];
 
+type CatalogExercise = { id: string; name: string; video_url: string | null; instructions: string | null; equipment: string | null };
+
 function normalize(value: unknown): Training {
   const v = (value && typeof value === "object" ? value : {}) as any;
   const rawDays = v.days ?? v.training_days ?? v.workouts ?? [];
@@ -53,6 +56,20 @@ export function TrainingEditor({ value, onChange }: { value: unknown; onChange: 
   const t = useMemo(() => normalize(value), [value]);
   const days = t.days ?? [];
 
+  const [catalog, setCatalog] = useState<CatalogExercise[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("exercises")
+        .select("id, name, video_url, instructions, equipment")
+        .order("name")
+        .limit(2000);
+      if (!cancelled && data) setCatalog(data as CatalogExercise[]);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   const update = (next: Training) => onChange(next);
   const setDay = (i: number, patch: Partial<Day>) => {
     const nd = [...days]; nd[i] = { ...nd[i], ...patch }; update({ ...t, days: nd });
@@ -67,6 +84,18 @@ export function TrainingEditor({ value, onChange }: { value: unknown; onChange: 
   const setEx = (di: number, ei: number, patch: Partial<Exercise>) => {
     const exs = [...(days[di].exercises ?? [])]; exs[ei] = { ...exs[ei], ...patch };
     setDay(di, { exercises: exs });
+  };
+
+  const pickFromCatalog = (di: number, ei: number, name: string) => {
+    const match = catalog.find((c) => c.name.toLowerCase() === name.toLowerCase());
+    const current = days[di].exercises?.[ei] ?? {};
+    const patch: Partial<Exercise> & { id?: string } = { name };
+    if (match) {
+      patch.id = match.id;
+      if (!current.videoUrl && match.video_url) patch.videoUrl = match.video_url;
+      if (!current.notes && match.instructions) patch.notes = match.instructions;
+    }
+    setEx(di, ei, patch);
   };
   const addEx = (di: number) => setDay(di, { exercises: [...(days[di].exercises ?? []), { name: "", sets: 3, reps: "8-12", rest: "90s" }] });
   const removeEx = (di: number, ei: number) => setDay(di, { exercises: (days[di].exercises ?? []).filter((_, k) => k !== ei) });
@@ -115,7 +144,13 @@ export function TrainingEditor({ value, onChange }: { value: unknown; onChange: 
               <div key={ei} className="rounded-lg border border-border p-2.5 space-y-2 bg-muted/20">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs font-mono text-muted-foreground w-5">{ei + 1}.</span>
-                  <Input placeholder="Exercício" value={ex.name ?? ""} onChange={(e) => setEx(di, ei, { name: e.target.value })} className="h-8 flex-1 min-w-[140px]" />
+                  <Input
+                    list="exercise-catalog"
+                    placeholder="Exercício (buscar na base)"
+                    value={ex.name ?? ""}
+                    onChange={(e) => pickFromCatalog(di, ei, e.target.value)}
+                    className="h-8 flex-1 min-w-[140px]"
+                  />
                   <div className="flex gap-0.5 shrink-0 ml-auto">
                     <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => moveEx(di, ei, -1)} disabled={ei === 0}><ChevronUp size={12} /></Button>
                     <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => moveEx(di, ei, 1)} disabled={ei === (d.exercises?.length ?? 0) - 1}><ChevronDown size={12} /></Button>
@@ -150,6 +185,12 @@ export function TrainingEditor({ value, onChange }: { value: unknown; onChange: 
         <Label className="text-xs flex items-center gap-1"><Sparkles size={12} /> Observações gerais</Label>
         <Textarea rows={3} value={t.notes ?? ""} onChange={(e) => update({ ...t, notes: e.target.value })} className="text-xs mt-1" />
       </div>
+
+      <datalist id="exercise-catalog">
+        {catalog.map((c) => (
+          <option key={c.id} value={c.name}>{c.equipment ?? ""}</option>
+        ))}
+      </datalist>
     </div>
   );
 }
