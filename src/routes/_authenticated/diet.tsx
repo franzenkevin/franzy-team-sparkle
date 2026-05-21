@@ -2,7 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ChevronDown, ChevronUp, Utensils, Loader2, Info, Leaf, Zap, Pill } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronUp, Utensils, Loader2, Info, Leaf, Zap, Pill, Star, BookOpen } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 import { FoodDiary } from "@/components/FoodDiary";
 
@@ -30,8 +32,12 @@ type Diet = {
 function DietPage() {
   const [loading, setLoading] = useState(true);
   const [diet, setDiet] = useState<Diet | null>(null);
+  const [protocolId, setProtocolId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<number | null>(0);
   const [activeOption, setActiveOption] = useState<Record<number, number>>({});
+  const [fbRating, setFbRating] = useState(0);
+  const [fbNotes, setFbNotes] = useState("");
+  const [savingFb, setSavingFb] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -39,16 +45,36 @@ function DietPage() {
       if (!user) return;
       const { data } = await supabase
         .from("protocols")
-        .select("diet")
+        .select("id, diet")
         .eq("user_id", user.id)
         .eq("status", "active")
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
       setDiet((data?.diet as Diet) ?? null);
+      setProtocolId((data as any)?.id ?? null);
       setLoading(false);
     })();
   }, []);
+
+  async function sendFeedback() {
+    if (!fbRating) { toast.error("Selecione de 1 a 5 estrelas"); return; }
+    setSavingFb(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setSavingFb(false); return; }
+    const { error } = await supabase.from("diet_feedback").insert({
+      user_id: user.id,
+      protocol_id: protocolId,
+      rating: fbRating,
+      notes: fbNotes || null,
+      session_date: new Date().toISOString().slice(0, 10),
+    });
+    setSavingFb(false);
+    if (error) { toast.error("Erro ao salvar feedback"); return; }
+    toast.success("Feedback enviado ao coach");
+    setFbRating(0);
+    setFbNotes("");
+  }
 
   if (loading) {
     return (
@@ -77,15 +103,15 @@ function DietPage() {
           <Utensils className="text-primary" /> Dieta
         </h1>
 
-        <div className="mt-6">
-          <FoodDiary
-            targets={{
-              kcal: diet?.totalCalories,
-              protein: diet?.protein,
-              carbs: diet?.carbs,
-              fat: diet?.fat,
-            }}
-          />
+        {/* 1. Explicação */}
+        <div className="mt-6 rounded-xl border border-primary/30 bg-primary/5 p-4 flex gap-3">
+          <BookOpen className="text-primary shrink-0 mt-0.5" size={18} />
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Sua dieta está descrita nas opções a seguir. Logo abaixo você terá as observações e prescrições,
+            juntamente com um diário alimentar onde poderá adicionar sua alimentação caso opte por flexibilizar
+            algo — mas sempre mantendo os mesmos macronutrientes. Não faça substituições sozinho se não houver
+            o conhecimento. No dia em que fizer algum ajuste, descreva no feedback diário da dieta abaixo.
+          </p>
         </div>
 
         {!diet || meals.length === 0 ? (
@@ -96,6 +122,7 @@ function DietPage() {
           </div>
         ) : (
           <>
+            {/* 2. Dieta prescrita */}
             <div className="mt-6 rounded-xl border border-border bg-card p-5">
               <h3 className="font-heading font-semibold mb-3">Resumo do dia</h3>
               <div className="grid grid-cols-4 gap-2 text-center">
@@ -176,6 +203,22 @@ function DietPage() {
               })}
             </div>
 
+            {/* 3. Diário alimentar */}
+            <div className="mt-8">
+              <h2 className="text-lg font-heading font-semibold mb-3 flex items-center gap-2">
+                <Utensils size={18} className="text-primary" /> Diário alimentar
+              </h2>
+              <FoodDiary
+                targets={{
+                  kcal: diet?.totalCalories,
+                  protein: diet?.protein,
+                  carbs: diet?.carbs,
+                  fat: diet?.fat,
+                }}
+              />
+            </div>
+
+            {/* 4. Observações / prescrição de manipulados */}
             {Array.isArray(diet.notes) && diet.notes.length > 0 && (
               <div className="mt-6 rounded-xl border border-border bg-card p-4">
                 <div className="flex items-center gap-2 mb-2">
@@ -220,6 +263,41 @@ function DietPage() {
                 <p className="text-xs text-muted-foreground whitespace-pre-wrap">{diet.preworkout}</p>
               </div>
             )}
+
+            {/* 5. Feedback diário */}
+            <div className="mt-8 rounded-xl border border-border bg-card p-5">
+              <h2 className="font-heading font-semibold mb-2 flex items-center gap-2">
+                <Star size={18} className="text-primary" /> Feedback diário da dieta
+              </h2>
+              <p className="text-xs text-muted-foreground mb-3">
+                Como foi sua aderência hoje? Descreva ajustes, fome, energia ou qualquer alteração.
+              </p>
+              <div className="flex items-center gap-1 mb-3">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => setFbRating(n)}
+                    className="p-1"
+                    aria-label={`${n} estrelas`}
+                  >
+                    <Star
+                      size={28}
+                      className={n <= fbRating ? "fill-primary text-primary" : "text-muted-foreground"}
+                    />
+                  </button>
+                ))}
+              </div>
+              <Textarea
+                value={fbNotes}
+                onChange={(e) => setFbNotes(e.target.value)}
+                placeholder="Descreva como foi sua dieta hoje, ajustes feitos, fome, energia..."
+                rows={4}
+              />
+              <Button onClick={sendFeedback} disabled={savingFb} className="mt-3 w-full">
+                {savingFb ? <Loader2 className="animate-spin" size={16} /> : "Enviar feedback"}
+              </Button>
+            </div>
           </>
         )}
       </main>
