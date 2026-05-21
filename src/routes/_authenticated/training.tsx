@@ -4,11 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, Save, Dumbbell, Loader2, Timer, X, Star, MessageSquare, Replace, LineChart, Coffee, Flame, ChevronDown, ChevronUp, Activity, Play, Info } from "lucide-react";
+import { ArrowLeft, Save, Dumbbell, Loader2, Timer, X, Star, MessageSquare, Replace, Coffee, Flame, ChevronDown, ChevronUp, Activity, Play, Info, Check, Target, Youtube } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 import { Textarea } from "@/components/ui/textarea";
-import { SubstitutionDialog } from "@/components/SubstitutionDialog";
 import { evaluateWorkoutAchievements } from "@/lib/achievements";
 
 export const Route = createFileRoute("/_authenticated/training")({
@@ -84,10 +83,11 @@ function TrainingPage() {
   const [storyBlob, setStoryBlob] = useState<Blob | null>(null);
   const [feedbackId, setFeedbackId] = useState<string | null>(null);
   const [savingFeedback, setSavingFeedback] = useState(false);
-  const [swapFor, setSwapFor] = useState<Exercise | null>(null);
   const [showWhy, setShowWhy] = useState(false);
+  const [showDynamics, setShowDynamics] = useState(false);
   const [expandedEx, setExpandedEx] = useState<Record<string, boolean>>({});
   const [exerciseVideos, setExerciseVideos] = useState<Record<string, string>>({});
+  const [subSuggestion, setSubSuggestion] = useState<Record<string, { loading?: boolean; alt?: { id: string; name: string; category: string; equipment: string | null } | null }>>({});
 
   // Rest timer countdown
   useEffect(() => {
@@ -297,7 +297,7 @@ function TrainingPage() {
       if (!ctx) { toast.error("Navegador sem suporte a canvas"); return; }
       // Fundo escuro com gradiente
       const grad = ctx.createLinearGradient(0, 0, 0, H);
-      grad.addColorStop(0, "#0b0b0b"); grad.addColorStop(1, "#1a1a1a");
+      grad.addColorStop(0, "#050505"); grad.addColorStop(1, "#0d0d0d");
       ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
       // Foto do usuário (se houver) como fundo
       let photoUrl: string | null = null;
@@ -314,33 +314,26 @@ function TrainingPage() {
           const ratio = Math.max(W / img.width, H / img.height);
           const w = img.width * ratio, h = img.height * ratio;
           ctx.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
-          ctx.fillStyle = "rgba(0,0,0,0.45)"; ctx.fillRect(0, 0, W, H);
+          ctx.fillStyle = "rgba(0,0,0,0.62)"; ctx.fillRect(0, 0, W, H);
         } catch (err) {
           console.warn("Falha ao carregar foto, usando fundo padrão", err);
         }
       }
-      // Logo
-      try {
-        const logoImg = await new Promise<HTMLImageElement>((res, rej) => {
-          const i = new Image();
-          i.onload = () => res(i); i.onerror = rej;
-          i.src = logo;
-        });
-        ctx.drawImage(logoImg, W / 2 - 80, 120, 160, 160);
-      } catch {}
-      ctx.textAlign = "center"; ctx.fillStyle = "#fff";
-      ctx.font = "bold 56px system-ui, sans-serif";
-      ctx.fillText("FRANZEN TEAM", W / 2, 340);
-      ctx.font = "500 36px system-ui, sans-serif"; ctx.fillStyle = "#aaa";
-      ctx.fillText(days[selectedDay]?.name ?? "Treino", W / 2, 400);
-      // KG total
-      ctx.fillStyle = "#fff";
-      ctx.font = "900 220px system-ui, sans-serif";
-      ctx.fillText(`${totalKgLifted.toLocaleString("pt-BR")}`, W / 2, H / 2 + 60);
-      ctx.font = "bold 60px system-ui, sans-serif"; ctx.fillStyle = "#f5a623";
-      ctx.fillText("KG LEVANTADOS HOJE", W / 2, H / 2 + 140);
-      ctx.font = "500 40px system-ui, sans-serif"; ctx.fillStyle = "#ddd";
-      ctx.fillText("#FranzenTeam", W / 2, H - 200);
+      // Estilo minimalista — Quinta — Push / KG VOLUME TOTAL / domínio
+      ctx.textAlign = "center";
+      const dayName = days[selectedDay]?.name ?? "Treino";
+      const weekday = days[selectedDay]?.weekday ?? todayWeekday;
+      ctx.font = "500 40px system-ui, -apple-system, sans-serif";
+      ctx.fillStyle = "rgba(255,255,255,0.72)";
+      ctx.fillText(`${weekday} — ${dayName}`, W / 2, H / 2 - 140);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "900 360px system-ui, -apple-system, sans-serif";
+      ctx.fillText(`${totalKgLifted.toLocaleString("pt-BR")}KG`, W / 2, H / 2 + 100);
+      ctx.font = "700 46px system-ui, sans-serif"; ctx.fillStyle = "#2dd4a8";
+      ctx.fillText("VOLUME TOTAL", W / 2, H / 2 + 190);
+      ctx.font = "500 36px system-ui, sans-serif"; ctx.fillStyle = "rgba(255,255,255,0.55)";
+      const domain = typeof window !== "undefined" ? window.location.hostname : "franzenteam.app";
+      ctx.fillText(domain, W / 2, H / 2 + 280);
       // Download
       const blob: Blob | null = await new Promise((res) =>
         canvas.toBlob((b) => res(b), "image/jpeg", 0.92),
@@ -351,12 +344,43 @@ function TrainingPage() {
       if (storyUrl) URL.revokeObjectURL(storyUrl);
       setStoryUrl(url);
       setStoryBlob(blob);
-      toast.success("Story pronto! Baixe ou compartilhe abaixo 📲");
     } catch (e) {
       console.error(e);
       toast.error("Erro ao gerar story. Tente sem foto de fundo.");
     } finally {
       setGeneratingStory(false);
+    }
+  };
+
+  // Gera/atualiza o preview do story automaticamente quando o treino ou kg muda
+  useEffect(() => {
+    if (!day) return;
+    const t = window.setTimeout(() => { generateStory().catch(() => {}); }, 250);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [day?.name, totalKgLifted, storyPhoto]);
+
+  const requestSubstitution = async (ex: Exercise) => {
+    setSubSuggestion((p) => ({ ...p, [ex.id]: { loading: true } }));
+    try {
+      const { data: src } = await supabase
+        .from("exercises")
+        .select("category, equipment")
+        .ilike("name", ex.name)
+        .maybeSingle();
+      let q = supabase.from("exercises").select("id, name, category, equipment").limit(8);
+      if (src?.category) q = q.eq("category", src.category);
+      else {
+        const token = ex.name.split(" ")[0]?.slice(0, 6) ?? "";
+        if (token) q = q.ilike("name", `%${token}%`);
+      }
+      const { data } = await q;
+      const alt = (data ?? []).find((a) => a.name.toLowerCase() !== ex.name.toLowerCase()) ?? null;
+      setSubSuggestion((p) => ({ ...p, [ex.id]: { loading: false, alt: alt as any } }));
+      if (!alt) toast.info("Sem alternativa cadastrada para esse exercício.");
+    } catch (e) {
+      console.error(e);
+      setSubSuggestion((p) => ({ ...p, [ex.id]: { loading: false, alt: null } }));
     }
   };
 
@@ -550,164 +574,156 @@ function TrainingPage() {
                   const sets = exerciseSets[ex.id] ?? [];
                   const video = ex.videoUrl || ex.video_url || exerciseVideos[ex.id];
                   const isExpanded = expandedEx[ex.id] ?? false;
+                  const sub = subSuggestion[ex.id];
                   return (
                     <div key={ex.id} className="rounded-xl border border-border bg-card p-5">
                       <div className="flex items-start justify-between gap-3">
-                        <div>
+                        <div className="min-w-0">
                           <h3 className="font-heading font-semibold">{ex.name}</h3>
                           <p className="text-xs text-muted-foreground mt-1">
-                            {ex.sets ?? sets.length} séries
-                            {ex.reps ? ` × ${ex.reps} reps` : ""}
-                            {ex.rest ? ` · descanso ${ex.rest}` : ""}
+                            {ex.sets ?? sets.filter((x) => x.type === "valid").length} séries válidas
+                            {ex.reps ? ` de ${ex.reps} reps (última na falha)` : ""}
+                            {ex.rest ? ` • Descanso: ${ex.rest}` : ""}
                           </p>
                         </div>
-                        <div className="flex gap-2">
-                          {video && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="text-primary"
-                              onClick={() => setExpandedEx((p) => ({ ...p, [ex.id]: !isExpanded }))}
-                              title="Ver vídeo"
-                            >
-                              <Play size={14} />
-                            </Button>
-                          )}
-                          <Button size="sm" variant="ghost" onClick={() => setExpandedEx((p) => ({ ...p, [ex.id]: !isExpanded }))}>
-                            {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                          </Button>
-                          <Button size="sm" variant="outline" onClick={() => setSwapFor(ex)}>
-                            <Replace size={14} />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => saveExercise(ex)}
-                            disabled={savingId === ex.id}
-                          >
-                            {savingId === ex.id ? <Loader2 className="animate-spin" size={14} /> : <Save size={14} />}
-                            <span className="ml-1">Salvar</span>
-                          </Button>
-                        </div>
+                        <Button size="sm" variant="ghost" onClick={() => setExpandedEx((p) => ({ ...p, [ex.id]: !isExpanded }))}>
+                          {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                        </Button>
                       </div>
 
-                      {video && !isExpanded && (
+                      <div className="mt-3 flex flex-col gap-2">
+                        {ex.rationale && (
+                          <button
+                            onClick={() => setExpandedEx((p) => ({ ...p, [ex.id]: !isExpanded }))}
+                            className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline self-start"
+                          >
+                            <Info size={14} /> {isExpanded ? "Ocultar info" : "Por que este exercício?"}
+                          </button>
+                        )}
                         <button
-                          onClick={() => setExpandedEx((p) => ({ ...p, [ex.id]: true }))}
-                          className="mt-2 inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
+                          onClick={() => (sub ? setSubSuggestion((p) => ({ ...p, [ex.id]: {} })) : requestSubstitution(ex))}
+                          className="inline-flex items-center gap-1.5 text-sm text-warning hover:underline self-start"
                         >
-                          <Play size={12} /> Ver demonstração do exercício
+                          <Replace size={14} />
+                          {sub?.loading ? "Buscando alternativa…" : "Não tenho esse equipamento — sugerir substituição"}
                         </button>
-                      )}
+                      </div>
 
-                      {isExpanded && (ex.rationale || video) && (
-                        <div className="mt-3 space-y-3 border-t border-border pt-3">
-                          {video && (
-                            <EmbeddedVideo url={video} />
-                          )}
-                          {ex.rationale && (
-                            <div className="text-sm text-muted-foreground whitespace-pre-wrap">
-                              <span className="inline-flex items-center gap-1 text-primary text-xs font-medium mb-1">
-                                <Info size={12} /> Por que este exercício?
-                              </span>
-                              <p>{ex.rationale}</p>
-                            </div>
-                          )}
+                      {isExpanded && ex.rationale && (
+                        <div className="mt-3 rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm text-foreground/90 whitespace-pre-wrap">
+                          {ex.rationale}
                         </div>
                       )}
-                      {isExpanded && !ex.rationale && !video && (
-                        <p className="mt-3 border-t border-border pt-3 text-xs text-muted-foreground">
-                          Sem vídeo ou observações para este exercício.
-                        </p>
+
+                      {sub?.alt && (
+                        <div className="mt-3 rounded-lg border border-warning/40 bg-warning/5 p-3">
+                          <p className="text-sm flex items-start gap-2">
+                            <Check size={14} className="text-warning mt-0.5 shrink-0" />
+                            <span>
+                              <span className="font-semibold">Substituir por:</span>{" "}
+                              <span className="text-warning font-medium">{sub.alt.name}</span>
+                              <span className="block text-xs text-muted-foreground mt-1">
+                                Mesma categoria{sub.alt.equipment ? ` • ${sub.alt.equipment}` : ""}. Mantém o padrão de movimento original.
+                              </span>
+                            </span>
+                          </p>
+                          <div className="mt-3 flex gap-2 justify-end">
+                            <Button size="sm" variant="ghost" onClick={() => setSubSuggestion((p) => ({ ...p, [ex.id]: {} }))}>
+                              Cancelar
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                toast.success(`Sugestão registrada: ${sub.alt!.name}. Avise seu coach para atualizar o protocolo.`);
+                                setSubSuggestion((p) => ({ ...p, [ex.id]: {} }));
+                              }}
+                            >
+                              Aceitar substituição
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {video && (
+                        <div className="mt-4">
+                          {isExpanded ? (
+                            <EmbeddedVideo url={video} />
+                          ) : (
+                            <Button
+                              variant="default"
+                              className="w-full bg-primary/15 text-primary hover:bg-primary/25 border border-primary/30"
+                              onClick={() => setExpandedEx((p) => ({ ...p, [ex.id]: true }))}
+                            >
+                              <Youtube size={16} className="mr-2" /> Ver vídeo de execução
+                            </Button>
+                          )}
+                        </div>
                       )}
 
                       <div className="mt-4 space-y-2">
-                        {(() => {
-                          const warmups = sets.filter((x) => x.type === "warmup").length;
-                          const valids = sets.length - warmups;
-                          return (
-                            <div className="rounded-lg border border-border/60 bg-muted/30 p-3 text-[11px] leading-relaxed space-y-1.5">
-                              {warmups > 0 && (
-                                <p>
-                                  <span className="inline-block text-warning font-semibold mr-1">AQUECIMENTO</span>
-                                  {warmups} série{warmups > 1 ? "s" : ""} com cargas progressivas (~40% e ~60% da válida), reps livres só pra ativar o padrão e preparar a articulação.
-                                </p>
-                              )}
-                              <p>
-                                <span className="inline-block text-primary font-semibold mr-1">PREPARO</span>
-                                Concentre-se no encaixe, respiração e amplitude. Pausa breve no descanso prescrito ({ex.rest || "—"}).
-                              </p>
-                              <p>
-                                <span className="inline-block text-success font-semibold mr-1">SÉRIES VÁLIDAS</span>
-                                {valids} série{valids > 1 ? "s" : ""} de {ex.reps ?? "—"} reps na carga real. Próximo da falha técnica (RPE 8–9), sem perder execução.
-                              </p>
-                              {ex.notes && (
-                                <p className="text-muted-foreground border-t border-border/60 pt-1.5 mt-1.5">{ex.notes}</p>
-                              )}
-                            </div>
-                          );
-                        })()}
                         <div className="grid grid-cols-12 gap-2 text-xs text-muted-foreground px-1">
-                          <span className="col-span-1">Série</span>
-                          <span className="col-span-3">Carga (kg)</span>
-                          <span className="col-span-3">Reps</span>
-                          <span className="col-span-3">RPE</span>
-                          <span className="col-span-2 text-right">Feito</span>
+                          <span className="col-span-2">Série</span>
+                          <span className="col-span-4">Carga (kg)</span>
+                          <span className="col-span-4">Reps</span>
+                          <span className="col-span-2 text-right">✓</span>
                         </div>
                         {sets.map((s, i) => {
                           const prev = previousSets[ex.id]?.[i];
                           const warmupCount = sets.filter((x) => x.type === "warmup").length;
                           const isWarmup = s.type === "warmup";
-                          const label = isWarmup
-                            ? `AQ${i + 1}`
-                            : `${i - warmupCount + 1}`;
+                          const validIdx = i - warmupCount + 1;
+                          const repsPlaceholder = isWarmup
+                            ? (i === 0 ? "12" : "10")
+                            : (prev?.reps ? String(prev.reps) : "0");
                           return (
                           <div key={i} className="grid grid-cols-12 gap-2 items-center">
-                            <span className={`col-span-1 text-xs font-semibold px-1.5 py-0.5 rounded text-center ${isWarmup ? "text-warning border border-warning/40" : "text-primary border border-primary/40"}`}>
-                              {label}
+                            <span className={`col-span-2 text-xs font-semibold px-2 py-1 rounded-md text-center inline-flex items-center justify-center gap-1 ${isWarmup ? "text-warning border border-warning/40" : "text-primary border border-primary/40"}`}>
+                              {isWarmup ? `AQ ${i + 1}` : (<><Target size={11} /> {validIdx}</>)}
                             </span>
                             <Input
                               type="number"
                               inputMode="decimal"
                               value={s.weight || ""}
-                              placeholder={prev ? `${prev.weight || "—"}` : ""}
+                              placeholder={prev ? `${prev.weight || "0"}` : "0"}
                               onChange={(e) => updateSet(ex.id, i, "weight", Number(e.target.value))}
-                              className="col-span-3 h-9"
+                              className="col-span-4 h-10 text-center"
                             />
                             <Input
                               type="number"
                               inputMode="numeric"
                               value={s.reps || ""}
-                              placeholder={prev ? `${prev.reps || "—"}` : ""}
+                              placeholder={repsPlaceholder}
                               onChange={(e) => updateSet(ex.id, i, "reps", Number(e.target.value))}
-                              className="col-span-3 h-9"
-                            />
-                            <Input
-                              type="number"
-                              inputMode="decimal"
-                              min={0}
-                              max={10}
-                              step={0.5}
-                              value={s.rpe || ""}
-                              placeholder={prev?.rpe ? `${prev.rpe}` : "0-10"}
-                              onChange={(e) => updateSet(ex.id, i, "rpe", Number(e.target.value))}
-                              className="col-span-3 h-9"
+                              className="col-span-4 h-10 text-center"
                             />
                             <div className="col-span-2 flex justify-end">
-                              <Checkbox
-                                checked={s.completed}
-                                onCheckedChange={(v) => handleCompletedToggle(ex, i, Boolean(v))}
-                              />
+                              <button
+                                type="button"
+                                onClick={() => handleCompletedToggle(ex, i, !s.completed)}
+                                className={`h-7 w-7 rounded-full border-2 grid place-items-center transition ${s.completed ? "border-primary bg-primary text-primary-foreground" : "border-primary/40 hover:border-primary"}`}
+                                aria-label="Marcar série"
+                              >
+                                {s.completed && <Check size={14} />}
+                              </button>
                             </div>
                           </div>
                           );
                         })}
                         {previousSets[ex.id] && (
-                          <p className="pt-1 text-xs text-muted-foreground">
+                          <p className="pt-1 text-[11px] text-muted-foreground">
                             Última sessão: {previousSets[ex.id].map((p) => `${p.weight || "—"}×${p.reps || "—"}`).join(", ")}
                           </p>
                         )}
                       </div>
+
+                      <Button
+                        onClick={() => saveExercise(ex)}
+                        disabled={savingId === ex.id}
+                        className="w-full mt-4 h-11 font-semibold"
+                      >
+                        {savingId === ex.id ? <Loader2 className="animate-spin mr-2" size={16} /> : <Save size={16} className="mr-2" />}
+                        Salvar exercício
+                      </Button>
                     </div>
                   );
                 })}
@@ -840,14 +856,6 @@ function TrainingPage() {
             </Button>
           </div>
         </div>
-      )}
-      {swapFor && (
-        <SubstitutionDialog
-          open={!!swapFor}
-          onOpenChange={(v) => !v && setSwapFor(null)}
-          exerciseName={swapFor.name}
-          onPick={(alt) => toast.success(`Sugestão: ${alt.name}. Avise seu coach para atualizar o protocolo.`)}
-        />
       )}
     </div>
   );
