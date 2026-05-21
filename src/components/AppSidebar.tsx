@@ -3,7 +3,7 @@ import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
   LayoutDashboard, Dumbbell, Apple, LineChart, User,
   MessageSquare, LogOut, Pill,
-  Trophy, Flame, Award, Bell, CalendarDays, Activity,
+  Trophy, Flame, Award, Bell, CalendarDays, Activity, FlaskConical, ClipboardList,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -20,8 +20,9 @@ const mainItems = [
   { title: "Treino", url: "/training", icon: Dumbbell },
   { title: "Dieta", url: "/diet", icon: Apple },
   { title: "Hormônios", url: "/hormones", icon: Pill },
+  { title: "Exames", url: "/exams", icon: FlaskConical },
   { title: "Progresso", url: "/progress", icon: LineChart },
-  { title: "Feedback semanal", url: "/feedback/weekly", icon: CalendarDays },
+  { title: "Feedback", url: "/feedback", icon: ClipboardList },
   { title: "Avaliação postural", url: "/monthly-analysis", icon: Activity },
   { title: "Conquistas", url: "/achievements", icon: Award },
   { title: "Ranking", url: "/ranking", icon: Trophy },
