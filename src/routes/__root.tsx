@@ -205,16 +205,22 @@ function RootComponent() {
 
     // First check immediately, then every 60s, plus on focus/visibility change.
     check();
-    timer = window.setInterval(check, 60_000);
+    timer = window.setInterval(check, 15_000);
     const onVisible = () => { if (!document.hidden) check(); };
     document.addEventListener("visibilitychange", onVisible);
     window.addEventListener("focus", onVisible);
+    // Re-check on any navigation (route change) and when network comes back.
+    const onNav = () => check();
+    window.addEventListener("popstate", onNav);
+    window.addEventListener("online", onNav);
 
     return () => {
       cancelled = true;
       if (timer !== null) window.clearInterval(timer);
       document.removeEventListener("visibilitychange", onVisible);
       window.removeEventListener("focus", onVisible);
+      window.removeEventListener("popstate", onNav);
+      window.removeEventListener("online", onNav);
     };
   }, []);
 
