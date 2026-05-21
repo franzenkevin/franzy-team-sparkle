@@ -506,6 +506,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_status: string
           activity_level: string | null
           address: string | null
           aerobic_fasted: boolean | null
@@ -526,6 +527,7 @@ export type Database = {
           cardio_type_preference: string | null
           cpf: string | null
           created_at: string
+          created_by_admin: string | null
           current_diet_text: string | null
           current_split: string | null
           daily_discomfort: string | null
@@ -537,6 +539,7 @@ export type Database = {
           exercise_discomfort: string | null
           experience: string | null
           fasting_morning: string | null
+          first_access_at: string | null
           free_meals: string | null
           full_name: string | null
           goal: string | null
@@ -559,6 +562,9 @@ export type Database = {
           photo_front_url: string | null
           photo_side_left_url: string | null
           photo_side_url: string | null
+          plan: string | null
+          plan_end: string | null
+          plan_start: string | null
           preferred_foods: string[] | null
           previous_consultation: string | null
           profession: string | null
@@ -584,6 +590,7 @@ export type Database = {
           weight: number | null
         }
         Insert: {
+          account_status?: string
           activity_level?: string | null
           address?: string | null
           aerobic_fasted?: boolean | null
@@ -604,6 +611,7 @@ export type Database = {
           cardio_type_preference?: string | null
           cpf?: string | null
           created_at?: string
+          created_by_admin?: string | null
           current_diet_text?: string | null
           current_split?: string | null
           daily_discomfort?: string | null
@@ -615,6 +623,7 @@ export type Database = {
           exercise_discomfort?: string | null
           experience?: string | null
           fasting_morning?: string | null
+          first_access_at?: string | null
           free_meals?: string | null
           full_name?: string | null
           goal?: string | null
@@ -637,6 +646,9 @@ export type Database = {
           photo_front_url?: string | null
           photo_side_left_url?: string | null
           photo_side_url?: string | null
+          plan?: string | null
+          plan_end?: string | null
+          plan_start?: string | null
           preferred_foods?: string[] | null
           previous_consultation?: string | null
           profession?: string | null
@@ -662,6 +674,7 @@ export type Database = {
           weight?: number | null
         }
         Update: {
+          account_status?: string
           activity_level?: string | null
           address?: string | null
           aerobic_fasted?: boolean | null
@@ -682,6 +695,7 @@ export type Database = {
           cardio_type_preference?: string | null
           cpf?: string | null
           created_at?: string
+          created_by_admin?: string | null
           current_diet_text?: string | null
           current_split?: string | null
           daily_discomfort?: string | null
@@ -693,6 +707,7 @@ export type Database = {
           exercise_discomfort?: string | null
           experience?: string | null
           fasting_morning?: string | null
+          first_access_at?: string | null
           free_meals?: string | null
           full_name?: string | null
           goal?: string | null
@@ -715,6 +730,9 @@ export type Database = {
           photo_front_url?: string | null
           photo_side_left_url?: string | null
           photo_side_url?: string | null
+          plan?: string | null
+          plan_end?: string | null
+          plan_start?: string | null
           preferred_foods?: string[] | null
           previous_consultation?: string | null
           profession?: string | null
@@ -1069,6 +1087,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      mark_profile_active: { Args: { _user_id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "user"
