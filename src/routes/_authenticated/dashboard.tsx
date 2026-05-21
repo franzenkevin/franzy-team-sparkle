@@ -12,6 +12,7 @@ import { useReminders } from "@/hooks/useReminders";
 import { NotificationBell } from "@/components/NotificationBell";
 import { AchievementsCard } from "@/components/AchievementsCard";
 import { CoachContactDialog } from "@/components/CoachContactDialog";
+import { PlanRemainingBadge } from "@/components/PlanGate";
 import { LineChart as RLineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 
 const WEEKDAYS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
@@ -151,6 +152,7 @@ function DashboardPage() {
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-heading font-bold mt-0.5">
               {name || "Atleta"}
             </h1>
+            <div className="mt-2"><PlanRemainingBadge /></div>
           </div>
           <NotificationBell />
         </div>
