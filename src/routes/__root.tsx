@@ -7,7 +7,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -126,6 +126,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+  const [updateAvailable, setUpdateAvailable] = useState(false);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
@@ -177,6 +178,7 @@ function RootComponent() {
       url.searchParams.set("_v", Date.now().toString());
       window.location.replace(url.toString());
     };
+    (window as any).__lovableReloadNow = reloadEverything;
 
     const check = async () => {
       if (cancelled || document.hidden) return;
@@ -197,8 +199,8 @@ function RootComponent() {
           return;
         }
         if (sig !== initialSig) {
-          // New build detected — force reload across the tab.
-          await reloadEverything();
+          // New build detected — show banner instead of auto-reloading.
+          setUpdateAvailable(true);
         }
       } catch { /* network hiccup; try again next tick */ }
     };
@@ -254,6 +256,27 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      {updateAvailable && (
+        <div className="fixed top-0 inset-x-0 z-[100] bg-primary text-primary-foreground shadow-md">
+          <div className="mx-auto max-w-5xl flex flex-wrap items-center justify-between gap-3 px-4 py-2 text-sm">
+            <span className="font-medium">Nova versão disponível</span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => (window as any).__lovableReloadNow?.()}
+                className="rounded-md bg-primary-foreground text-primary px-3 py-1 text-xs font-semibold hover:opacity-90"
+              >
+                Atualizar agora
+              </button>
+              <button
+                onClick={() => setUpdateAvailable(false)}
+                className="rounded-md border border-primary-foreground/40 px-3 py-1 text-xs font-medium hover:bg-primary-foreground/10"
+              >
+                Depois
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <Outlet />
       <Toaster />
     </QueryClientProvider>
