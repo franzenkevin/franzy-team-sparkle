@@ -23,6 +23,35 @@ async function signed(supabase: any, path: string): Promise<string> {
   return data?.signedUrl || path;
 }
 
+/** Baixa os bytes da foto já reduzida (transform). Faz fallback para o original se o transform falhar. */
+async function imageBytes(storage: any, path: string): Promise<Uint8Array> {
+  if (/^https?:\/\//.test(path)) {
+    const r = await fetch(path);
+    if (!r.ok) throw new Error(`Não foi possível baixar a foto: ${path}`);
+    return new Uint8Array(await r.arrayBuffer());
+  }
+  // 1) tenta versão reduzida (1280px, q75) — funciona para originais até ~25MB
+  const { data: tr } = await storage.from("photos").createSignedUrl(path, 3600, {
+    transform: { width: 1280, height: 1280, resize: "contain", quality: 75 },
+  });
+  if (tr?.signedUrl) {
+    const r = await fetch(tr.signedUrl);
+    if (r.ok) return new Uint8Array(await r.arrayBuffer());
+  }
+  // 2) fallback: baixa o original direto via storage admin
+  const { data: blob, error } = await storage.from("photos").download(path);
+  if (error || !blob) {
+    throw new Error(`Foto "${path}" indisponível. Peça ao aluno para reenviar pela Anamnese.`);
+  }
+  const buf = new Uint8Array(await blob.arrayBuffer());
+  if (buf.byteLength > 18 * 1024 * 1024) {
+    throw new Error(
+      `Foto "${path}" acima de 18MB e não pôde ser reduzida automaticamente. Peça ao aluno para reenviar pela Anamnese (o app compacta a foto antes do upload).`,
+    );
+  }
+  return buf;
+}
+
 export const requestBodyAnalysis = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: Input) => {
@@ -42,9 +71,9 @@ export const requestBodyAnalysis = createServerFn({ method: "POST" })
       .eq("user_id", userId).maybeSingle();
 
     const [u1, u2, u3] = await Promise.all([
-      signed(supabase, data.photoFront),
-      signed(supabase, data.photoSide),
-      signed(supabase, data.photoBack),
+      imageBytes(supabase.storage, data.photoFront),
+      imageBytes(supabase.storage, data.photoSide),
+      imageBytes(supabase.storage, data.photoBack),
     ]);
 
     const gateway = createLovableAiGatewayProvider(apiKey);
@@ -70,6 +99,7 @@ export const requestBodyAnalysis = createServerFn({ method: "POST" })
       });
       content = text || "";
     } catch (e: any) {
+      console.error("[body-analysis] user-flow error:", e);
       throw new Error(`Falha na análise IA: ${e?.message ?? "erro desconhecido"}`);
     }
 
@@ -114,13 +144,7 @@ async function ensureAdmin(userId: string) {
   if (!role) throw new Error("Acesso restrito ao admin");
 }
 
-async function signedAdmin(path: string): Promise<string> {
-  if (/^https?:\/\//.test(path)) return path;
-  const { data } = await supabaseAdmin.storage.from("photos").createSignedUrl(path, 3600, {
-    transform: { width: 1600, height: 1600, resize: "contain", quality: 80 },
-  });
-  return data?.signedUrl || path;
-}
+// signedAdmin removido — usamos imageBytes(supabaseAdmin.storage, …) que faz transform + fallback.
 
 /** Admin gera análise corporal usando as fotos da anamnese OU as últimas enviadas pelo aluno. */
 export const adminGenerateBodyAnalysis = createServerFn({ method: "POST" })
@@ -150,12 +174,18 @@ export const adminGenerateBodyAnalysis = createServerFn({ method: "POST" })
     }
     if (!front || !side || !back) throw new Error("Aluno ainda não enviou as 3 fotos.");
 
-    const [u1, u2, u3] = await Promise.all([signedAdmin(front), signedAdmin(side), signedAdmin(back)]);
+    const [u1, u2, u3] = await Promise.all([
+      imageBytes(supabaseAdmin.storage, front),
+      imageBytes(supabaseAdmin.storage, side),
+      imageBytes(supabaseAdmin.storage, back),
+    ]);
     const gateway = createLovableAiGatewayProvider(apiKey);
     const model = gateway("google/gemini-2.5-pro");
     const profileText = `Perfil: ${profile.full_name ?? "—"} | sexo ${profile.sex ?? "—"} | ${profile.age ?? "—"} anos | ${profile.weight ?? "—"}kg | ${profile.height ?? "—"}cm | objetivo ${profile.goal ?? "—"} | exp ${profile.experience ?? "—"} | lesões ${profile.injuries ?? "—"}.${data.notes ? ` Obs admin: ${data.notes}.` : ""}`;
 
-    const { text } = await generateText({
+    let text = "";
+    try {
+      const r = await generateText({
       model,
       system: BODY_ANALYSIS_SYSTEM_PROMPT,
       messages: [{
@@ -168,7 +198,12 @@ export const adminGenerateBodyAnalysis = createServerFn({ method: "POST" })
         ],
       }],
       abortSignal: AbortSignal.timeout(110_000),
-    });
+      });
+      text = r.text || "";
+    } catch (e: any) {
+      console.error("[body-analysis] admin-flow error:", e);
+      throw new Error(`Falha na análise IA: ${e?.message ?? "erro desconhecido"}`);
+    }
 
     let jsonText: string;
     try { jsonText = JSON.stringify(extractJsonFromResponse(text || "")); }

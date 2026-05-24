@@ -1,12 +1,23 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Plus, Trash2, ChevronUp, ChevronDown, Utensils, Leaf, Pill, Zap } from "lucide-react";
+import { LOCAL_FOODS, type FoodItem } from "@/lib/foodsDb";
+import { supabase } from "@/integrations/supabase/client";
 
-type Food = { name?: string; amount?: string; calories?: number; protein?: number; carbs?: number; fat?: number };
+type Food = {
+  name?: string;
+  amount?: string;
+  calories?: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
+  /** Quando true, recalcula macros automaticamente a partir da base por 100g + quantidade em gramas. */
+  auto?: boolean;
+};
 type MealOption = { label?: string; foods?: Food[] };
 type Meal = { label?: string; time?: string; options?: MealOption[] };
 type Supplement = { name?: string; dose?: string; timing?: string; notes?: string };
@@ -39,10 +50,64 @@ function normalize(value: unknown): Diet {
 
 const toNum = (s: string) => (s === "" ? undefined : Number(s));
 
+/** Extrai gramas de strings como "200g", "1 colher (30g)", "150". */
+function parseGrams(amount?: string): number | null {
+  if (!amount) return null;
+  const m = String(amount).match(/(\d+(?:[.,]\d+)?)\s*g/i) ?? String(amount).match(/(\d+(?:[.,]\d+)?)/);
+  if (!m) return null;
+  const n = Number(m[1].replace(",", "."));
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+type BaseFood = { name: string; kcal: number; protein: number; carbs: number; fat: number; serving_g?: number };
+
+function bestMatch(name: string | undefined, db: BaseFood[]): BaseFood | null {
+  const q = (name ?? "").trim().toLowerCase();
+  if (q.length < 3) return null;
+  let best: BaseFood | null = null;
+  let bestScore = 0;
+  for (const f of db) {
+    const n = f.name.toLowerCase();
+    let score = 0;
+    if (n === q) score = 100;
+    else if (n.includes(q)) score = 60 + Math.min(20, q.length);
+    else if (q.includes(n.split(",")[0])) score = 40;
+    if (score > bestScore) { bestScore = score; best = f; }
+  }
+  return bestScore >= 40 ? best : null;
+}
+
+function computeFromBase(base: BaseFood, grams: number): { calories: number; protein: number; carbs: number; fat: number } {
+  const per = base.serving_g && base.serving_g > 0 ? base.serving_g : 100;
+  const k = grams / per;
+  const r = (n: number) => Math.round(n * 10) / 10;
+  return {
+    calories: Math.round(base.kcal * k),
+    protein: r(base.protein * k),
+    carbs: r(base.carbs * k),
+    fat: r(base.fat * k),
+  };
+}
+
 export function DietEditor({ value, onChange }: { value: unknown; onChange: (v: Diet) => void }) {
   const d = useMemo(() => normalize(value), [value]);
   const meals = d.meals ?? [];
   const update = (next: Diet) => onChange(next);
+
+  const [customFoods, setCustomFoods] = useState<BaseFood[]>([]);
+  useEffect(() => {
+    let alive = true;
+    supabase.from("custom_foods").select("name, kcal, protein, carbs, fat, serving_g").limit(1000)
+      .then(({ data }) => { if (alive && data) setCustomFoods(data as any); });
+    return () => { alive = false; };
+  }, []);
+
+  const foodDb: BaseFood[] = useMemo(() => {
+    const local: BaseFood[] = LOCAL_FOODS.map((f: FoodItem) => ({
+      name: f.name, kcal: f.kcal, protein: f.protein, carbs: f.carbs, fat: f.fat, serving_g: 100,
+    }));
+    return [...customFoods, ...local];
+  }, [customFoods]);
 
   const setMeal = (mi: number, patch: Partial<Meal>) => {
     const nm = [...meals]; nm[mi] = { ...nm[mi], ...patch }; update({ ...d, meals: nm });
@@ -63,7 +128,30 @@ export function DietEditor({ value, onChange }: { value: unknown; onChange: (v: 
 
   const setFood = (mi: number, oi: number, fi: number, patch: Partial<Food>) => {
     const foods = [...((meals[mi].options ?? [])[oi]?.foods ?? [])];
-    foods[fi] = { ...foods[fi], ...patch }; setOpt(mi, oi, { foods });
+    const next: Food = { ...foods[fi], ...patch };
+
+    // Auto-cálculo: se mudou o nome ou a quantidade, tenta casar com a biblioteca
+    // e recalcula macros proporcionalmente. Macros editados à mão desligam o auto.
+    const nameOrAmountChanged = "name" in patch || "amount" in patch;
+    const macroEditedManually = ("protein" in patch) || ("carbs" in patch) || ("fat" in patch) || ("calories" in patch);
+
+    if (macroEditedManually) {
+      next.auto = false;
+    } else if (nameOrAmountChanged) {
+      const match = bestMatch(next.name, foodDb);
+      const grams = parseGrams(next.amount);
+      if (match && grams) {
+        const c = computeFromBase(match, grams);
+        next.calories = c.calories;
+        next.protein = c.protein;
+        next.carbs = c.carbs;
+        next.fat = c.fat;
+        next.auto = true;
+      }
+    }
+
+    foods[fi] = next;
+    setOpt(mi, oi, { foods });
   };
   const addFood = (mi: number, oi: number) => {
     const foods = [...((meals[mi].options ?? [])[oi]?.foods ?? []), { name: "", amount: "", calories: 0, protein: 0, carbs: 0, fat: 0 }];
@@ -99,6 +187,10 @@ export function DietEditor({ value, onChange }: { value: unknown; onChange: (v: 
       <Textarea placeholder="Introdução / orientações da dieta" rows={2}
         value={d.intro ?? ""} onChange={(e) => update({ ...d, intro: e.target.value })} className="text-xs" />
 
+      <p className="text-[10px] text-muted-foreground -mt-1">
+        Dica: digite o alimento (ex.: "Arroz, branco, cozido") e a quantidade em gramas (ex.: "200g"). Os macros são calculados automaticamente pela biblioteca de alimentos. Editar P/C/G/kcal manualmente desativa o auto-cálculo.
+      </p>
+
       {meals.length === 0 && (
         <Card className="p-6 text-center text-sm text-muted-foreground">Nenhuma refeição. Clique em "Adicionar refeição".</Card>
       )}
@@ -130,8 +222,9 @@ export function DietEditor({ value, onChange }: { value: unknown; onChange: (v: 
                 {(opt.foods ?? []).map((f, fi) => (
                   <div key={fi} className="space-y-1.5 rounded-md border border-border/60 p-2 sm:p-0 sm:border-0">
                     <div className="flex gap-1.5 items-center">
-                      <Input className="h-8 text-xs flex-1 min-w-0" placeholder="Alimento" value={f.name ?? ""} onChange={(e) => setFood(mi, oi, fi, { name: e.target.value })} />
-                      <Input className="h-8 text-xs w-20 shrink-0" placeholder="Qtd" value={f.amount ?? ""} onChange={(e) => setFood(mi, oi, fi, { amount: e.target.value })} />
+                      <Input className="h-8 text-xs flex-1 min-w-0" placeholder="Alimento" list="diet-foods-db"
+                        value={f.name ?? ""} onChange={(e) => setFood(mi, oi, fi, { name: e.target.value })} />
+                      <Input className="h-8 text-xs w-20 shrink-0" placeholder="Qtd (g)" value={f.amount ?? ""} onChange={(e) => setFood(mi, oi, fi, { amount: e.target.value })} />
                       <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={() => removeFood(mi, oi, fi)}><Trash2 size={12} className="text-destructive" /></Button>
                     </div>
                     <div className="grid grid-cols-4 gap-1.5">
@@ -140,6 +233,9 @@ export function DietEditor({ value, onChange }: { value: unknown; onChange: (v: 
                       <Input className="h-8 text-xs" placeholder="G" value={f.fat ?? ""} onChange={(e) => setFood(mi, oi, fi, { fat: toNum(e.target.value) })} />
                       <Input className="h-8 text-xs" placeholder="kcal" value={f.calories ?? ""} onChange={(e) => setFood(mi, oi, fi, { calories: toNum(e.target.value) })} />
                     </div>
+                    {f.auto && (
+                      <p className="text-[10px] text-primary/80">Auto-calculado pela biblioteca</p>
+                    )}
                   </div>
                 ))}
                 <Button size="sm" variant="outline" className="w-full h-8" onClick={() => addFood(mi, oi)}>
@@ -181,6 +277,10 @@ export function DietEditor({ value, onChange }: { value: unknown; onChange: (v: 
           </div>
         ))}
       </Card>
+
+      <datalist id="diet-foods-db">
+        {foodDb.slice(0, 500).map((f, i) => (<option key={i} value={f.name} />))}
+      </datalist>
 
       <div>
         <Label className="text-xs flex items-center gap-1"><Zap size={12} className="text-primary" /> Pré-treino / termogênico</Label>
