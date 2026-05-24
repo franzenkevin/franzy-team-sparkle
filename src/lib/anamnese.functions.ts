@@ -111,9 +111,29 @@ export const prescribeFromAnamnese = createServerFn({ method: "POST" })
     const { data: profile } = await supabase.from("profiles").select("*").eq("user_id", uid).maybeSingle();
     if (!profile) throw new Error("Perfil não encontrado");
 
-    const { data: lastAnalysis } = await supabase
-      .from("ai_analyses").select("content").eq("user_id", uid).eq("kind", "anamnese_analysis")
+    // EXIGE anamnese completa + análise corporal IA antes de prescrever
+    if (!profile.anamnese_completed_at) {
+      throw new Error("O aluno ainda não finalizou a anamnese. Peça que conclua antes de prescrever.");
+    }
+
+    const { data: lastAnamnese } = await supabase
+      .from("ai_analyses").select("content, created_at").eq("user_id", uid).eq("kind", "anamnese_analysis")
       .order("created_at", { ascending: false }).limit(1).maybeSingle();
+
+    const { data: lastBody } = await supabase
+      .from("ai_analyses").select("content, created_at").eq("user_id", uid).eq("kind", "body_analysis")
+      .order("created_at", { ascending: false }).limit(1).maybeSingle();
+
+    if (!lastBody?.content) {
+      throw new Error(
+        "Antes de prescrever, gere a Análise Corporal IA (aba Análises IA). O protocolo SEMPRE deve usar a análise das fotos junto com a anamnese.",
+      );
+    }
+    if (!lastAnamnese?.content) {
+      throw new Error(
+        "Antes de prescrever, gere a Análise IA da anamnese (botão Gerar análise IA na aba Anamnese).",
+      );
+    }
 
     // Contexto histórico para ondulação + reanálise
     const { data: previousProtocol } = await supabase
@@ -164,9 +184,14 @@ APLIQUE as regras de "CICLO DE 60 DIAS" e "REANÁLISE — FEEDBACK DO ALUNO".` :
 
     const userPrompt = `${profileToText(profile)}
 
-## AVALIAÇÃO IA PRÉVIA
-${lastAnalysis?.content ?? "—"}
+## AVALIAÇÃO IA DA ANAMNESE (obrigatória)
+${lastAnamnese.content}
+
+## ANÁLISE CORPORAL IA — FOTOS (obrigatória)
+${lastBody.content}
 ${historyBlock}
+
+REGRA CRÍTICA: você DEVE usar TANTO os dados da anamnese QUANTO os achados da análise corporal das fotos (desvios posturais, pontos fracos/fortes, simetria, recomendações) para construir o protocolo. Justifique escolhas baseadas em ambas as fontes no campo "summary".
 
 Gere o JSON completo do protocolo (treino + dieta + summary).`;
 
