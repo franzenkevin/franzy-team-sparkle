@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import {
   ArrowLeft, Save, Sparkles, CheckCircle2, XCircle, Clock, Loader2, Pencil,
-  Dumbbell, Apple, Pill, Heart, FileText, Camera, MessageSquare, BarChart3,
+  Dumbbell, Apple, Pill, Heart, FileText, Camera, MessageSquare, BarChart3, Send,
 } from "lucide-react";
 import { TrainingEditor } from "@/components/admin/TrainingEditor";
 import { DietEditor } from "@/components/admin/DietEditor";
@@ -321,13 +321,25 @@ function ProtocolEditorBlock({ protocol, userId, kind, onSaved, history }: {
     protocol ? (kind === "hormones" ? (protocol.hormones ?? []) : (protocol[kind] ?? {})) : (kind === "hormones" ? [] : {}),
   );
   const [saving, setSaving] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [autoSavedAt, setAutoSavedAt] = useState<Date | null>(null);
+  const [dirty, setDirty] = useState(false);
+  const lastSavedJsonRef = useRef<string>("");
 
   useEffect(() => {
-    setValue(protocol ? (kind === "hormones" ? (protocol.hormones ?? []) : (protocol[kind] ?? {})) : (kind === "hormones" ? [] : {}));
+    const v = protocol ? (kind === "hormones" ? (protocol.hormones ?? []) : (protocol[kind] ?? {})) : (kind === "hormones" ? [] : {});
+    setValue(v);
+    lastSavedJsonRef.current = JSON.stringify(v);
+    setDirty(false);
   }, [protocol, kind]);
 
-  const save = async (status: "active" | "pending_review") => {
-    setSaving(true);
+  // Marca alterações
+  useEffect(() => {
+    const current = JSON.stringify(value);
+    setDirty(current !== lastSavedJsonRef.current);
+  }, [value]);
+
+  const persist = async (status: "active" | "pending_review", opts?: { silent?: boolean }) => {
     try {
       const payload: any = {
         targetUserId: userId,
@@ -339,11 +351,51 @@ function ProtocolEditorBlock({ protocol, userId, kind, onSaved, history }: {
         notify: status === "active",
       };
       await saveFn({ data: payload });
-      toast.success(status === "active" ? "Salvo e liberado ao aluno" : "Rascunho salvo");
-      onSaved();
-    } catch (e: any) { toast.error(e?.message ?? "Erro ao salvar"); }
+      lastSavedJsonRef.current = JSON.stringify(value);
+      setDirty(false);
+      setAutoSavedAt(new Date());
+      if (!opts?.silent) {
+        toast.success(status === "active" ? "Publicado para o aluno" : "Rascunho salvo");
+      }
+      // Recarrega só ao publicar (para evitar conflito com edição em andamento)
+      if (status === "active") onSaved();
+    } catch (e: any) {
+      if (!opts?.silent) toast.error(e?.message ?? "Erro ao salvar");
+      throw e;
+    }
+  };
+
+  const handleSaveDraft = async () => {
+    setSaving(true);
+    try { await persist("pending_review"); } catch { /* toast já mostrado */ }
     finally { setSaving(false); }
   };
+  const handlePublish = async () => {
+    if (!confirm("Publicar este protocolo para o aluno? Ele será notificado.")) return;
+    setPublishing(true);
+    try { await persist("active"); } catch { /* toast já mostrado */ }
+    finally { setPublishing(false); }
+  };
+
+  // Auto-save a cada 20s quando houver alterações não salvas
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      if (!dirty || saving || publishing) return;
+      persist("pending_review", { silent: true }).catch(() => { /* silencioso */ });
+    }, 20_000);
+    return () => window.clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dirty, saving, publishing, value, protocol?.id]);
+
+  // Auto-save ao sair da página / mudar de aba
+  useEffect(() => {
+    const onLeave = () => {
+      if (dirty) persist("pending_review", { silent: true }).catch(() => {});
+    };
+    window.addEventListener("beforeunload", onLeave);
+    return () => { window.removeEventListener("beforeunload", onLeave); onLeave(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dirty]);
 
   return (
     <div className="space-y-3">
@@ -355,15 +407,20 @@ function ProtocolEditorBlock({ protocol, userId, kind, onSaved, history }: {
             </h3>
             <p className="text-xs text-muted-foreground">
               {protocol ? `v${protocol.version} · ${protocol.status}` : "Nenhum protocolo ainda"}
+              {autoSavedAt && (
+                <span className="ml-2">· auto-salvo {autoSavedAt.toLocaleTimeString("pt-BR")}</span>
+              )}
+              {dirty && <span className="ml-2 text-amber-600">· alterações não salvas</span>}
             </p>
           </div>
           <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={() => save("pending_review")} disabled={saving}>
-              <Save size={14} className="mr-1"/>Rascunho
+            <Button size="sm" variant="outline" onClick={handleSaveDraft} disabled={saving || publishing}>
+              {saving ? <Loader2 size={14} className="mr-1 animate-spin"/> : <Save size={14} className="mr-1"/>}
+              Salvar
             </Button>
-            <Button size="sm" onClick={() => save("active")} disabled={saving}>
-              {saving ? <Loader2 size={14} className="mr-1 animate-spin"/> : <CheckCircle2 size={14} className="mr-1"/>}
-              Salvar e liberar
+            <Button size="sm" onClick={handlePublish} disabled={saving || publishing}>
+              {publishing ? <Loader2 size={14} className="mr-1 animate-spin"/> : <Send size={14} className="mr-1"/>}
+              Publicar para aluno
             </Button>
           </div>
         </div>
