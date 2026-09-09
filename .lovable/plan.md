@@ -1,80 +1,50 @@
-# Reestruturação do Painel Admin (estilo Prime Coaching)
+# Subir projeto completo para GitHub
 
-Vou reorganizar todo o `/admin` para o layout das screenshots: **sidebar fixa à esquerda + área central com lista de alunos** e, ao clicar em um aluno, **uma página de detalhe com abas horizontais** (Progresso, Anamnese, Dietas, Treinos, Feedbacks, Fotos, Notas, IA).
+## Objetivo
+Conectar o projeto atual ao GitHub via integração nativa da Lovable e criar o repositório **APP FRANZEN TEAM** com todo o código-fonte, histórico de versões e configurações.
 
-## 1. Nova estrutura de rotas
+## Escopo
+- Todo o código do projeto (pasta `src/`, configurações, rotas, componentes, funções server, migrações etc.).
+- Arquivos de configuração (`vite.config.ts`, `wrangler.jsonc`, `package.json`, `tsconfig.json`, `components.json`, `.env` etc.).
+- **Fora do escopo**: dados do banco de dados e arquivos de storage. Esses são exportados separadamente pelo painel Lovable Cloud.
 
-```text
-src/routes/_authenticated/admin.tsx               -> layout com AdminSidebar + Outlet
-src/routes/_authenticated/admin.index.tsx         -> Resumo (dashboard)
-src/routes/_authenticated/admin.clients.tsx       -> Lista de alunos (filtros + cards)
-src/routes/_authenticated/admin.clients.$id.tsx   -> Detalhe do aluno (header + tabs)
-src/routes/_authenticated/admin.library.tsx       -> Bibliotecas (templates de treino/dieta)
-src/routes/_authenticated/admin.tools.tsx         -> Ferramentas (calculadoras, coach IA global)
-src/routes/_authenticated/admin.settings.tsx      -> Minha conta
-```
+## Passos
 
-A página atual `admin.tsx` (tabs Resumo/Pendências/Clientes/Coach) será quebrada nessas rotas.
+1. **Abrir a integração GitHub no editor Lovable**
+   - No editor, clicar no menu **Plus (+)** no canto inferior esquerdo da caixa de chat.
+   - Selecionar **GitHub → Connect project**.
 
-## 2. AdminSidebar (`src/components/admin/AdminSidebar.tsx`)
+2. **Autorizar o app da Lovable no GitHub**
+   - Na tela de autorização do GitHub, permitir que o app "Lovable" acesse a conta desejada.
+   - Aceitar as permissões solicitadas.
 
-Sidebar persistente baseada no shadcn `Sidebar`, igual às screenshots:
-- Resumo
-- Clientes (ativo por padrão, com sub-itens: Todos, Pendentes de aprovação, Fotos novas)
-- Bibliotecas
-- Ferramentas (Calculadoras, Coach IA)
-- Minha conta
+3. **Escolher conta/organização**
+   - Selecionar a conta pessoal ou organização onde o repositório será criado.
 
-Colapsável (`collapsible="icon"`), com `SidebarTrigger` no header.
+4. **Criar o repositório com o nome definido**
+   - Nome: `APP FRANZEN TEAM`
+   - Visibilidade: conforme preferência do usuário (público ou privado).
+   - Clicar em **Create Repository**.
 
-## 3. Lista de alunos (`admin.clients.tsx`)
+5. **Aguardar o push inicial**
+   - A Lovable fará o push completo do projeto para o novo repositório automaticamente.
+   - Aguardar a confirmação de sincronização no editor.
 
-Cards por aluno com:
-- Avatar + nome + email + telefone
-- Badges de status: Anamnese / Fotos / Treino / Dieta / Cardio
-- Dias restantes do plano
-- Filtros no topo: Status, Prontidão, Anamnese, Fotos, Ordenação
+6. **Verificar no GitHub**
+   - Acessar o repositório criado no GitHub.
+   - Confirmar que todos os arquivos e pastas estão presentes.
+   - Verificar se o README, commits iniciais e branches principais foram criados.
 
-Click no card → navega para `admin.clients.$id`.
+7. **Confirmar sincronização bidirecional**
+   - A partir da conexão, qualquer alteração feita no editor Lovable será enviada automaticamente para o GitHub.
+   - Alterações feitas diretamente no GitHub também sincronizam de volta para a Lovable.
 
-## 4. Detalhe do aluno (`admin.clients.$id.tsx`)
+## Pós-condições
+- Repositório `APP FRANZEN TEAM` criado e populado com o projeto completo.
+- Integração ativa para sincronização contínua.
+- URL do repositório disponível para acesso e compartilhamento.
 
-**Header azul** (igual screenshot Prime): avatar grande, nome, email copiável, badges (idade, altura, peso, plano, dias restantes), botões de ação rápida (mensagem, histórico, link, e-mail, agendar).
-
-**Tabs horizontais** abaixo do header:
-
-| Aba | Componente | Função |
-|---|---|---|
-| Progresso | `<StudentProgress />` | Cards de métricas + gráfico de peso (existente em progress.tsx adaptado) |
-| Anamnese | `<StudentAnamnese />` | Visualiza respostas + 4 fotos (frente/lat dir/lat esq/costas) |
-| Avaliações | `<StudentAssessments />` | Histórico de medidas/avaliações |
-| Dietas | `<DietEditor />` + lista de prescrições | Já existe — usar em modo embarcado |
-| Treinos | `<TrainingEditor />` + lista | Já existe |
-| Hormônios | `<HormonesEditor />` | Já existe |
-| Feedbacks | `<StudentFeedbacks />` | Semanais + dieta + treino + mensal, com aprovação de análise IA |
-| Fotos | `<StudentPhotos />` | Galeria de evolução |
-| Notas | `<StudentNotes />` | Notas internas do coach |
-| IA Coach | `<CoachChat />` | Chat IA específico desse aluno (já existe `adminCoachChat`) |
-
-Cada aba carrega só seus dados (lazy). Edições salvam direto via server fn existente.
-
-## 5. Reaproveitamento
-
-Tudo que já existe é reusado:
-- `CoachChat`, `TrainingEditor`, `DietEditor`, `HormonesEditor`, `Calculators`, `TemplateLibrary`, `ResumoTab`
-- Server fns: `adminCoachChat`, `adminGenerateBodyAnalysis`, etc.
-
-Sem reescrever lógica — só nova **casca de navegação** + componentes finos de aba.
-
-## 6. Detalhes técnicos
-
-- Layout: `SidebarProvider` envolve `admin.tsx`; `<AppSidebar>` do aluno é **não** renderizado em rotas admin (já tratado em `_authenticated.tsx`).
-- Mobile: sidebar vira off-canvas via `SidebarTrigger`; tabs do detalhe rolam horizontalmente.
-- Roteamento: usar `<Link to="/admin/clients/$id" params={{ id }}>` tipado.
-- Tabs: shadcn `<Tabs>` com `value` sincronizado a `?tab=` na URL (deep link).
-
-## 7. Escopo desta entrega
-
-Vou entregar a **estrutura completa de navegação + lista + detalhe com todas as abas**, conectando os editores existentes. As abas "Avaliações", "Notas" e "Fotos" entrarão com a UI básica (lista + uploader/textarea) ligada às tabelas existentes; refinamentos visuais ficam para iterações.
-
-Aprova que eu siga?
+## Notas técnicas
+- A integração nativa da Lovable cria um repositório novo; não é possível importar diretamente para um repositório existente.
+- Dados do banco (tabelas, registros) e arquivos de storage não são versionados no GitHub. Para backup de dados, usar a exportação do Lovable Cloud.
+- O `.env` pode conter variáveis sensíveis; verificar se o repositório será privado caso essas informações devam permanecer protegidas.
